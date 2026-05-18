@@ -22,7 +22,11 @@
 #ifndef FITS_READER_FITS_READER_H
 #define FITS_READER_FITS_READER_H
 
-#define DllExport __declspec (dllexport)
+#ifdef _WIN32
+#define DllExport __declspec(dllexport)
+#else
+#define DllExport __attribute__((visibility("default")))
+#endif
 
 #include <fitsio.h>
 #include <cstring>

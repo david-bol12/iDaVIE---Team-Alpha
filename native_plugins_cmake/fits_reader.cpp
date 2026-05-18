@@ -24,12 +24,18 @@
 
 // #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <limits>
 #include <regex>
 #include <sstream>
 #include <string>
+
+#ifndef _WIN32
+#define strcpy_s(dest, destsz, src) strncpy((dest), (src), (destsz) - 1)
+#define strncpy_s(dest, destsz, src, count) strncpy((dest), (src), (count) < (destsz) ? (count) : (destsz) - 1)
+#endif
 
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 {
@@ -410,7 +416,7 @@ int FitsUpdateKey(fitsfile* fptr, int datatype, char* keyname, void* value, char
 int FitsGetImageSize(fitsfile *fptr, int dims, int64_t **naxes, int *status)
 {
     int64_t* imageSize = new int64_t[dims];
-    int success = fits_get_img_sizell(fptr, dims, imageSize, status);
+    int success = fits_get_img_sizell(fptr, dims, reinterpret_cast<LONGLONG*>(imageSize), status);
     *naxes = imageSize;
     return success;
 }
@@ -454,7 +460,7 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
     debug << "Reading cube image with " << dims << " dimensions and " << nelem << " elements.";
     WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     
-    int success = fits_read_pixll(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
+    int success = fits_read_pixll(fptr, TFLOAT, reinterpret_cast<LONGLONG*>(startPix), nelem, &nulval, dataarray, &anynul, status);
     delete[] startPix;
     *array = dataarray;
     return success;
@@ -556,7 +562,7 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     std::stringstream debug;
     debug << "Reading mask image with " << dims << " dimensions and " << nelem << " elements.";
     WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-    int success = fits_read_pixll(fptr, TSHORT, startPix, nelem, &nulval, dataarray, &anynul, status);
+    int success = fits_read_pixll(fptr, TSHORT, reinterpret_cast<LONGLONG*>(startPix), nelem, &nulval, dataarray, &anynul, status);
     delete[] startPix;
     *array = dataarray;
     return success;
