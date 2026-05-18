@@ -21,10 +21,19 @@
  */
 #include "ast_tool.h"
 
+#include <cmath>
+#include <cstring>
 #include <string>
 #include <regex>
 
+#ifndef _WIN32
+#define strcpy_s(dest, destsz, src) strncpy((dest), (src), (destsz) - 1)
+#define strncpy_s(dest, destsz, src, count) strncpy((dest), (src), (count) < (destsz) ? (count) : (destsz) - 1)
+#endif
+
+#ifndef M_PI
 const double M_PI = 3.141592653589793238463;
+#endif
 
 std::string GetStringFromFitsChan(const AstFitsChan *chan, const char *name) {
   char *val_ptr;
