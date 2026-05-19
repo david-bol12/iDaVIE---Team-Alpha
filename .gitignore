@@ -559,3 +559,6 @@ About
 
 # local claude settings
 .claude/settings.local.json
+
+# People can see docs
+!docs/

@@ -1,0 +1,64 @@
+ID,Title,Category,Size,Sprint,Owner,Days,Feeds,DoD
+MGMT-1,Sub-team Kanban board set up,Management,S,1,SM,2 AM,§9.2.5,Board exists with all Sprint 1 cards seeded
+MGMT-2,Daily stand-up notes file,Management,S,1,SM,2 AM,§9.2.6,File exists at docs/sub-team-6/standups.md
+MGMT-3,Sprint 1 role assignments documented,Management,S,1,SM,2 AM,§10.1,Names against roles committed
+BNCH-1,CK suite baseline for UI + Menu scripts,Benchmark,M,1,QC,2-3,"T2, pitch 1",Spreadsheet committed with row per class vs §7.1 thresholds
+BNCH-2,SonarQube baseline (CC + cognitive + smells + dup + MI + debt),Benchmark,M,1,QC,2-3,"T2, pitch 1",Report exported; top-10 smells listed
+BNCH-3,CodeScene hotspot + churn,Benchmark,S,1,QC,3,"T2, pitch 1",One hotspot screenshot committed
+BNCH-4,DV8/NDepend DSM + propagation cost,Benchmark,M,1,QC,4,T2 modularity,DSM image committed
+BNCH-6,Mocking-difficulty count (static + Unity API calls per class),Benchmark,S,1,QC,4,T2 testability,Count per class
+DESN-1,Concern-map of CanvassDesktop (whiteboard photographed),Design,S,1,TL + all,2 PM,"DESN-2, WE1",Image at docs/sub-team-6/concern-map.png
+REQ-1,Catalogue current GUI tab behaviours (File/Render/Stats/Sources/Debug),Requirements,M,1,POL,3,"Req doc, T4",Paragraph + screenshot per tab
+REQ-2,NFRs traced to ISO 25010 maintainability sub-chars,Requirements,M,1,POL,3-4,"Req doc, T4, LO2",NFR table with measurable acceptance
+REQ-3,Long-term roadmap drivers (Python console + workspace save),Requirements,S,1,POL,4,"Req doc, T4",Half page
+REQ-4,Sub-team requirements document consolidated (1-2 pp),Requirements,M,1,POL,4-5,§9.2.1 deliverable,docs/sub-team-6/requirements.md committed
+ARCH-1,ADR-01 MVVM split (Nygard format),Architecture,M,1,TL,3-4,"T3, T4",adrs/0001-mvvm-split.md filled in
+ARCH-2,ADR-02 Transport (JSON-RPC + gRPC),Architecture,M,1,TL,4,"T3, T4",adrs/0002-transport.md filled in
+ARCH-8,Interface contracts proposed to Sub-team 1,Architecture,M,1,TL,4-5,"Sub-team 1 dep, T4",C# headers in refactoring-examples/sub-team-6/contracts/
+DEPS-1,Gateway dependency on integration risk register (Sub-team 1),Dependencies,S,1,SM,2,T7,Item on register; owner Sub-team 1 TL
+DEPS-2,VR-side menu coord raised with Sub-team 4,Dependencies,S,1,SM,2,T7,Item on register; owner Sub-team 4 TL
+MGMT-4,Sprint 1 review slides (15 min Day 5),Management,S,1,SM,5 AM,"§8.1, LO7",Slides for Day 5 review committed
+MGMT-5,Sprint 1 Kanban snapshot + retro notes,Management,S,1,SM,5 PM,§9.2.5,Image + retro doc committed
+AI-1,Rolling AI prompt log (ongoing),AI,S × ongoing,1,all,2-5,T8,Daily updates at docs/sub-team-6/ai-log.md
+ARCH-3,C4 Level 1 Context diagram,Architecture,S,2,TL,6,"T3, pitch 2",PlantUML committed
+ARCH-4,C4 Level 2 Container diagram,Architecture,M,2,TL,6,"T3, pitch 2",PlantUML committed
+ARCH-5,C4 Level 3 Component diagram,Architecture,M,2,TL,6-7,"T3, pitch 2",PlantUML committed
+ARCH-6,ADR-03 Anti-corruption layer around Unity 6,Architecture,S,2,TL,6,"T3, T4",ADR committed
+ARCH-7,ADR-04 UI Toolkit View + Unity 6 migration plan,Architecture,M,2,TL,7,"T3, T4, pitch 4",ADR + half-page migration plan
+ARCH-9,MVVM binding policy (1-2 pp),Architecture,M,2,TL,7,§6.6 deliverable,Doc committed
+DESN-2,SRP audit of CanvassDesktop showing four concerns separated,Design,M,2,TL,7,"T4, LO4",Diagram + half-page commentary
+WE1-1,File tab BEFORE UML class diagram,Worked Ex 1,M,2,TL,7,"T4, pitch 3",PlantUML committed
+WE1-2,File tab BEFORE dependency graph + DSM excerpt,Worked Ex 1,S,2,QC,7,T4 modularity,Image + caption
+WE1-3,File tab AFTER UML class diagram (MVVM + Gateway),Worked Ex 1,M,2,TL,7-8,"T4, pitch 3",PlantUML committed
+WE1-4,File tab AFTER sequence diagram (load FITS cube),Worked Ex 1,M,2,TL,8,"T4, pitch 3",PlantUML committed
+WE1-5,File tab AFTER C# skeleton (compiles no Unity in VM),Worked Ex 1,L,2,TL + 1,7-8,"T4, LO4, LO5",refactoring-examples/sub-team-6/file-tab/skeleton/ compiles
+WE1-6,File tab CK + ISO 25010 delta worksheet,Worked Ex 1,M,2,QC,8,"T4, T7, pitch 3",metrics.md committed with before vs projected
+DEPS-3,Day-8 cross-sub-team integration review attendance + reconciliation,Dependencies,S,2,TL + all,8,§8.2 Day 8,Review minutes
+WE2-1,Debug tab BEFORE UML class diagram,Worked Ex 2,S,2,POL,8,"T4, pitch 3",PlantUML committed
+WE2-2,Debug tab AFTER UML showing Observer of IStructuredLogStream,Worked Ex 2,M,2,POL,8-9,"T4, pitch 3",PlantUML committed
+WE2-3,Debug tab AFTER sequence diagram (log line to desktop tab),Worked Ex 2,S,2,POL,9,T4,PlantUML committed
+WE2-4,Debug tab AFTER C# skeleton (compiles in isolation),Worked Ex 2,M,2,POL + 1,9,"T4, LO5",refactoring-examples/sub-team-6/debug-tab/skeleton/ compiles
+WE2-5,Debug tab CK + ISO 25010 delta worksheet,Worked Ex 2,S,2,QC,9,"T4, T7, pitch 3",metrics.md committed
+ARCH-11,State contract to Sub-team 7 (Persistence),Architecture,M,2,TL,8-9,"§8.2 Day 9 exit, T7",Schema doc handed to Sub-team 7
+DEPS-4,Day-9 hand state contract to Sub-team 7,Dependencies,S,2,TL,9,§8.2 Day 9 exit,Sub-team 7 sign-off recorded
+TEST-1,ViewModel unit-test strategy (NUnit + Moq no Unity ≥ 70 percent),Testability,M,2,QC,8,"§9.2.4, pitch 4, LO6",Strategy doc
+TEST-2,UI Toolkit page-object pattern spec,Testability,M,2,QC,9,"§9.2.4, LO6",Pattern doc
+TEST-3,Worked test spec for OpenCubeCommand ViewModel,Testability,M,2,QC,9,"T4, pitch 4",Spec or C# test stub
+TEST-4,Sub-team test strategy document (2-4 pp),Testability,M,2,QC,10,§9.2.4 deliverable,docs/sub-team-6/test-strategy.md committed
+BNCH-5,Day-10 projected post-refactor CK + ISO 25010 metrics,Benchmark,M,2,QC,10,"T7, pitch 3",Worksheet committed
+BNCH-7,Interface-size audit (ISP ≤ 7),Benchmark,S,2,QC,9-10,T2 testability,Audit table for proposed interfaces
+ARCH-10,Desktop client architecture document (5-10 pp),Architecture,XL,2,TL,9-10,"§6.6 deliverable, T3, T4",docs/sub-team-6/architecture.md final
+MGMT-6,Sprint 2 review slides + mid-assessment visit material,Management,M,2,SM,10 AM,"§8.2 Day 10, T5 dry-run",Slides committed
+MGMT-7,Sprint 2 Kanban snapshot + retro notes,Management,S,2,SM,10 PM,§9.2.5,Image + retro doc
+PITCH-3,Address mid-assessment maintainer feedback,Pitch,M,3,TL + POL,11,T4,Changes traced to feedback
+PITCH-1,Trade-off analysis (MVVM vs MVP vs MVU; JSON-RPC vs gRPC; UI Toolkit vs IMGUI),Pitch,M,3,TL,11,"§8.3 Day 11, pitch 5",2-page doc
+PITCH-2,Final pitch slides for our sub-team content,Pitch,M,3,SM + TL,12,T5,Slides committed
+MGMT-8,Sprint 3 Kanban snapshot + sub-team retro,Management,S,3,SM,12 PM,§10.2,Image + retro doc
+IND-1,Individual reflection — student A,Individual,S,3,A,11-13,§9.3,2-page PDF submitted
+IND-2,Individual reflection — student B,Individual,S,3,B,11-13,§9.3,2-page PDF submitted
+IND-3,Individual reflection — student C,Individual,S,3,C,11-13,§9.3,2-page PDF submitted
+IND-4,Individual reflection — student D,Individual,S,3,D,11-13,§9.3,2-page PDF submitted
+IND-5,Peer-rated contribution table — student A,Individual,S,3,A,11-13,§9.3,Submitted privately
+IND-6,Peer-rated contribution table — student B,Individual,S,3,B,11-13,§9.3,Submitted privately
+IND-7,Peer-rated contribution table — student C,Individual,S,3,C,11-13,§9.3,Submitted privately
+IND-8,Peer-rated contribution table — student D,Individual,S,3,D,11-13,§9.3,Submitted privately
