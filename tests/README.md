@@ -84,10 +84,21 @@ shared libraries. This flag does exactly that and nothing else.
 
 ## Run
 
-Run everything via CTest from `tests/build/`:
+CTest must be invoked from the **build directory**, not from `tests/` — it
+looks for `CTestTestfile.cmake` in the current dir, which only exists inside
+`build/`. Running `ctest` from `tests/` itself gives `No test configuration
+file found!`.
 
 ```bash
+cd tests/build
 ctest --output-on-failure
+```
+
+Or stay in `tests/` and point CTest at the build dir explicitly
+(CMake 3.20+):
+
+```bash
+ctest --test-dir build --output-on-failure
 ```
 
 This builds nothing; it just runs each harness against the bundled sample
