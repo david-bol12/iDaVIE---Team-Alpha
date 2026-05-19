@@ -106,7 +106,13 @@ if (-not (Test-Path $BuildDir)) {
 
 Push-Location $BuildDir
 
-cmake --fresh `
+# Delete CMakeCache.txt manually instead of using --fresh (requires CMake 3.24+)
+$CMakeCache = Join-Path $BuildDir "CMakeCache.txt"
+if (Test-Path $CMakeCache) {
+    Remove-Item $CMakeCache -Force
+}
+
+cmake `
     -DCMAKE_TOOLCHAIN_FILE="$VCPKGCMAKE" `
     -DCMAKE_BUILD_TYPE=Release `
     ..
@@ -160,6 +166,11 @@ function Download-IfMissing {
 
 Write-Host "Downloading Unity packages..."
 
+# TextMeshPro must be downloaded before import; it is not bundled with the repo
+Download-IfMissing `
+    "textMeshPro-3.0.6.unitypackage" `
+    "https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-3.0.6.tgz"
+
 Download-IfMissing `
     "steamvr.unitypackage" `
     "https://github.com/ValveSoftware/steamvr_unity_plugin/releases/download/2.7.3/steamvr_2_7_3.unitypackage"
@@ -190,6 +201,8 @@ function Import-UnityPackage {
 
     Write-Host "Importing $(Split-Path $PackagePath -Leaf)..."
 
+    # -ignorecompilererrors is intentional: packages have cross-dependencies and
+    # will not all compile cleanly until the full set has been imported.
     & $UNITYPATH `
         -projectPath $PSScriptRoot `
         -batchmode `
@@ -282,8 +295,6 @@ $Manifest.dependencies | Add-Member -MemberType NoteProperty `
     -Force
 
 # Save manifest
-$Manifest | ConvertTo-Json -Depth 10 | Out-File $ManifestPath -Encoding utf8
-
 $Manifest | ConvertTo-Json -Depth 10 | Out-File $ManifestPath -Encoding utf8
 
 Write-Host ""
