@@ -28,11 +28,7 @@
 #include <math.h>
 #include <omp.h>
 
-#ifdef _WIN32
-#define DllExport __declspec(dllexport)
-#else
-#define DllExport __attribute__((visibility("default")))
-#endif
+#define DllExport __declspec (dllexport)
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1

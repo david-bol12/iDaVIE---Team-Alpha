@@ -556,3 +556,6 @@ Training
 Blog
 About
 
+
+# local claude settings
+.claude/settings.local.json
