@@ -35,10 +35,10 @@
 #### Example 1 — File tab: direct native-plugin call → ViewModel command via service gateway
 
 **Before-state artefacts** *(target: `refactoring-examples/sub-team-6/file-tab/before/`)*
-- [x] UML class diagram of the current file-load slice of `CanvassDesktop.cs` (PlantUML, source-controlled) (docs\sub-team-6\deliverables\before-class-diagram.puml)
+- [x] UML class diagram of the current file-load slice of `CanvassDesktop.cs` (PlantUML, source-controlled) (`docs/sub-team-6/deliverables/ex1-file_tab/before-class-diagram.puml`)
 - [ ] Dependency graph — transitive Unity/SteamVR/native dependencies visible
-- [ ] CK metrics table: WMC, DIT, NOC, CBO, RFC, LCOM (real numbers from Understand)
-- [ ] Code smells catalogue for the affected slice (from SonarQube + CodeScene)
+- [x] CK metrics table: WMC, DIT, NOC, CBO, RFC, LCOM (real numbers from Understand) — `docs/sub-team-6/deliverables/SK_BNCH.md` covers CanvassDesktop + 7 sibling classes (CanvassDesktop: WMC 63 🔴 / DIT 1 / NOC 0 / CBO 47 🔴 / RFC 118 🔴 / LCOM 0.955 🔴)
+- [~] Code smells catalogue for the affected slice — SonarQube half done (`docs/sub-team-6/deliverables/SonarQube Baseline report.md` Top-10 smells + tech debt + maintainability rating); CodeScene churn/hotspots still owed
 - [ ] Sequence diagram: "user clicks Open → file loaded → cube visible" (current path)
 
 **After-state artefacts** *(target: `refactoring-examples/sub-team-6/file-tab/after/`)*
@@ -69,14 +69,14 @@
 - [ ] UML: `IDebugLogSource` → `DebugTabViewModel` (Observer) → `DebugTabView`
 - [ ] Dependency graph
 - [ ] CK metrics — projected, evidenced
-- [ ] Sequence diagram — already drafted at `docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml` — needs verification + matching before-state diagram
+- [x] Sequence diagram — drafted at `docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml`; matching before-state diagram still owed
 - [ ] SOLID/GRASP audit
 
 **Code skeleton** *(target: `refactoring-examples/sub-team-6/debug-tab/code/`)*
-- [ ] `IDebugLogSource.cs` interface
-- [ ] `DebugTabViewModel.cs` — Observer, pure C#
+- [x] `IDebugLogSource.cs` interface — implemented as `ILogStream.cs` + `ILogObserver.cs` in `refactoring-examples/sub-team-6/debug-tab/skeleton/`
+- [x] `DebugTabViewModel.cs` — Observer, pure C# (`refactoring-examples/sub-team-6/debug-tab/skeleton/DebugTabViewModel.cs`; verified Unity-free, subscribes to `ILogStream`)
 - [ ] `DebugTabView.cs` — UI Toolkit binding
-- [ ] `FakeDebugLogSource.cs` — test double
+- [ ] `FakeDebugLogSource.cs` — test double (current `LogStream.cs` is the concrete producer, not a test fake)
 - [ ] Unit test that subscribes ViewModel to fake source and asserts behaviour without Unity
 
 **Delta worksheet** — same six CK metrics before → after.
@@ -92,7 +92,7 @@
 | # | Deliverable | Form | Due | Our contribution |
 |---|---|---|---|---|
 | **T1** [x] | GitHub fork with full assessment history | Repository | Continuous; frozen 4 Jun 11:00 | Our commits, ADRs, diagrams, examples | 
-| **T2** [ ] | Baseline maintainability benchmark report | PDF + raw tool exports | Day 2 (19 May) | [ ] CK + smell + churn baseline for `CanvassDesktop.cs`, `Assets/Scripts/UI/`, `Assets/Scripts/Menu/` |
+| **T2** [~] | Baseline maintainability benchmark report | PDF + raw tool exports | Day 2 (19 May) | [~] CK baseline (`SK_BNCH.md`) + SonarQube smells (`SonarQube Baseline report.md`) DONE for our 8 classes; CodeScene churn/hotspots + NDepend + DV8 still owed |
 | **T3** [ ] | **Architecture overview** (C4 + ADR log + plug-in ABI spec) | PDF | **Day 10 (29 May)** | [ ] Client-shell C4 view (context/container/component); our ADRs feed into team ADR log |
 | **T4** [ ] | Consolidated refactoring proposal report (max 60 pp excl. appendices) | PDF | Frozen 4 Jun 11:00; submitted 5 Jun 14:00–16:00 | [ ] Our chapter: client architecture, MVVM policy, both worked examples, CK deltas |
 | **T5** [ ] | Pitch | Live + slide PDF | 4 Jun 11:00–12:00 | (Section 1.1 above) |
@@ -113,8 +113,8 @@
 | **D5** [ ] | Sub-team test strategy | 2–4 pp | `docs/sub-team-6/test-strategy.md` | [~] Exists; needs ViewModel unit tests (no Unity), UI-Toolkit page-object pattern for integration, mocking strategy for `IFileService`/`IDebugLogSource`, coverage targets (≥70% domain branch/line, ≥50% overall, Unity-bound tracked not strict), ISP ≤ 7 members, dependency isolation index, mocking-difficulty notes |
 | **D6** [ ] | Kanban/Trello snapshots × 3 | end of each sprint | `docs/sub-team-6/kanban-snapshots/sprint-{1,2,3}.{md,png}` *(to create)* | [ ] Backlog files exist (`backlog.md`, `backlog.csv`); need dated end-of-sprint snapshots: Day 5 (Fri 22 May), Day 10 (Fri 29 May), Day 12 (Tue 2 Jun) |
 | **D7** [ ] | Daily stand-up notes | single shared file | `docs/sub-team-6/standups.md` | [~] File exists; needs daily entry for every working day (15 days total). Note: stand-ups are async on interview days. |
-| **D8** [ ] | Sub-team AI tool usage log | continuous | `ai-tool-log/sub-team-6.md` | [~] File exists; continuous updates required — tool, model, prompt class, where helped, where failed, what human did instead |
-| **D9** [ ] | CK baseline + projected snapshot for our slice | feeds T2 + T4 + T7 | `docs/sub-team-6/metrics/{baseline,projection}.md` *(to create)* | [ ] Day 2 baseline + Day 13 projection for `CanvassDesktop.cs` + `Assets/Scripts/UI/` + `Assets/Scripts/Menu/` |
+| **D8** [~] | Sub-team AI tool usage log | continuous | `docs/sub-team-6/ai-log.md` | [~] File exists with 5 substantive entries (Days 2–3); continuous updates required — tool, model, prompt class, where helped, where failed, what human did instead |
+| **D9** [~] | CK baseline + projected snapshot for our slice | feeds T2 + T4 + T7 | baseline: `docs/sub-team-6/deliverables/SK_BNCH.md` + `docs/sub-team-6/deliverables/SonarQube Baseline report.md`; projection: `docs/sub-team-6/metrics/projection.md` *(to create)* | [x] Day 2 CK baseline DONE (SK_BNCH covers 8 classes with WMC/DIT/NOC/CBO/RFC/LCOM); [ ] Day 13 projection still owed |
 | **D10** [ ] | Concern map for our slice | 1 diagram | `docs/sub-team-6/concern-map.{puml,mmd}` *(to create alongside existing .png)* | [~] `concern-map.png` exists — **spec violation risk:** Section 10.4 forbids binary-only diagrams; needs text-based source (PlantUML / Mermaid / drawio XML) |
 | **D11** [ ] | UML/SysML diagram set | text-based | `docs/sub-team-6/uml-diagrams/` | [~] Has `before-class-diagram.puml`, `after-debug-sequence-diagram.puml`; needs full set per Section 1.2 above + SysML BDD for our slice (Day 6 freeze item) + state-machine diagrams where applicable |
 | **D12** [ ] | ADRs for our scope | suggested ≥3 | `docs/sub-team-6/adrs/` | [~] `0001-mvvm-split.md`, `0002-transport.md` exist; recommend at least one more (e.g. panel composition / composition-root pattern / View-toolkit choice / anti-corruption layer rationale) |
@@ -182,7 +182,7 @@ Each role has weekly evidentiary obligations:
 | [ ] Cross-sub-team stand-up | Daily 09:15, 15 min | TL attends |
 | [ ] Quality Guild huddle | Daily 10:30, 15 min | QC attends |
 | [x] Sprint 1 planning | Day 2 (Tue 19 May) | 2h sub-team + 1h team |
-| [x] Sprint 2 planning | Day 6 (Mon 25 May) | 2h sub-team + 1h team |
+| [ ] Sprint 2 planning | Day 6 (Mon 25 May) | 2h sub-team + 1h team |
 | [ ] Sprint 1 review | Day 5 (Fri 22 May) | 15 min per sub-team |
 | [ ] Sprint 2 review | Day 10 (Fri 29 May) | + Mid-assessment iDaVIE-team visit (30 min) |
 | [ ] Sprint 1 retro | Day 5 | 1h sub-team + 30 min team |
