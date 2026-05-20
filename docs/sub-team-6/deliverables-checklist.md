@@ -16,8 +16,9 @@
 ## 1. Final-Days Deliverables (frozen Thu 4 June 11:00 — pitch start)
 
 ### 1.1 The Pitch itself (T5)
-- [ ] **40-min live presentation** to the iDaVIE maintainer panel (Team Alpha slot: Thu 4 June 11:00–12:00, lecture theatre, not our workspace).
-- [ ] **20-min Q&A** — panel can direct questions at any named team member. Tech Leads and Architecture sub-team must be present. Sub-team 6 should also be present and named for our slice.
+- [ ] **40-min live presentation** to the iDaVIE maintainer panel (Team Alpha slot: Thu 4 June 11:00–12:00, lecture theatre, not our workspace). (https://docs.google.com/presentation/d/1VInnKnJoL806wzDpulDFbLr45mpyG5KGsksA2Of4olI/edit?slide=id.p#slide=id.p)
+- [ ] **20-min Q&A** — panel can direct questions at any named team member. Tech Leads and Architecture sub-team must be present. Sub-team 6 should also be present and named for our slice. (https://docs.google.com/document/d/1A3z_kfBT1E9uLr8vEefJQ4q9AmiOH4mw4iaSNQ2o5pY/edit?tab=t.jdmnunofissj)
+
 - [ ] **Slide deck as PDF** (recording made for moderation).
 - [ ] **Suggested structure (Appendix C) — our slice contributes to:**
   - [ ] 4 min — iDaVIE pain points with metrics *(our slice: `CanvassDesktop.cs` 1899 lines, transform.Find chains, FindObjectOfType coupling, no test coverage)*
