@@ -1,0 +1,48 @@
+@startuml
+' WE2-3 | Debug tab AFTER sequence diagram
+' Shows the refactored flow: a log line emitted inside the system
+' travels through a decoupled IDebugLogger interface and is displayed
+' in the CanvassDesktop Debug tab.
+' Owner: POL | Feeds: T4
+
+title Debug Tab (AFTER Refactor) — Log Line to Desktop Tab
+
+actor User
+participant "CanvassDesktop\n(View)" as View
+participant "DesktopViewModel" as VM
+participant "IDebugLogger" as Logger
+participant "DebugLogService" as Service
+participant "DebugTabController" as DebugTab
+
+== User Opens Debug Tab ==
+User -> View : clicks Debug tab
+View -> VM : OnDebugTabSelected()
+VM -> DebugTab : Show()
+DebugTab -> Service : GetLogHistory()
+Service --> DebugTab : List<LogEntry>
+DebugTab --> View : render log entries in scroll view
+
+== System Emits a Log Line ==
+note over Service : Any system component\nemits a log via IDebugLogger
+Service -> Logger : Log(level, message)
+Logger -> Service : AppendEntry(LogEntry)
+Service -> DebugTab : OnNewLogEntry(LogEntry)
+DebugTab -> View : AppendLineToScrollView(entry)
+View --> User : new log line visible in Debug tab
+
+== Key Refactor Notes ==
+note over VM, Logger
+  IDebugLogger is an interface injected
+  into all components — no direct
+  dependency on CanvassDesktop or
+  UnityEngine.Debug.Log.
+end note
+
+note over DebugTab
+  DebugTabController is a separate class;
+  no longer embedded in CanvassDesktop.
+  Satisfies NFR-MOD-1 (Modularity)
+  and NFR-TST-1 (Testability).
+end note
+
+@enduml
