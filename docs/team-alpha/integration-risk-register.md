@@ -13,6 +13,7 @@
 | R05 | UnityEngine / SteamVR types leak across the anti-corruption layer                          | Cross-cutting (all)       | Sub-team 1  | H        | Architectural fitness function in CI: forbid `UnityEngine.*` in domain assemblies. | Open   |
 | R06 | CK metric tooling (SonarQube, Understand, NDepend, CodeScene, DV8) not operational Day 2   | Quality Guild ↔ all       | Quality Guild | H      | Quality Guild publishes setup notes Day 1 EOD; each sub-team confirms Day 2 AM. | Open   |
 | R07 | Worked-example before/after diffs require Unity 6 packages we don't have                   | 6 (and any UI-touching)   | Sub-team 6  | M        | Use Unity-free pseudocode in the "after" worked examples; flag UI-Toolkit deps. | Open   |
+| DEPS-1 | Sub-team 1 gateway contract not available — Sub-team 6 ViewModel layer depends on `IServiceGateway` interface to be defined by Sub-team 1 (ARCH-8). Until frozen, WE1/WE2 and the composition root use a placeholder stub. | 1 ↔ 6 | Sub-team 1 | H | Sub-team 6 defines a minimal `IServiceGateway` stub in `refactoring-examples/sub-team-6/contracts/` by Day 5; Sub-team 1 ratifies or replaces it by Day 7 (T3 feeds this). | Open |
 
 ## Handoff note
 
