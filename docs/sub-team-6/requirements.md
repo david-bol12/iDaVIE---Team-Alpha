@@ -10,11 +10,11 @@ The Desktop GUI and Client Shell: `CanvassDesktop`, file/mask loaders, parameter
 
 | Tab | Current behaviour | Direct file I/O? | Notes |
 |---|---|---|---|
-| File | _(fill — REQ-1)_ | Yes / No | |
-| Render | _(fill)_ | | |
-| Stats | _(fill)_ | | |
-| Sources | _(fill)_ | | |
-| Debug | _(fill)_ | | |
+| File | Provides file/mask loader UI: browse and load FITS/HDF5 volume files, select HDU, define data subsets, and apply image/mask overlays | Yes | Directly reads file paths; tightly coupled to native plugin loader |
+| Render | Exposes volume rendering controls: colour map selection, transfer function thresholds, rest frequency dropdown, and histogram-based brightness adjustment | No | Drives rendering parameters on the active volume |
+| Stats | Displays statistical summary of the loaded volume: min, max, mean, standard deviation, sigma clipping, and percentile values | No | Read-only panel; recalculates on volume load |
+| Sources | Loads and displays catalogue source overlays: imports source mapping files, shows source table with sky coordinates, and toggles source visibility | Yes | Reads catalogue/mapping files from disk |
+| Debug | Exposes runtime diagnostic information: active tool states, OnGUI popup toggles, internal state change logs, and performance counters | No | Development/diagnostic panel; not exposed in release builds |
 
 ## 3. Non-functional requirements traced to ISO/IEC 25010 maintainability (REQ-2)
 
@@ -23,9 +23,9 @@ The Desktop GUI and Client Shell: `CanvassDesktop`, file/mask loaders, parameter
 | NFR-MOD-1 | Modularity | View, ViewModel and Service Gateway must be in separate assemblies / namespaces with no circular dependencies. | Cycle count = 0 (NDepend / DV8) | §4.2.2 |
 | NFR-MOD-2 | Modularity | ViewModel layer must have zero transitive dependency on UnityEngine or SteamVR. | NDepend rule pass on PR | §4.2.3 |
 | NFR-ANA-1 | Analysability | No class in our slice exceeds WMC 20 (domain) or 40 (adapter). | CK from Understand | §7.1 |
-| NFR-MOD-3 | Modifiability | All public API boundaries expressed as interfaces with ≥ 1 test double. | Coverage report | §4.2.4 |
-| NFR-TST-1 | Testability | ViewModel branch + line coverage ≥ 70 %. | SonarQube | §7.2 |
-| NFR-TST-2 | Testability | Interface size ≤ 7 public members (ISP). | Audit table (BNCH-7) | §7.2 |
+| NFR-MOD-3 | Modifiability | All public API boundaries expressed as interfaces with >= 1 test double. | Coverage report | §4.2.4 |
+| NFR-TST-1 | Testability | ViewModel branch + line coverage >= 70 %. | SonarQube | §7.2 |
+| NFR-TST-2 | Testability | Interface size <= 7 public members (ISP). | Audit table (BNCH-7) | §7.2 |
 
 _(Expand with at least one NFR per sub-characteristic.)_
 
