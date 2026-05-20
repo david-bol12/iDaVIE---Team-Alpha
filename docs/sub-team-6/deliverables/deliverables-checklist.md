@@ -35,10 +35,10 @@
 #### Example 1 — File tab: direct native-plugin call → ViewModel command via service gateway
 
 **Before-state artefacts** *(target: `refactoring-examples/sub-team-6/file-tab/before/`)*
-- [x] UML class diagram of the current file-load slice of `CanvassDesktop.cs` (PlantUML, source-controlled) (`docs/sub-team-6/deliverables/ex1-file_tab/before-class-diagram.puml`)
+- [x] UML class diagram of the current file-load slice of `CanvassDesktop.cs` (PlantUML, source-controlled) (`docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/before-class-diagram.puml`)
 - [ ] Dependency graph — transitive Unity/SteamVR/native dependencies visible
-- [x] CK metrics table: WMC, DIT, NOC, CBO, RFC, LCOM (real numbers from Understand) — `docs/sub-team-6/deliverables/SK_BNCH.md` covers CanvassDesktop + 7 sibling classes (CanvassDesktop: WMC 63 🔴 / DIT 1 / NOC 0 / CBO 47 🔴 / RFC 118 🔴 / LCOM 0.955 🔴)
-- [~] Code smells catalogue for the affected slice — SonarQube half done (`docs/sub-team-6/deliverables/SonarQube Baseline report.md` Top-10 smells + tech debt + maintainability rating); CodeScene churn/hotspots still owed
+- [x] CK metrics table: WMC, DIT, NOC, CBO, RFC, LCOM (real numbers from Understand) — `docs/sub-team-6/deliverables/D9-ck-baseline/SK_BNCH.md` covers CanvassDesktop + 7 sibling classes (CanvassDesktop: WMC 63 🔴 / DIT 1 / NOC 0 / CBO 47 🔴 / RFC 118 🔴 / LCOM 0.955 🔴)
+- [~] Code smells catalogue for the affected slice — SonarQube half done (`docs/sub-team-6/deliverables/D9-ck-baseline/SonarQube Baseline report.md` Top-10 smells + tech debt + maintainability rating); CodeScene churn/hotspots still owed
 - [ ] Sequence diagram: "user clicks Open → file loaded → cube visible" (current path)
 
 **After-state artefacts** *(target: `refactoring-examples/sub-team-6/file-tab/after/`)*
@@ -92,7 +92,7 @@
 | # | Deliverable | Form | Due | Our contribution |
 |---|---|---|---|---|
 | **T1** [x] | GitHub fork with full assessment history | Repository | Continuous; frozen 4 Jun 11:00 | Our commits, ADRs, diagrams, examples | 
-| **T2** [~] | Baseline maintainability benchmark report | PDF + raw tool exports | Day 2 (19 May) | [~] CK baseline (`SK_BNCH.md`) + SonarQube smells (`SonarQube Baseline report.md`) DONE for our 8 classes; CodeScene churn/hotspots + NDepend + DV8 still owed |
+| **T2** [~] | Baseline maintainability benchmark report | PDF + raw tool exports | Day 2 (19 May) | [~] CK baseline (`D9-ck-baseline/SK_BNCH.md`) + SonarQube smells (`D9-ck-baseline/SonarQube Baseline report.md`) DONE for our 8 classes; CodeScene churn/hotspots + NDepend + DV8 still owed |
 | **T3** [ ] | **Architecture overview** (C4 + ADR log + plug-in ABI spec) | PDF | **Day 10 (29 May)** | [ ] Client-shell C4 view (context/container/component); our ADRs feed into team ADR log |
 | **T4** [ ] | Consolidated refactoring proposal report (max 60 pp excl. appendices) | PDF | Frozen 4 Jun 11:00; submitted 5 Jun 14:00–16:00 | [ ] Our chapter: client architecture, MVVM policy, both worked examples, CK deltas |
 | **T5** [ ] | Pitch | Live + slide PDF | 4 Jun 11:00–12:00 | (Section 1.1 above) |
