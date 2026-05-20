@@ -91,14 +91,14 @@
 
 | # | Deliverable | Form | Due | Our contribution |
 |---|---|---|---|---|
-| **T1** | GitHub fork with full assessment history | Repository | Continuous; frozen 4 Jun 11:00 | Our commits, ADRs, diagrams, examples |
-| **T2** | Baseline maintainability benchmark report | PDF + raw tool exports | Day 2 (19 May) | [ ] CK + smell + churn baseline for `CanvassDesktop.cs`, `Assets/Scripts/UI/`, `Assets/Scripts/Menu/` |
-| **T3** | **Architecture overview** (C4 + ADR log + plug-in ABI spec) | PDF | **Day 10 (29 May)** | [ ] Client-shell C4 view (context/container/component); our ADRs feed into team ADR log |
-| **T4** | Consolidated refactoring proposal report (max 60 pp excl. appendices) | PDF | Frozen 4 Jun 11:00; submitted 5 Jun 14:00–16:00 | [ ] Our chapter: client architecture, MVVM policy, both worked examples, CK deltas |
-| **T5** | Pitch | Live + slide PDF | 4 Jun 11:00–12:00 | (Section 1.1 above) |
-| **T6** | CI/CD pipeline + dashboard URL | GitHub Actions + URL | Operational by Day 3; final 4 Jun 11:00 | [ ] Our QC sits on Quality Guild; our slice must run through it cleanly |
-| **T7** | Team Integration & Metrics Report (signed by all 7 Tech Leads) | PDF | Frozen 4 Jun 11:00 | [ ] Our TL signs; we supply desktop-shell metrics + integration evidence |
-| **T8** | AI tool usage log + reflection (max 8 pp; one team doc signed by all sub-teams) | PDF | Frozen 4 Jun 11:00 | [ ] Our `ai-tool-log/sub-team-6.md` consolidates into team doc |
+| **T1** [x] | GitHub fork with full assessment history | Repository | Continuous; frozen 4 Jun 11:00 | Our commits, ADRs, diagrams, examples | 
+| **T2** [ ] | Baseline maintainability benchmark report | PDF + raw tool exports | Day 2 (19 May) | [ ] CK + smell + churn baseline for `CanvassDesktop.cs`, `Assets/Scripts/UI/`, `Assets/Scripts/Menu/` |
+| **T3** [ ] | **Architecture overview** (C4 + ADR log + plug-in ABI spec) | PDF | **Day 10 (29 May)** | [ ] Client-shell C4 view (context/container/component); our ADRs feed into team ADR log |
+| **T4** [ ] | Consolidated refactoring proposal report (max 60 pp excl. appendices) | PDF | Frozen 4 Jun 11:00; submitted 5 Jun 14:00–16:00 | [ ] Our chapter: client architecture, MVVM policy, both worked examples, CK deltas |
+| **T5** [ ] | Pitch | Live + slide PDF | 4 Jun 11:00–12:00 | (Section 1.1 above) |
+| **T6** [ ] | CI/CD pipeline + dashboard URL | GitHub Actions + URL | Operational by Day 3; final 4 Jun 11:00 | [ ] Our QC sits on Quality Guild; our slice must run through it cleanly |
+| **T7** [ ] | Team Integration & Metrics Report (signed by all 7 Tech Leads) | PDF | Frozen 4 Jun 11:00 | [ ] Our TL signs; we supply desktop-shell metrics + integration evidence |
+| **T8** [~] | AI tool usage log + reflection (max 8 pp; one team doc signed by all sub-teams) | PDF | Frozen 4 Jun 11:00 | [ ] Our `ai-tool-log/sub-team-6.md` consolidates into team doc |
 
 ---
 
@@ -106,20 +106,20 @@
 
 | # | Deliverable | Spec page target | File pointer | State |
 |---|---|---|---|---|
-| **D1** | Sub-team requirements document | 1–2 pp | `docs/sub-team-6/requirements.md` | [~] REQ-1 current behaviour partially filled; needs all five tabs (File, Render, Stats, Sources, Debug) + direct file I/O behaviour + long-term Python console + workspace state requirements |
-| **D2** | Sub-team design document (Desktop client architecture) | 5–10 pp | `docs/sub-team-6/architecture.md` | [~] Exists; needs full build-out — MVVM split, View/ViewModel/Gateway layering, transport contract (JSON-RPC over named pipes local; gRPC future remote), composition root, panel composition strategy, anti-corruption layer around UnityEngine/SteamVR |
-| **D3** | MVVM binding policy | (standalone or chapter in D2) | `docs/sub-team-6/mvvm-binding-policy.md` *(to create)* | [ ] Not started — how Views bind to ViewModels, allowed/forbidden bindings, no UnityEngine in ViewModels, INotifyPropertyChanged / equivalent, command dispatch pattern |
-| **D4** | Worked refactoring examples × 2 | (Section 1.2 above) | `refactoring-examples/sub-team-6/{file-tab,debug-tab,contracts}/` | [ ] Folders exist, empty |
-| **D5** | Sub-team test strategy | 2–4 pp | `docs/sub-team-6/test-strategy.md` | [~] Exists; needs ViewModel unit tests (no Unity), UI-Toolkit page-object pattern for integration, mocking strategy for `IFileService`/`IDebugLogSource`, coverage targets (≥70% domain branch/line, ≥50% overall, Unity-bound tracked not strict), ISP ≤ 7 members, dependency isolation index, mocking-difficulty notes |
-| **D6** | Kanban/Trello snapshots × 3 | end of each sprint | `docs/sub-team-6/kanban-snapshots/sprint-{1,2,3}.{md,png}` *(to create)* | [ ] Backlog files exist (`backlog.md`, `backlog.csv`); need dated end-of-sprint snapshots: Day 5 (Fri 22 May), Day 10 (Fri 29 May), Day 12 (Tue 2 Jun) |
-| **D7** | Daily stand-up notes | single shared file | `docs/sub-team-6/standups.md` | [~] File exists; needs daily entry for every working day (15 days total). Note: stand-ups are async on interview days. |
-| **D8** | Sub-team AI tool usage log | continuous | `ai-tool-log/sub-team-6.md` | [~] File exists; continuous updates required — tool, model, prompt class, where helped, where failed, what human did instead |
-| **D9** | CK baseline + projected snapshot for our slice | feeds T2 + T4 + T7 | `docs/sub-team-6/metrics/{baseline,projection}.md` *(to create)* | [ ] Day 2 baseline + Day 13 projection for `CanvassDesktop.cs` + `Assets/Scripts/UI/` + `Assets/Scripts/Menu/` |
-| **D10** | Concern map for our slice | 1 diagram | `docs/sub-team-6/concern-map.{puml,mmd}` *(to create alongside existing .png)* | [~] `concern-map.png` exists — **spec violation risk:** Section 10.4 forbids binary-only diagrams; needs text-based source (PlantUML / Mermaid / drawio XML) |
-| **D11** | UML/SysML diagram set | text-based | `docs/sub-team-6/uml-diagrams/` | [~] Has `before-class-diagram.puml`, `after-debug-sequence-diagram.puml`; needs full set per Section 1.2 above + SysML BDD for our slice (Day 6 freeze item) + state-machine diagrams where applicable |
-| **D12** | ADRs for our scope | suggested ≥3 | `docs/sub-team-6/adrs/` | [~] `0001-mvvm-split.md`, `0002-transport.md` exist; recommend at least one more (e.g. panel composition / composition-root pattern / View-toolkit choice / anti-corruption layer rationale) |
-| **D13** | **State contract to Persistence** | small interface doc | `refactoring-examples/sub-team-6/contracts/desktop-state-contract.md` *(to create)* | [ ] Section 8.2 Day 9 exit criterion: each sub-team declares what its state looks like for the Persistence aggregate. Hands to Sewe en sestig (Team Alpha Persistence). |
-| **D14** | Trade-off analysis (our slice's contribution) | feeds T4 + pitch | `docs/sub-team-6/trade-offs.md` *(to create)* | [ ] Section 8.3 Day 11 work product; 5-min pitch slot |
+| **D1** [ ] | Sub-team requirements document | 1–2 pp | `docs/sub-team-6/requirements.md` | [~] REQ-1 current behaviour partially filled; needs all five tabs (File, Render, Stats, Sources, Debug) + direct file I/O behaviour + long-term Python console + workspace state requirements |
+| **D2** [ ] | Sub-team design document (Desktop client architecture) | 5–10 pp | `docs/sub-team-6/architecture.md` | [~] Exists; needs full build-out — MVVM split, View/ViewModel/Gateway layering, transport contract (JSON-RPC over named pipes local; gRPC future remote), composition root, panel composition strategy, anti-corruption layer around UnityEngine/SteamVR |
+| **D3** [ ] | MVVM binding policy | (standalone or chapter in D2) | `docs/sub-team-6/mvvm-binding-policy.md` *(to create)* | [ ] Not started — how Views bind to ViewModels, allowed/forbidden bindings, no UnityEngine in ViewModels, INotifyPropertyChanged / equivalent, command dispatch pattern |
+| **D4** [ ] | Worked refactoring examples × 2 | (Section 1.2 above) | `refactoring-examples/sub-team-6/{file-tab,debug-tab,contracts}/` | [ ] Folders exist, empty |
+| **D5** [ ] | Sub-team test strategy | 2–4 pp | `docs/sub-team-6/test-strategy.md` | [~] Exists; needs ViewModel unit tests (no Unity), UI-Toolkit page-object pattern for integration, mocking strategy for `IFileService`/`IDebugLogSource`, coverage targets (≥70% domain branch/line, ≥50% overall, Unity-bound tracked not strict), ISP ≤ 7 members, dependency isolation index, mocking-difficulty notes |
+| **D6** [ ] | Kanban/Trello snapshots × 3 | end of each sprint | `docs/sub-team-6/kanban-snapshots/sprint-{1,2,3}.{md,png}` *(to create)* | [ ] Backlog files exist (`backlog.md`, `backlog.csv`); need dated end-of-sprint snapshots: Day 5 (Fri 22 May), Day 10 (Fri 29 May), Day 12 (Tue 2 Jun) |
+| **D7** [ ] | Daily stand-up notes | single shared file | `docs/sub-team-6/standups.md` | [~] File exists; needs daily entry for every working day (15 days total). Note: stand-ups are async on interview days. |
+| **D8** [ ] | Sub-team AI tool usage log | continuous | `ai-tool-log/sub-team-6.md` | [~] File exists; continuous updates required — tool, model, prompt class, where helped, where failed, what human did instead |
+| **D9** [ ] | CK baseline + projected snapshot for our slice | feeds T2 + T4 + T7 | `docs/sub-team-6/metrics/{baseline,projection}.md` *(to create)* | [ ] Day 2 baseline + Day 13 projection for `CanvassDesktop.cs` + `Assets/Scripts/UI/` + `Assets/Scripts/Menu/` |
+| **D10** [ ] | Concern map for our slice | 1 diagram | `docs/sub-team-6/concern-map.{puml,mmd}` *(to create alongside existing .png)* | [~] `concern-map.png` exists — **spec violation risk:** Section 10.4 forbids binary-only diagrams; needs text-based source (PlantUML / Mermaid / drawio XML) |
+| **D11** [ ] | UML/SysML diagram set | text-based | `docs/sub-team-6/uml-diagrams/` | [~] Has `before-class-diagram.puml`, `after-debug-sequence-diagram.puml`; needs full set per Section 1.2 above + SysML BDD for our slice (Day 6 freeze item) + state-machine diagrams where applicable |
+| **D12** [ ] | ADRs for our scope | suggested ≥3 | `docs/sub-team-6/adrs/` | [~] `0001-mvvm-split.md`, `0002-transport.md` exist; recommend at least one more (e.g. panel composition / composition-root pattern / View-toolkit choice / anti-corruption layer rationale) |
+| **D13** [ ] | **State contract to Persistence** | small interface doc | `refactoring-examples/sub-team-6/contracts/desktop-state-contract.md` *(to create)* | [ ] Section 8.2 Day 9 exit criterion: each sub-team declares what its state looks like for the Persistence aggregate. Hands to Sewe en sestig (Team Alpha Persistence). |
+| **D14** [ ] | Trade-off analysis (our slice's contribution) | feeds T4 + pitch | `docs/sub-team-6/trade-offs.md` *(to create)* | [ ] Section 8.3 Day 11 work product; 5-min pitch slot |
 
 ### Architectural non-negotiables our deliverables must demonstrate (Section 4.2)
 - [ ] No SOLID/GRASP violations — or documented trade-off
@@ -163,7 +163,7 @@
 ### 4.1 Sub-team role rotation evidence — visible in standups + Kanban
 Standard 4-role rotation across 3 sprints; each of the 4 of us holds 3 of 4 roles.
 
-- [ ] **Sprint 1 (Days 1–5):** A=SM, B=TL, C=POL, D=QC (assign actual names)
+- [ ] **Sprint 1 (Days 1–5):** CK=SM, MG=TL, JF=POL, RH=QC
 - [ ] **Sprint 2 (Days 6–10):** A=QC, B=SM, C=TL, D=POL
 - [ ] **Sprint 3 (Days 11–13):** A=POL, B=QC, C=SM, D=TL
 
@@ -181,15 +181,15 @@ Each role has weekly evidentiary obligations:
 | [ ] Sub-team daily stand-up | Daily 09:00, 10 min | Async on interview days |
 | [ ] Cross-sub-team stand-up | Daily 09:15, 15 min | TL attends |
 | [ ] Quality Guild huddle | Daily 10:30, 15 min | QC attends |
-| [ ] Sprint 1 planning | Day 2 (Tue 19 May) | 2h sub-team + 1h team |
-| [ ] Sprint 2 planning | Day 6 (Mon 25 May) | 2h sub-team + 1h team |
+| [x] Sprint 1 planning | Day 2 (Tue 19 May) | 2h sub-team + 1h team |
+| [x] Sprint 2 planning | Day 6 (Mon 25 May) | 2h sub-team + 1h team |
 | [ ] Sprint 1 review | Day 5 (Fri 22 May) | 15 min per sub-team |
 | [ ] Sprint 2 review | Day 10 (Fri 29 May) | + Mid-assessment iDaVIE-team visit (30 min) |
 | [ ] Sprint 1 retro | Day 5 | 1h sub-team + 30 min team |
 | [ ] Sprint 2 retro | Day 10 | 1h sub-team + 30 min team |
 | [ ] Sprint 3 retro | Day 12 (Tue 2 Jun) 16:00–17:00 | **Sub-team only — no team-wide retro for Sprint 3** |
-| [ ] Architecture Guild review | Wednesdays 1h | TL attends |
-| [ ] Quality Guild metrics review | Fridays 1h before sprint review | QC attends |
+| [x] [ ] Architecture Guild review | Wednesdays 1h | TL attends |
+| [x] [ ] Quality Guild metrics review | Fridays 1h before sprint review | QC attends |
 
 ### 4.3 Mid-assessment iDaVIE-team visit
 - [ ] **Day 10 (Fri 29 May), 30 min per team** — present current state to iDaVIE maintainer panel; receive feedback to be addressed Day 11
@@ -244,7 +244,7 @@ Each role has weekly evidentiary obligations:
 - [ ] **NDepend** — CQLinq architecture rules, instability, propagation cost (every PR)
 - [ ] **CodeScene** — hotspots, churn, knowledge map, code health (daily; full report Day 2 and Day 12)
 - [ ] **DV8** — DSM, propagation cost, architectural anti-patterns (end of each sprint)
-- [ ] **GitHub Actions** — CI orchestration (continuous)
+- [x] **GitHub Actions** — CI orchestration (continuous)
 
 ---
 
