@@ -99,7 +99,7 @@ Reverse-direction references are a CI failure. This enforces §4.2.2 (no cycles)
 - §4.2 mandatory architectural constraints (§4.2.2 no cycles, §4.2.3 no Unity in domain, §4.2.4 interfaces on public APIs).
 - §6.6 sub-team work package brief (MVVM prescription).
 - §7.1 CK metric thresholds.
-- [ADR-0002](0002-transport.md) — transport layer this ViewModel gateway sits behind.
+- [ADR-0002 — Client–server transport](../deliverables/D2-Architecture/client-server-transport.md) — transport layer this ViewModel gateway sits behind.
 - ARCH-8 — interface contracts proposed to Sub-team 1 (gateway surface).
 - ARCH-9 — MVVM binding policy (Sprint 2) — operating manual for the View↔ViewModel binding shim.
 - [WE1 — File tab](../../../refactoring-examples/sub-team-6/file-tab/) — proof of ViewModel command + gateway round-trip.
