@@ -9,6 +9,7 @@
 - `[ ]` = not started or in progress
 - `[~]` = drafted, needs completion
 - `[x]` = complete to a defensible standard
+- `[R]` - For Review
 - File pointers are relative to repo root.
 
 ---
