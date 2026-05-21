@@ -10,15 +10,18 @@
 
 `Assets/Scripts/UI/CanvassDesktop.cs` is a ~1900-line `MonoBehaviour` that mixes menu structure, panel state, file dialogs, configuration, threshold maths, and direct native-plugin calls in a single class.
 
-**Quantified pain (baseline):**
+**Quantified pain (baseline — Day 2 CK measurement, SK_BNCH Sprint 1):**
 
-<!-- BNCH-1 row — replace with real CK numbers + SonarQube cognitive-complexity rank once Rory lands BNCH-1/BNCH-2 -->
-| Metric | CanvassDesktop (estimated) | §7.1 threshold |
-|---|---|---|
-| WMC | ~120 | ≤ 20 (domain) / ≤ 40 (adapters) |
-| RFC | ~90 | ≤ 50 |
-| CBO | ~18 | ≤ 14 (domain) / ≤ 25 (orchestrators) |
-| LCOM | ~0.9 | ≤ 0.5 |
+| Metric | CanvassDesktop (measured) | §7.1 threshold | Status |
+|---|---|---|---|
+| WMC | 63 | ≤ 40 (orchestrator) | **violation** |
+| DIT | 1 | ≤ 4 | within |
+| NOC | 0 | ≤ 5 | within |
+| CBO | 47 | ≤ 25 (orchestrator) | **violation** |
+| RFC | 118 | ≤ 50 | **violation** |
+| LCOM_HS | 0.955 | ≤ 0.50 | **violation** |
+
+CanvassDesktop's CBO of 47 breaks down as 23 project types (e.g. `VolumeDataSetRenderer`, `FitsReader`, `DataAnalysis`, `FeatureMapping`), 13 Unity/TMPro UI types, 7 System library types, and 4 Valve.VR types. Three fields (`_restFrequency`, `inPaintMode`, `_tabsManager`) are declared but never accessed — dead weight confirmed by the LCOM field-access count of 189 across 63 methods and 67 fields.
 
 **Forces in tension:**
 
