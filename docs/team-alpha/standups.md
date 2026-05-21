@@ -87,3 +87,15 @@ If you'd rather use cohort allocation IDs (Section 5.5), swap the numbering sche
 **Today:**
 **Blockers:**
 **Cross-team asks:**
+
+---
+
+## 2026-05-21
+
+### Sub-team 6 — Desktop GUI & Client Shell
+**Present:** Con, Mark, Rory, Jimmy
+**Absent:** none
+**Yesterday:** Mark, Rory and Jimmy worked on docs. Con reviewed docs, moved locations, and re-read the brief.
+**Today:** Continue refactor planning.
+**Blockers:** None.
+**Cross-team asks:** _(none today)_

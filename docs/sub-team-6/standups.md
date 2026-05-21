@@ -44,14 +44,14 @@
 
 ## 2026-05-21 (Day 4 — Thu) — Sprint 1 Day 4
 
-**Present:** 
+**Present:** Con, Mark, Rory, Jimmy
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Con | Reviewed docs, moved locations, reviewed brief | Continue refactor planning | None |
+| Mark | Conducted initial researhc, model view, viewmodel split. Created before UML diagrams of class diagrams. | Testing and initial draft of refactor of files | None |
+| Rory | Got Codescene up and working. Started Ndepend| Got NDepend Working | None |
+| Jimmy | Debugging worked examples | More on worked example refactoring and reviewing | None |
 
 **Decisions:**
 - _(decisions made in stand-up)_
