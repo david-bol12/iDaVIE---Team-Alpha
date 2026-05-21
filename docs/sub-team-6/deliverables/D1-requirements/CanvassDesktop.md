@@ -594,3 +594,49 @@ Returns `GetFirstActiveRenderer().Mask` — the active mask `VolumeDataSet`.
 | `Exit` | public | UI button |
 | `getActiveDataSet` | public | **No source callers found — possibly dead code** |
 | `getActiveMaskSet` | public | **No source callers found — possibly dead code** |
+
+---
+
+## I/O That Belongs Server-Side
+
+In the target architecture (per [ADR 0002](../../adrs/0002-transport.md) — JSON-RPC over named pipes for local mode, gRPC for future remote streaming) the client shell must not initiate domain data I/O directly. All filesystem reads/writes of FITS cubes, source catalogues, and mapping files, all native plug-in calls (cfitsio P/Invoke), and all raw-voxel analytics belong on the server. This section enumerates every such site in `CanvassDesktop.cs`, classifies it, and points each one at the service-gateway interface that will absorb it.
+
+### Classification rules
+
+- **Server-side.** Anything that reads or writes domain data files, invokes the native FITS plug-in, or operates on raw cube voxels. These violate NFR-MOD-2 (no transitive `UnityEngine` / native-plug-in dependency from domain code) and must move behind a gateway.
+- **Client-side (stays).** OS file-picker dialogs and `PlayerPrefs` last-path persistence — these are intrinsically client-machine concerns. In remote-server mode the dialog is replaced by a *remote-browse* RPC, but the dialog responsibility remains on the client.
+
+### Server-side I/O sites
+
+| Method (line) | Call | Category | Why it belongs server-side | Gateway interface |
+|---|---|---|---|---|
+| `_browseImageFile` (349–407) | `FitsReader.FitsOpenFile` / `FitsGetHduCount` / `FitsMovabsHdu` / `FitsReadKey` / `FitsCloseFile` | FITS header read (native) | Direct P/Invoke into cfitsio on the UI coroutine; couples the client to a native ABI | `IFitsService.OpenAndDescribe(path) → FileDescriptor` |
+| `UpdateHeaderFromFits` (544) | `FitsReader.ExtractHeaders` | FITS header read (native) | Reads the full HDU header through cfitsio | `IFitsService.GetHeader(handle, hduIndex) → IDictionary<string,string>` |
+| `ChangeHduSelection` (1441–1447) | `FitsReader.FitsOpenFile` / `FitsMovabsHdu` / `FitsCloseFile` (via `UpdateHeaderFromFits`) | FITS header read (native) | Re-opens the file from disk on every HDU change — wasteful and out-of-place on the client | `IFitsService.GetHeader(handle, hduIndex)` (no reopen — handle is server-resident) |
+| `_browseMaskFile` (842–856) | `FitsReader.FitsOpenFile` / `ExtractHeaders` / `FitsCloseFile` | FITS header read (native) | Same coupling as image read; also performs axis-size validation against the image cube | `IFitsService.ValidateMaskAgainst(maskHandle, imageHandle, zAxis) → ValidationResult` |
+| `LoadCubeCoroutine` (full method) | `VolumeDataSet` constructor → native cube loader; `CheckMemSpaceForCubes` (RAM check against `SystemInfo.systemMemorySize`) | FITS cube read (heavy, native) | Streams up to multi-GB voxel data through the native plug-in; the memory check interrogates *client* RAM for what is fundamentally a server resource | `IDataSetService.LoadCube(handle, subset, hduIndex) → DataSetHandle` (server reports its own capacity) |
+| `_browseSourcesFile` (1270) | `FeatureTable.GetFeatureTableFromFile` | Catalogue read (XML / FITS) | Parses source catalogues; same disk + parse coupling as cube load | `ISourceCatalogueService.OpenCatalogue(path) → CatalogueDescriptor` |
+| `LoadSourcesFile` (1607) | `FeatureTable.GetFeatureTableFromFile` (called *again* on the same path) | Catalogue read (XML / FITS) | Duplicates the browse-time read — gateway should let the client reuse the descriptor from browse | `ISourceCatalogueService.ImportInto(featureSetHandle, descriptor, mapping, mask)` |
+| `_browseMappingFile` (1326) | `FeatureMapping.GetMappingFromFile` | JSON read | Mapping JSON is domain configuration; persistence and schema versioning belong server-side | `IMappingService.Load(path) → FeatureMapping` |
+| `_saveMappingFile` (1523) | `FeatureMapping.SaveMappingToFile` (via `featureMappingObject.SaveMappingToFile`) | JSON write | Same reason as load; also needs server-side validation before write | `IMappingService.Save(mapping, path) → SaveResult` |
+| `SetMaxMinPercentile` (1788, 1799) | `DataAnalysis.GetPercentileValuesFromHistogram` / `GetPercentileValuesFromData(dataSet.FitsData, …)` | Raw-voxel scan (native) | Scans the full in-memory cube to compute percentiles — the quintessential server query | `IDataSetService.GetPercentiles(handle, lowerPct, upperPct, mode) → (min, max)` |
+
+### Sites that stay client-side
+
+| Method (line) | Call | Why it stays |
+|---|---|---|
+| `BrowseImageFile` (317), `BrowseMaskFile` (817), `BrowseSourcesFile` (1246), `BrowseMappingFile` (1310), `SaveMappingFile` (1477) | `StandaloneFileBrowser.OpenFilePanelAsync` / `SaveFilePanelAsync` | OS-native file dialog — the picker UI is a client-machine concern. In remote-server mode the dialog is replaced by a remote-browse RPC, but the dialog responsibility remains in the client. |
+| Same callbacks | `PlayerPrefs.SetString("LastPath", …)` | Last-used directory is a per-client preference, not session state |
+
+### Open questions for the gateway contract
+
+1. **Handle vs. path.** Should `IFitsService.OpenAndDescribe` return an opaque server-held handle (preferred — paths never cross the boundary again) or a path string the client re-passes on every call? Decision determines whether `IDataSetService.LoadCube` takes a `FileDescriptor` or a `string path`.
+2. **Header caching.** `ChangeHduSelection` currently re-opens the file for every HDU switch. The gateway should let the client cache the `FileDescriptor` and request headers by `(handle, hduIndex)` without re-opening.
+3. **Memory check ownership.** `CheckMemSpaceForCubes` checks `SystemInfo.systemMemorySize` on the client. In a remote-server topology this is meaningless; in local-pipe mode it's still meaningful but should be answered by the server, which knows its own constraints. Move to `IDataSetService.CanFit(subset, hduIndex) → MemoryEstimate`.
+
+### Traceability
+
+- Closes the "direct file I/O behaviour" gap flagged against **REQ-1 / D1** in [`deliverables-checklist.md`](../deliverables-checklist.md) §2.
+- Provides concrete evidence for **NFR-MOD-2** (ViewModel must not transitively depend on `UnityEngine` or the native FITS plug-in) in [`requirements.md`](../../requirements.md) §3.
+- Drives the `IFitsService` / `IDataSetService` / `IMappingService` / `ISourceCatalogueService` interface design for the File-tab worked example in [`D4-worked-examples/ex1-file-tab/`](../D4-worked-examples/ex1-file-tab/).
+- `ISourceCatalogueService` shape feeds back to **Sub-team 5** (Feature domain) at the next cross-sub-team integration window.
