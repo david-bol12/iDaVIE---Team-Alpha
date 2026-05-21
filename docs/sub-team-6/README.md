@@ -16,6 +16,7 @@ This directory is the single source of truth for our sub-team's design proposal 
 | ADR log | [adrs/](adrs/) | TL | stub (0001, 0002 seeded) |
 | Daily stand-up notes | [standups.md](standups.md) | SM | living |
 | AI tool usage log | [ai-log.md](ai-log.md) | all | living |
+| TEST-1 — ViewModel unit-test strategy | [deliverables/TEST-1.md](deliverables/TEST-1.md) | QC | draft |
 | Worked example 1 — File tab | [`../../refactoring-examples/sub-team-6/file-tab/`](../../refactoring-examples/sub-team-6/file-tab/) | TL | empty |
 | Worked example 2 — Debug tab | [`../../refactoring-examples/sub-team-6/debug-tab/`](../../refactoring-examples/sub-team-6/debug-tab/) | POL | empty |
 | Interface contracts | [`../../refactoring-examples/sub-team-6/contracts/`](../../refactoring-examples/sub-team-6/contracts/) | TL | empty |
