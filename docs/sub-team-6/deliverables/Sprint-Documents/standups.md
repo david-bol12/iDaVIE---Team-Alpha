@@ -11,9 +11,9 @@
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
 | Con | Got UI Rendering and Working| Carrying out Scrum Master Duties| Need to figure out how much code will need to be written for this project|
-| Mark | Got UI Rendereing and Working| | |
-| | | | |
-| | | | |
+| Mark | Got UI Rendereing and Working| Create UML diagrams of the file tab & concenr map of canvas desktop| |
+| Jimmy | | Try to get system running| |
+| Rory | | Try to get system running| |
 
 **Decisions:**
 - Continue with work
@@ -29,10 +29,10 @@
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Con | Got sprint plan up. Got click up configured for all teams for kanban| Update the deliverables and checklist| |
+| Mark | Created UML diagrams. Created canvas desktop class diagram| Create Initial proposal for mvvm. | |
+| Jimmy | | Work on the initial debug refactor| |
+| Rory | | Settign sup testing software e.g. SonarCube and CodeScene| |
 
 **Decisions:**
 - _(decisions made in stand-up)_
@@ -67,10 +67,10 @@
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Con| Heavy analysis of brief. Moved documentation into deliverable sections.| conducted peer review. Conducted sprint review and retro. Put up skeleton of the presentation and identitfy holes.| |
+| Mark| Initial file Refactor. Looked at intial unit testing doc. | conducted peer review. Conducted sprint review and retro. Checking quality of refactors.| |
+| Jimmy| Added a basic CI. | | |
+| Rory| Got CK metrics for beforehand| | |
 
 **Decisions:**
 - _(decisions made in stand-up)_
