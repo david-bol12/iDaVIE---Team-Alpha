@@ -1,3 +1,12 @@
+> **STATUS: SUPERSEDED — 2026-05-21 (Day 4).**
+> This 10-NFR generic table (NFR-M1…M10) was retired during the D1 rewrite. It references project conventions iDaVIE does not use (Javadoc, `/utils` packages, 200-LOC module cap, generic CI tooling) and is not traceable to our slice or our Quality-Guild tool chain (Understand / SonarQube / NDepend / CodeScene / DV8).
+>
+> **Authoritative replacement:** `docs/sub-team-6/requirements.md` §3 (REQ-2). All ISO/IEC 25010 NFRs for the Desktop GUI & Client Shell slice live there and are traceable to the §7 metric families.
+>
+> Kept for audit trail only — do not cite this file in T4 / pitch.
+
+---
+
 # REQ2_NFR_Maintainability_Table
 
 _Source: `REQ2_NFR_Maintainability_Table.pdf` (3 pages)_
