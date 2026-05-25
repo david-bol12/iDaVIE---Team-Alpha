@@ -369,16 +369,19 @@ Counts across CanvassDesktop before vs all WE1 + WE2 successor types combined.
 | Public API boundaries backed by interfaces | **0** | **7** | +7 |
 | Dead methods | **1** | **0** | −1 |
 | Unstructured `Debug.Log` call-sites | **40** | **0** | −40 |
-| Types unit-testable without Unity test runner | **0** | **5** (`FileTabViewModel`, `SubsetBoundsViewModel`, `FitsServiceAdapter`, `DebugTabViewModel`, `UnityLogStreamAdapter`) | +5 |
+| Types pure-C# unit-testable (no Unity assemblies, no native DLL) | **0** | **3** (`FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`) | +3 |
+| Adapters integration-testable behind interface seams | **0** | **2** (`FitsServiceAdapter` via `IFitsService` test double; `UnityLogStreamAdapter` via `ILogStream` test double) | +2 |
 
 ---
 
 ## 7. Thresholds Reference (Assignment Spec §7.1)
 
-| Role | WMC | CBO | RFC | LCOM |
-|---|:---:|:---:|:---:|:---:|
-| Domain / ViewModel | ≤ 20 | ≤ 14 | ≤ 50 | ≤ 0.50 |
-| Orchestrator / Adapter | ≤ 40 | ≤ 25 | ≤ 50 | ≤ 0.50 |
+| Role | WMC | DIT | NOC | CBO | RFC | LCOM |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Domain / ViewModel | ≤ 20 | ≤ 4 | ≤ 5 | ≤ 14 | ≤ 50 | ≤ 0.50 |
+| Orchestrator / Adapter | ≤ 40 | ≤ 4 | ≤ 5 | ≤ 25 | ≤ 50 | ≤ 0.50 |
+
+Cycles are forbidden across all top-level components (see §6, row "Circular dependency cycles"). DIT and NOC thresholds apply uniformly across both roles. Observed DIT and NOC across all WE1/WE2 successor types stay at 0–1 (see §2.2 and §3.2) — well under threshold.
 
 Role assignments:
 - **Domain / ViewModel:** `FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`

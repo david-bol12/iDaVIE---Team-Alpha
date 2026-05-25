@@ -34,10 +34,10 @@ sequenceDiagram
     Dialog-->>User: native OS file picker
     User->>Dialog: select *.fits
     Dialog->>Dialog: PlayerPrefs.SetString("LastPath", ...)
-    Dialog-->>VM: Task&lt;string?&gt; → path
+    Dialog-->>VM: Task⟨string?⟩ → path
     deactivate Dialog
 
-    VM->>VM: IsLoading = true;<br/>PropertyChanged → spinner on
+    VM->>VM: IsLoading = true —<br/>PropertyChanged → spinner on
 
     VM->>Fits: IFitsService.OpenImageAsync(path)
     activate Fits
@@ -48,14 +48,14 @@ sequenceDiagram
     Note right of VM: no IntPtr crosses ACL —<br/>only the immutable DTO
 
     VM->>VM: ImagePath = path<br/>HduOptions.AddRange(info.HduList)<br/>HeaderText = info.HeaderText<br/>Subset.ResetToAxisMaxima(...)<br/>PopulateZAxisOptions(info)<br/>NotifyIsLoadable()
-    Note right of VM: pure C# state mutation;<br/>PropertyChanged drives the View
+    Note right of VM: pure C# state mutation —<br/>PropertyChanged drives the View
 
     VM->>VM: IsLoadable get → axis-count rule<br/>ValidationMessage = null
     VM->>VM: IsLoading = false<br/>CanExecuteChanged on LoadCommand
     deactivate VM
 
     VM-->>View: PropertyChanged: ImagePath, HduOptions,<br/>HeaderText, SubsetEnabled, IsLoadable, IsLoading
-    View-->>User: HDU dropdown populated;<br/>header shown; Load button enabled
+    View-->>User: HDU dropdown populated —<br/>header shown — Load button enabled
     end
 
     Note over User,VCC: validation passed — Load enabled<br/>(no separate "open" round-trip required)
@@ -70,9 +70,9 @@ sequenceDiagram
     activate VM
 
     VM->>VM: build LoadCubeRequest {<br/>  ImagePath, MaskPath, HduIndex,<br/>  Subset?, ZAxisSelection<br/>}
-    VM->>Vol: IVolumeService.LoadCubeAsync(<br/>request, IProgress&lt;float&gt;)
+    VM->>Vol: IVolumeService.LoadCubeAsync(<br/>request, IProgress⟨float⟩)
     activate Vol
-    Note right of Vol: TaskCompletionSource&lt;bool&gt; +<br/>StartCoroutine(LoadCubeCoroutine)<br/>— contained inside the adapter
+    Note right of Vol: TaskCompletionSource⟨bool⟩ +<br/>StartCoroutine(LoadCubeCoroutine)<br/>— contained inside the adapter
 
     opt previous cube exists
         Vol->>VCC: RemoveDataSet(existing)
@@ -80,7 +80,7 @@ sequenceDiagram
     end
     Vol-->>VM: progress.Report(0.2f)
 
-    Vol->>Vol: Instantiate(_cubePrefab)<br/>renderer = newCube.GetComponent&lt;VDSR&gt;()<br/>renderer.FileName / MaskFileName /<br/>SelectedHdu / CubeDepthAxis /<br/>subsetBounds  ← contained smell
+    Vol->>Vol: Instantiate(_cubePrefab)<br/>renderer = newCube.GetComponent⟨VDSR⟩()<br/>renderer.FileName / MaskFileName /<br/>SelectedHdu / CubeDepthAxis /<br/>subsetBounds  ← contained smell
     Note right of Vol: ⚠ field writes still happen<br/>— but only inside the adapter
     Vol-->>VM: progress.Report(0.4f)
 
@@ -92,7 +92,7 @@ sequenceDiagram
     end
     Note right of Vol: ⚠ busy-wait still here<br/>— contained, returned as Task
 
-    Vol-->>VM: tcs.TrySetResult(true);<br/>progress.Report(1f)
+    Vol-->>VM: tcs.TrySetResult(true) —<br/>progress.Report(1f)
 
     Vol->>Peers: CubeLoaded(CubeLoadedEventArgs)<br/>{ImagePath, MaskPath, HduIndex}
     Note right of Peers: Peer VMs rebind own state.<br/>★ Replaces postLoadFileFileSystem cascade<br/>and closes Anomaly #8 rest-freq leak —<br/>each peer owns its subscribe/unsubscribe.
@@ -102,7 +102,7 @@ sequenceDiagram
     deactivate VM
 
     VM-->>View: PropertyChanged: IsLoading
-    View-->>User: spinner hidden; cube visible
+    View-->>User: spinner hidden — cube visible
     end
 ```
 

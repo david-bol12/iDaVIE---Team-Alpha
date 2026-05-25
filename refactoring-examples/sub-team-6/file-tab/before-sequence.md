@@ -54,7 +54,7 @@ sequenceDiagram
     end
 
     CD->>FR: FitsMovabsHdu(fptr, 1)  %% reset to primary
-    CD->>CD: transform.Find("HeaderTitle_container/<br/>Hdu_container/Hdu_dropdown")<br/>.GetComponent&lt;Dropdown&gt;()
+    CD->>CD: transform.Find("HeaderTitle_container/<br/>Hdu_container/Hdu_dropdown")<br/>.GetComponent⟨Dropdown⟩()
     Note right of CD: scene-hierarchy hardwiring → untestable
 
     CD->>CD: UpdateHeaderFromFits(fptr)<br/>(further FR.FitsReadKey calls)
@@ -63,11 +63,11 @@ sequenceDiagram
     Note right of CD: manual lifetime management<br/>of unmanaged handle
 
     CD->>CD: IsLoadable() — inline axis-count rule
-    CD-->>User: Load button becomes interactable;<br/>subset selector appears
+    CD-->>User: Load button becomes interactable —<br/>subset selector appears
     deactivate CD
     end
 
-    Note over User,VDSR: User now sees the file is "valid";<br/>must click a second button to actually load
+    Note over User,VDSR: User now sees the file is "valid" —<br/>must click a second button to actually load
 
     %% ═══════════════════════════════════════════════════════════════════
     %% PHASE B — User confirms load (cube becomes visible)
@@ -82,17 +82,17 @@ sequenceDiagram
 
     activate CD
     Note over CD: coroutine reentry — same lifeline,<br/>async lifetime
-    CD->>CD: show progress bar;<br/>CheckMemSpaceForCubes(...)
+    CD->>CD: show progress bar —<br/>CheckMemSpaceForCubes(...)
 
     opt previous cube exists
         CD->>VCC: RemoveDataSet(firstActiveRenderer)
-        CD->>CD: FindObjectOfType&lt;VolumeInputController&gt;()<br/>.SetActive(false/true)  %% fragile "reset"
+        CD->>CD: FindObjectOfType⟨VolumeInputController⟩()<br/>.SetActive(false/true)  %% fragile "reset"
         CD->>VCC: DisablePaintMode() /<br/>endThresholdEditing() /<br/>endZAxisEditing()
         CD->>VDSR: Data.CleanUp(...) /<br/>Mask?.CleanUp(false) /<br/>Destroy(renderer)
     end
 
     CD->>VDSR: Instantiate(cubeprefab) → newCube
-    CD->>VDSR: newCube.GetComponent&lt;VolumeDataSetRenderer&gt;()
+    CD->>VDSR: newCube.GetComponent⟨VolumeDataSetRenderer⟩()
     CD->>VDSR: direct field writes:<br/>.subsetBounds, .FileName, .MaskFileName,<br/>.SelectedHdu, .loadText, .progressBar,<br/>.CubeDepthAxis, .FileChanged
     Note right of VDSR: ★ no encapsulation —<br/>UI pokes public mutable fields
 
@@ -110,8 +110,8 @@ sequenceDiagram
 
     CD-->>User: cube appears in scene
 
-    CD->>CD: postLoadFileFileSystem()<br/>— hides LoadingText, progressBar,<br/>WelcomeMenu; enables Rendering/Stats/Sources/Paint;<br/>auto-clicks Stats_Button
-    CD-->>User: WelcomeMenu disappears;<br/>tabs come alive; Stats tab shown
+    CD->>CD: postLoadFileFileSystem()<br/>— hides LoadingText, progressBar,<br/>WelcomeMenu — enables Rendering/Stats/Sources/Paint —<br/>auto-clicks Stats_Button
+    CD-->>User: WelcomeMenu disappears —<br/>tabs come alive — Stats tab shown
     deactivate CD
     end
 ```
