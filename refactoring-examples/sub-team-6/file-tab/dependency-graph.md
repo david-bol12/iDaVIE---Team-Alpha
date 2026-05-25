@@ -80,9 +80,11 @@ graph LR
         FTVM[FileTabViewModel]:::domain
         SBV[SubsetBoundsViewModel]:::domain
         IFS[IFitsService]:::domain
+        IFH[IFitsHandle]:::domain
         IFD[IFileDialogService]:::domain
         IVS[IVolumeService]:::domain
-        DTOs[DTOs<br/>FitsFileInfo, LoadCubeRequest,<br/>SubsetBounds, HduInfo]:::domain
+        IMP[IMemoryProbe]:::domain
+        DTOs[DTOs<br/>FitsFileInfo, LoadCubeRequest,<br/>SubsetBounds, HduInfo,<br/>CubeLoadedEventArgs, RatioMode]:::domain
         Cmds[IAsyncCommand / ICommand]:::domain
     end
 
@@ -92,6 +94,7 @@ graph LR
         FSA[FitsServiceAdapter]:::unity
         FDA[FileDialogServiceAdapter]:::unity
         VSA[VolumeServiceAdapter<br/>MonoBehaviour]:::unity
+        MPA[MemoryProbeAdapter]:::unity
     end
 
     subgraph SubsystemAsm["Out-of-scope subsystems (Sub-team 1 + 3 own these)"]
@@ -109,6 +112,7 @@ graph LR
     FTVM --> IFS
     FTVM --> IFD
     FTVM --> IVS
+    FTVM --> IMP
     FTVM --> SBV
     FTVM --> DTOs
     FTVM --> Cmds
@@ -118,8 +122,10 @@ graph LR
 
     %% Adapters implement Domain interfaces (ACL — single direction)
     FSA  -.->|implements| IFS
+    FSA  -.->|implements IFitsHandle| IFH
     FDA  -.->|implements| IFD
     VSA  -.->|implements| IVS
+    MPA  -.->|implements| IMP
     FTV  --> IFTVM
 
     %% Adapter → external (allowed; this is what adapters are for)
@@ -130,6 +136,7 @@ graph LR
     VSA --> VDSR
     VSA --> VIC
     VSA --> UE
+    MPA --> SysInfo[SystemInfo<br/>UnityEngine]:::unity
     FTV --> UE
     FTCR --> UE
     FR  -->|DllImport| Native
@@ -139,6 +146,7 @@ graph LR
     FTCR --> FSA
     FTCR --> FDA
     FTCR --> VSA
+    FTCR --> MPA
     FTCR --> FTV
 ```
 
@@ -147,7 +155,7 @@ graph LR
 1. **Three assemblies with a single direction of dependency.** `Adapters` references `Domain`; `Domain` does **not** reference `Adapters`. The arrow direction is enforced by the assembly references themselves — flipping it would not compile.
 2. **Section 4.2 satisfied for the slice.** No solid arrow leaves `Domain` toward `UnityEngine`, `SteamVR`, `idavie_native`, `SFB`, or `TMPro`. The transitive reach is broken: `FileTabViewModel` cannot, even by accident, end up calling a native function.
 3. **One composition root** (`FileTabCompositionRoot`) is the only class permitted to reference both layers — and it is itself an adapter. It instantiates the domain object graph and hands it to the view.
-4. **Test reachability.** `dotnet test refactoring-examples/sub-team-6/file-tab/tests/FileTabTests.csproj` compiles and runs against the `Domain` assembly alone, with no Unity present. The 27 NUnit tests in `tests/FileTabViewModelTests.cs` exercise the slice end-to-end via test doubles.
+4. **Test reachability.** `dotnet test refactoring-examples/sub-team-6/file-tab/tests/FileTabTests.csproj` compiles and runs against the `Domain` assembly alone, with no Unity present. The 34 NUnit tests in `tests/FileTabViewModelTests.cs` exercise the slice end-to-end via test doubles.
 
 ### Cycles in the AFTER graph
 
@@ -173,7 +181,7 @@ No back-edges. No `Adapters → Domain.concrete` edges except via the compositio
 | `Domain → UnityEngine` edges | direct: many | **zero** |
 | `Domain → idavie_native` edges | transitive (via `FitsReader`) | **zero** |
 | `Domain → SteamVR` edges | direct | **zero** |
-| Interfaces on critical path | 0 | 6 (`IFileTabViewModel`, `IFitsService`, `IFileDialogService`, `IVolumeService`, `IAsyncCommand`, `ICommand`) |
+| Interfaces on critical path | 0 | 8 (`IFileTabViewModel`, `IFitsService`, `IFitsHandle`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IAsyncCommand`, `ICommand`) |
 | Composition root | absent (`Start()` does ad-hoc `FindObjectOfType<>`) | explicit (`FileTabCompositionRoot.Awake()`) |
 | Cycles | 2 instance-level (`CanvassDesktop ↔ TabsManager`, `CanvassDesktop ↔ MenuBarBehaviour`) | **0** |
 | Test-runner reach | Unity required | `dotnet test` from any CI runner |
