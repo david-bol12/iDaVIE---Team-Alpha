@@ -10,6 +10,7 @@ This directory is the single source of truth for our sub-team's design proposal 
 |---|---|---|---|
 | Backlog (product + sprints) | [backlog.md](backlog.md) | SM | living |
 | Backlog (CSV for board import) | [backlog.csv](backlog.csv) | SM | living |
+| BNCH-4 — DSM & propagation cost | [deliverables/other/T2-baseline-benchmark/BNCH-4.md](deliverables/other/T2-baseline-benchmark/BNCH-4.md) | QC | ✅ done |
 | Requirements document | [requirements.md](requirements.md) | POL | stub |
 | Architecture document (5–10 pp) | [architecture.md](architecture.md) | TL | stub |
 | Test strategy (2–4 pp) | [test-strategy.md](test-strategy.md) | QC | stub |
