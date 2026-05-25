@@ -37,25 +37,6 @@ We map every architectural choice back to one of these. The panel cannot disagre
 
 ---
 
-### Slide 1.1 — Frame the audit, not the complaint (~45 sec)
-
-**Claim:** We measured maintainability against **ISO/IEC 25010**, not taste. Five sub-characteristics, all five red on our slice.
-
-**Why this matters:** the panel must reject any "the code is bad" handwave. The criteria for *bad* are: Modularity, Reusability, Analysability, Modifiability, Testability — and each one has a **measurable** acceptance test (NFR table in `docs/sub-team-6/requirements.md` §3).
-
-**Theory anchor:**
-- ISO/IEC 25010 — Maintainability is the product characteristic; the five sub-characteristics are the only legitimate language we have for *what is wrong*.
-- LO1 (benchmark maintainability with CK + static analysis) and LO2 (elicit NFRs against ISO 25010) — the first two LOs of the course; framing in their language is non-negotiable.
-
-**Evidence:**
-- `docs/sub-team-6/requirements.md` §3 — the NFR table (NFR-MOD-1..3, NFR-REU-1..3, NFR-ANA-1..3, NFR-MOF-1..3, NFR-TST-1..3) covers all five sub-characteristics with tool-backed acceptance metrics.
-- `docs/sub-team-6/deliverables/other/D9-ck-baseline/SK_BNCH.md` — the measurements.
-
-**Speaker note:** open with "we audited eight classes in the desktop client against §7.1 CK thresholds and ISO/IEC 25010 maintainability sub-characteristics; this isn't an opinion piece". Cite the eight classes (CanvassDesktop, DesktopPaintController, PaintMenuController, VideoUiManager, HistogramMenuController, HistogramHelper, SourceRow, TabsManager) by name so the panel knows the scope is fixed.
-
-
----
-
 ### Slide 1.2 — `CanvassDesktop.cs` is a textbook God Class (~75 sec)
 
 **Claim:** A single `MonoBehaviour` of 1 899 lines owns FITS I/O, HDU parsing, histogram maths, colour maps, subset bounds, source mapping, paint-mode wiring, statistics, threshold controls, and configuration. That is not a class.
