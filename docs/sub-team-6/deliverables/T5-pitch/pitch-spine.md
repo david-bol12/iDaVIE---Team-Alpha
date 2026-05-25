@@ -53,7 +53,6 @@ We map every architectural choice back to one of these. The panel cannot disagre
 
 **Speaker note:** open with "we audited eight classes in the desktop client against §7.1 CK thresholds and ISO/IEC 25010 maintainability sub-characteristics; this isn't an opinion piece". Cite the eight classes (CanvassDesktop, DesktopPaintController, PaintMenuController, VideoUiManager, HistogramMenuController, HistogramHelper, SourceRow, TabsManager) by name so the panel knows the scope is fixed.
 
-**Risk if challenged — "why ISO 25010 and not ISO 9126?":** 9126 was withdrawn in 2011; 25010 is the current standard and is the one explicitly named in our requirements deliverable.
 
 ---
 
@@ -881,7 +880,216 @@ Ranked by pitch-day visibility. Each gap names an artefact, an owner, and a due 
 
 ---
 
-## Appendix B — Cross-references from this spine
+## Appendix B — Anticipated Q & A
+
+> **Purpose.** Research aid for the 20-min Q&A that follows the 40-min talk (§9.1 T5; Appendix C of the brief). Every slide in §1–§7 already carries a `Risk if challenged` line — those are the *first-order* answers. This appendix captures questions that go *beyond* the per-slide rebuttals: cross-cutting probes, process / AI / authorship questions, panel-specific angles, and hostile framings. Treat as rehearsal seed, not script.
+>
+> **Format reality (Appendix C of the brief).** 20 minutes, ~8–12 questions at panel pace. Panel may direct any question at any named member — §10.5 #4 makes "inability to explain a section a fail signal" — so each of the four of us must be able to field any question in this appendix. Tech Lead + Architecture sub-team must be present; for us that means **Tech Lead this sprint defends architecture; PO Liaison defends requirements / NFR mapping; Quality Champion defends metrics; Scrum Master defends process + AI log**.
+>
+> **What the panel is.** iDaVIE maintainers — domain astronomers + Unity/C++ engineers who *wrote* the code we are critiquing. Expect: (i) defensiveness about the existing code, (ii) deep Unity / native-interop knowledge, (iii) skepticism of "design proposals" that have not been built, (iv) a working knowledge of FITS, WCS, large-cube performance. Plan for it.
+
+---
+
+### B.1 — Top 12 most-likely questions (the must-rehearse set)
+
+Ranked by signal — *probability × difficulty × cost of muffing it*. If we rehearse only these twelve, we cover ~70 % of likely Q&A pressure.
+
+| # | Question (likely panel voice) | What they are really probing | First-line answer | Trap |
+|---|---|---|---|---|
+| **1** | *"You did not change a single line of production code. Why should we believe these CK numbers will land?"* | Projection ≠ measurement. §7 forbids "speculative numbers without evidence". | Point at skeleton: `refactoring-examples/sub-team-6/file-tab/`, `…/debug-tab/skeleton/`. The numbers are countable from skeleton, not from hope. Day 13 re-measurement on the skeleton is owed (Gap #12, Appendix A). | Promising the full refactor is delivered. It is not — design proposal only (§6.6). |
+| **2** | *"Pick one slide. Defend it as if you wrote it alone."* | §10.5 #4 — inability to defend = fail signal. They will pick a slide *with our name on it*. | Whichever member is asked: lead with the **claim** sentence from that slide, then the **theory anchor**, then the **evidence pointer**. Do not improvise — the spine is the script. | Reading the slide back. They asked you to *defend*, not narrate. |
+| **3** | *"Show me where in the brief MVVM is mandated, and defend the choice over MVP / MVU / MVC."* | LO4 + ADR-0001 quality. §6.6 says "MVVM-style split"; the choice between MVVM variants is ours. | Brief §6.6 names MVVM explicitly. ADR-0001 *Alternatives Considered* rejects MVP (no binding semantics — equivalent boilerplate without payoff), MVU (mismatch with UI Toolkit two-way binding; learning-curve risk), MVC (View pulls Model — defeats DIP for our threading model), Reactive MVVM (Rx adds a library dependency we have not justified). | Defending MVVM as "the obvious choice". The brief names it but does not justify it — we must. |
+| **4** | *"Sub-team 1 owns the `IServiceGateway`. What happens if their contract differs from your assumption?"* | DEPS-1, integration risk (R01 in ADR-0001). | Slide 6.3. The contract *is* the artefact. Day 8 integration review (sprint plan) is the lock-in date. Our ViewModel depends only on `IFileService` and `ILogStream` — those are *ours*. The seam to `IServiceGateway` is the adapter and is owned in our composition root. If Sub-team 1's shape changes, we rewrite the adapter, not the ViewModel. | Saying "we coordinated with them". Name the *artefact* and the *date*. |
+| **5** | *"`CanvassDesktop` is a `MonoBehaviour` because Unity demands it. Doesn't your split fight the engine?"* | The panel wrote the engine integration. They know Unity. | The View *stays* a `MonoBehaviour` (or `UIDocument` in UI Toolkit) — that is the only assembly that touches Unity. The ViewModel is pure C# because it does *not* extend `MonoBehaviour`; it is held by reference, not by the scene graph. We are not fighting Unity — we are letting Unity own only what Unity must own. `mvvm-binding-policy.md` §5 (composition root). | Implying the View is also pure C#. It is not. |
+| **6** | *"You claim 47 → ~4 CBO on the post-split shell. How? Show me the dependencies you removed."* | Quantitative challenge. CBO drops are easy to over-claim. | Walk the before-DSM (`before-dsm.md`) → after-DSM (`after-dsm.md`) for **CanvassDesktop (post-split)** row only. The shell's responsibility is *only* to instantiate the ViewModels and bind the `UIDocument`. Its CBO is now bounded by the count of ViewModels it composes (~4). The remaining dependencies (FITS, native, dialogs) moved *into* the adapters, where adapter thresholds (CBO ≤ 25) absorb them. | Quoting the gross number without showing where the coupling *went*. CBO does not disappear — it relocates to a class with a higher threshold. |
+| **7** | *"You found a real bug (`UpdateMaxValue` writes `minVal`). Did you fix it? Did you tell the maintainers?"* | This is the trick question. The brief is design-only (§6.6) — but the panel *is* the maintainer. | Frame: this is evidence of cost in Slide 1.4, not a deliverable. We are now telling you — on a slide. We can raise a GitHub issue post-pitch if useful; we did not raise it during the assessment because doing so was out of §6.6 scope. | Either (a) hedging — say it cleanly. Or (b) claiming we will fix it during the assessment window. We will not. |
+| **8** | *"JSON-RPC over named pipes is fine for local. What is your evidence that the same interface survives the gRPC switch?"* | OCP / Protected Variations on a real boundary. | ADR-0002 §A.6 — `wireVersion` semver discipline. ADR-0002 §A.7 — gRPC `.proto` reuses method names and error codes. The `IServiceGateway` interface is *transport-agnostic by construction*: method signatures take DTOs, return `Task<Result>`, no pipe-specific types leak into the contract. The cost of switching is one new adapter class, not a new interface. | Claiming we *will* migrate to gRPC. We are claiming the *interface* survives the migration. |
+| **9** | *"Where exactly is the cycle? You list `HistogramHelper → CanvassDesktop → HistogramMenuController → HistogramHelper` as 'suspected'. Why not measured?"* | Evidence Gap #1 (DV8/NDepend cycle report on the 8-class slice). | Acknowledge openly: the cycle suspicion is from the SonarQube Rank 10 finding; full graph-level cycle detection is owed by Day 10 (Quality Champion). The other three §4.2 boxes are already failed without it, so the architectural argument holds. We do not need the cycle report to justify the split. | Bluffing the cycle. The panel uses NDepend; they can ask us to run it. |
+| **10** | *"Your sub-team is 4 people. How is the work distributed and who owns each artefact?"* | Authorship + §10.5 #4. Panel cross-checks names on ADRs and slides. | Sprint-rotated roles (TL / SM / POL / QC). Per-slide speaker assignment (Gap #14, Appendix A) lands Day 12. Each ADR has a named author (Gap #13). The four of us split the deck: TL — Sections 2 / 3 / 4 / 5.4; QC — Sections 1 / 3.4 / 4.4 / 5.5; POL — Sections 1.1 / 5.1–5.3 / 7.2; SM — Sections 6 / 7 / process narrative. | Vagueness. Have the assignment table ready by Day 12. |
+| **11** | *"Where did AI help and where did it fail in this pitch?"* | §10.5 #2 — AI tool log is a *required* artefact (T8). §10.5 #6 — pitch defence may not use AI in the moment. | "Helped: ADR template scaffolding, PlantUML stub generation, prose smoothing on the binding policy. Failed: produced confidently-wrong CK number projections in early drafts; we replaced with skeleton-derived projections. Failed: ADR Alternatives sections were too generic until we forced named alternatives." Cite T8 entry. | "AI did not write any of this." It did; the policy welcomes it; pretend otherwise and the panel infers dishonesty. |
+| **12** | *"What did you decide *not* to do, and why?"* | Trade-off literacy. They want to see the rejected branches. | Three answers, in order: (i) **Did not rewrite the rendering tabs** — out of scope, blast radius of UI Toolkit migration is per-panel (strangler fig). (ii) **Did not pick Rx / UniRx** — ADR-0001 Alternatives, learning-curve risk for the cohort. (iii) **Did not pick source generators for INPC on day 1** — `mvvm-binding-policy.md` §1.1, decision deferred until Day 12 (skeleton stability first). | Reciting a generic "we considered alternatives" sentence. Name the three. |
+
+---
+
+### B.2 — Section-by-section deep cuts (beyond the per-slide *Risk if challenged*)
+
+These questions sit alongside the Risk lines on the slides themselves. Where a slide already covers it, we cross-reference and add only the *follow-up* the panel is likely to escalate to.
+
+#### B.2.1 — Pain & metrics (Section 1 — 4 min slot)
+
+- **Q: "You audited 8 classes. Why those 8 and not the full 31 files under `Assets/Scripts/UI/`?"** — Scope decision in Slide 1.1. Answer: the 8 are the *behavioural element* §6.6 names (`CanvassDesktop` plus the panels and controllers it composes). The other ~23 files are sub-panels under VR / Stats / Render that are owned by the same sub-team but were de-scoped on Day 3 (concern-mapping). The 8 represent the worst CK numbers; CodeScene's hotspot map (Day 3) confirmed they are also the highest-churn. **Trap:** "those are the ones we had time for". Be deliberate.
+
+- **Q: "Henderson-Sellers LCOM = 0.955. Why HS and not the original CK LCOM?"** — Theory probe. Answer: original CK LCOM is unbounded and size-sensitive — incomparable across classes of different LOC. HS normalises to [0, 1] and is the variant Understand reports by default. The threshold ≤ 0.5 in §7.1 is calibrated for HS. **Trap:** confusing LCOM1/2/3/4/HS. If unsure, say "HS, as Understand reports".
+
+- **Q: "SonarQube default CC threshold is 15. You quote 31 as the violation. What number would *you* set, and why?"** — Threshold-vs-trend literacy. Answer: SonarQube default 15 is for general business code; for UI-orchestration methods 20 is defensible; 31 is double *any* defensible threshold. We are not arguing for a stricter threshold than SonarQube; we are pointing at a method that beats every plausible threshold. **Trap:** invent a number.
+
+- **Q: "The brief lists ISO 25010 sub-characteristics. You picked five. Why not the other three (functional suitability, performance, security)?"** — Appendix A of brief lists *maintainability* sub-characteristics. Answer: ISO 25010 has eight top-level *characteristics*; maintainability is one, with five sub-characteristics. Those five are all of it, and they map 1:1 to NFR-MOD/REU/ANA/MOF/TST in `requirements.md` §3. Functional/performance/security are out of scope per §1 of the brief — assessment title names "maintainability". **Trap:** treating the sub-characteristics list as a menu.
+
+- **Q: "You cite Robert Martin for SRP. Define SRP precisely."** — LO4. Answer: "A class should have one reason to change" *or, more precisely (Martin 2017),* "a module should be responsible to one and only one **actor**". The actor framing is the one that survives — it is why our split puts the file-load actor (`FileTabViewModel`) and the threshold-validation actor (`SubsetBoundsViewModel`) in different classes. **Trap:** the "single thing" definition — it is wrong and Martin disowned it.
+
+#### B.2.2 — Target architecture (Section 2 — 10 min slot)
+
+- **Q: "The brief says micro-kernel + plug-in + client–server + layered. You drew MVVM. Where is the micro-kernel in your slide?"** — The brief's macro style; our slice is the desktop client. Answer: micro-kernel is Sub-team 1's slice (§6.1). Our slice sits *above* the kernel as one of its clients. Slide 2.1 (C4 L1) shows the kernel as a single black box with us as a client adapter. MVVM is our **client-side** internal style. **Trap:** implying we invented the architecture independently of Sub-team 1.
+
+- **Q: "`.asmdef`-level enforcement is one rule. What stops a junior developer adding `using UnityEngine` inside a `.cs` file in the ViewModel project?"** — Defence-in-depth probe. Answer: the compiler. If the `.asmdef` does not reference `UnityEngine`, the `using` statement fails to compile. That is *not* an aspirational rule; that is the build refusing the code. Slide 2.2 + Slide 6.2. **Trap:** offering NDepend as the *primary* defence. It is the *secondary* defence (transitive imports).
+
+- **Q: "Composition root — where is it instantiated? What constructs the composition root?"** — Recursive turtle question. Answer: a single `MonoBehaviour` on the boot scene, attached to a GameObject. Unity itself instantiates it via `Awake()` — that is the *only* line of "magic" we accept. Everywhere else: explicit `new`. `mvvm-binding-policy.md` §5. **Trap:** inventing a DI container. We are not using one.
+
+- **Q: "You reject in-process HTTP. iDaVIE already has a Python bridge — would HTTP not align with that?"** — Domain knowledge probe. Answer: ADR-0002 Alternatives. HTTP adds a port-bind, an auth concern, and request/response framing we do not need. Named pipes are filesystem-level — same security boundary as the loaded FITS files. The Python bridge is a separate concern (ARQ-1) and can use whatever wire fits it best; the gateway interface is transport-agnostic. **Trap:** dismissing HTTP as "heavy". Name the concrete cost (port-bind + auth).
+
+- **Q: "ADR-0003 is owed. What is its proposed Decision?"** — Evidence Gap #6. Answer: ADR-0003 covers (a) UI Toolkit as the View tech for new panels, (b) Canvas → UI Toolkit migration via strangler fig (panel-by-panel coexistence), (c) the ACL placement (in Gateway, not in View). Due Day 8 — TL. **Trap:** inventing the Decision now. Acknowledge the gap; do not paper it over.
+
+#### B.2.3 — Worked examples (Sections 3 & 4 — 12 min slot, the centrepiece)
+
+- **Q: "I see `FileTabViewModel` ~ 12 WMC. Show me the method list."** — Skeleton probe. Answer: open `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs` if it exists; otherwise narrate from `after-class-diagram.puml`: `OpenAsync`, `CloseAsync`, `OnAxisChanged`, `OnThresholdChanged`, `OnSubsetBoundsChanged`, `Validate`, `Reset`, `IsBusy` get, `SelectedDataset` get/set, `Error` get, plus 2 INPC plumbing — ~12 methods.[EVIDENCE-GAP-B.2.3a — confirm method list against committed skeleton] **Trap:** quoting a number without method names.
+
+- **Q: "How does the View know when `SelectedDataset` changes?"** — Binding mechanics. Answer: `INotifyPropertyChanged` event. The ViewModel raises `PropertyChanged("SelectedDataset")`; the View's `UIDocument` has a binding registered against `SelectedDataset` via UI Toolkit's binding system (Unity 6) or via our `UnityBinder<T>` shim (Unity 2021). `mvvm-binding-policy.md` §2.1. **Trap:** "the View polls it". That would be the old design.
+
+- **Q: "Observer pattern for the Debug tab. Who removes the observer when the View is destroyed?"** — Lifecycle / leak probe. Answer: `DebugTabViewModel` implements `IDisposable`. The composition root holds the reference and disposes on scene unload. `mvvm-binding-policy.md` §6 (lifecycle).[EVIDENCE-GAP-B.2.3b — §6 of binding policy currently a stub; confirm before pitch] **Trap:** "garbage collection handles it". It does not — the publisher's strong reference pins the observer.
+
+- **Q: "You picked `ObservableCollection<LogEntry>`. At 1 000 entries / sec, does that scale?"** — Performance pressure. Answer: open issue, named in `mvvm-binding-policy.md` §3.1. Three options on the table: vanilla `ObservableCollection` (acceptable to ~100/sec), ring-buffer with virtualised UI Toolkit `ListView` (target choice, decision pending), or batched `Reset` events. Decision in Sprint 2 with a load test. **Trap:** claiming the current skeleton handles 1 000/sec. It does not — be honest about the open question.
+
+- **Q: "You did *not* refactor the Render tab. Would your architecture survive it?"** — Generality test. Answer: yes — same MVVM frame, different forces. Render tab introduces (a) Unity-side OpenGL state via a `IRenderService`, (b) per-frame updates which probably want a different ViewModel surface (continuous, not command-based). The architecture generalises; the worked example would be a new third pattern (continuous data-bind) under the same MVVM frame. **Trap:** claiming "trivially" — the panel will press on per-frame perf.
+
+- **Q: "You wrote two worked examples but the brief (§6.6) lists File tab and Debug tab specifically. Did you choose the easy ones?"** — Defensiveness probe. Answer: the brief *names* these two — we did not choose them. Slide 4 of the spine speaks to this — File tab exercises **command + async**; Debug tab exercises **Observer + threading**. They are the *forcing* examples for different stress dimensions. The brief picked well. **Trap:** suggesting we picked the easy ones. We did not pick them.
+
+#### B.2.4 — Testability & Unity 6 migration (Section 5 — 6 min slot)
+
+- **Q: "70 % branch + line on ViewModel. What is your *line* coverage on `FileTabViewModel` today?"** — Coverage reality. Answer: 0 %. The skeleton tests are owed by Day 10 (Gap #11). The target is reached when the three `OpenCubeCommand` tests + analogues for `Close`, `Validate`, `SubsetBoundsViewModel.Validate`, error path, and threading land. We project ~75 % from the test list. **Trap:** quoting a number we have not measured.
+
+- **Q: "Mocking framework — Moq, NSubstitute, FakeItEasy?"** — Tooling probe. Answer: Moq + NUnit. Moq because it is the framework the cohort already knows; NUnit because it is the Unity Test Framework's default. Both run outside Unity in `dotnet test`. **Trap:** discussing the framework war. The choice is conventional; defend it as conventional.
+
+- **Q: "How do you test the `UnityBinder<T>` shim itself?"** — Recursive test probe. Answer: the shim is in the View assembly, so it falls into the **integration test layer** (UI Toolkit page-object pattern, Slide 5.1) — not the ViewModel unit-test layer. Acknowledged in `mvvm-binding-policy.md` §4.2. **Trap:** claiming we unit-test it. The shim touches `VisualElement` — Unity-bound.
+
+- **Q: "Edit Mode vs Play Mode tests in Unity Test Framework — which layer are you targeting?"** — Unity-specific probe. Answer: Play Mode for the integration tier (UI Toolkit rendering needs the runtime); Edit Mode for any test that needs the Unity scripting runtime but no scene. Most of our coverage gate (ViewModel) is *neither* — it is `dotnet test`, no Unity at all. `test-strategy.md` §2. **Trap:** lumping all Unity tests together.
+
+- **Q: "UI Toolkit migration. iDaVIE has ~30 panels. At one panel per sprint, that is 30 sprints. Is that realistic?"** — Migration cost reality. Answer: panels are not equal effort; the File tab + Debug tab are the prototype. Once the shim and binding policy are stable, a typical panel is 1–3 days. The strangler-fig pattern means *no big-bang freeze* — partial migration ships. The architecture's value is that this is even possible; whether it is *finished* is a roadmap decision for the maintainer team. **Trap:** committing to a timeline.
+
+#### B.2.5 — Trade-offs & risk (Section 6 — 5 min slot)
+
+- **Q: "What is the runtime cost of the indirection — interface dispatch, async, INPC events?"** — Perf pressure. Answer: interface dispatch on .NET is virtually free (one vtable lookup, JIT-inlined where monomorphic); INPC is one delegate invocation per change; async is the Task allocation. None matter on UI thread frequencies (~60 Hz). The cost is dwarfed by FITS I/O. **Trap:** dismissing perf — the panel cares about large-cube load times. Name the dominator (I/O).
+
+- **Q: "MVVM ceremony — `INotifyPropertyChanged` boilerplate is hated for a reason. What is your concrete plan?"** — Adoption pain. Answer: `mvvm-binding-policy.md` §1.1 — three options: hand-rolled (canonical example), `CommunityToolkit.Mvvm.SourceGenerators` (`[ObservableProperty]` attribute, no boilerplate), or a base class with `SetField<T>`. Decision pending Day 9; current skeletons use hand-rolled for clarity. **Trap:** claiming source-gen is decided. It is not.
+
+- **Q: "Cognitive load — your design has 3 assemblies, 6 interfaces, a binder, an ACL, a composition root. Is a first-year cohort going to follow this?"** — Adoption / teachability. Answer: Slide 6.4. Each concept maps to exactly one *named file* — skeletons are the convention exemplar. PR checklist (`mvvm-binding-policy.md` §10.3) makes the rules reviewer-facing. The complexity is upfront; the *per-panel* cost is "copy the skeleton, rename, run checklist". **Trap:** "it is not that complex". It is — own the complexity, name the mitigation.
+
+- **Q: "You list 14 evidence gaps. Which one would *kill* this pitch if challenged hard?"** — Honest self-assessment. Answer: **Gap #1 — DV8/NDepend cycle report on the 8-class slice**, due Day 10. Without it, §4.2 #2 (no cycles) is "suspected fail" — and the panel can refuse to grade the proposal as passing the constraint. Quality Champion owns it. Day 10 is hard. **Trap:** picking a soft gap. Pick the load-bearing one.
+
+#### B.2.6 — Cross-team & integration
+
+- **Q: "How does Sub-team 4 (VR menus) reuse your ViewModels?"** — Reuse claim under pressure. Answer: ARQ-3 in `requirements.md` §4 — ViewModel surface is pure C#, callable from VR menu code (which is Unity-side, but a *different* View) without modification. The interface that lets VR menus open a file is `IFileService` — the same one our `FileTabViewModel` consumes. **Trap:** claiming the View is shared. It is not — only the ViewModel and below.
+
+- **Q: "Sub-team 7 (Persistence). What does your slice contribute to workspace state?"** — D13 deliverable. Answer: every ViewModel exposes a JSON-serialisable `State` DTO. Persistence reads/writes those DTOs without touching Unity. The state contract is delivered to Sub-team 7 by Day 9 (sprint plan §8.2 exit criterion). **Trap:** "Persistence is their problem". Name our contribution (the DTOs).
+
+- **Q: "The Architecture Guild — what cross-cutting commitments did your sub-team make there?"** — §10.1 Layer 3. Answer: TL sits on Architecture Guild daily. Our commitments: (i) `IServiceGateway` consumer signature stability across our 8 classes, (ii) zero `UnityEngine` reach into Gateway-facing types, (iii) Day 8 integration review participation, (iv) per-PR NDepend rule conformance. Recorded in integration risk register R01–R03. **Trap:** "we attend the meetings". Name the commitments.
+
+#### B.2.7 — Process, AI, defensibility (§10.5)
+
+- **Q: "Show me a paragraph from the report and tell me which sentences are AI-touched."** — §10.5 #3 + the verbatim-AI clause. Answer: Open T8 log. The AI-assisted scaffolding is named per artefact. Worked example: the ADR-0001 *Context* section was AI-scaffolded; the *Decision* and *Alternatives* sections were human-authored from the start (the alternatives required named-rejection judgement AI consistently muffed). **Trap:** "AI did not touch this paragraph" if it did. The panel can re-prompt the same model and compare cadence.
+
+- **Q: "Your role rotation — who held Tech Lead in which sprint?"** — §10.1. Answer: by stand-up notes / role log. Sprint 1 TL: <name>. Sprint 2 TL: <name>. Sprint 3 TL: <name>. Each TL signs the architecture artefacts of their sprint. [EVIDENCE-GAP-B.2.7a — confirm role roster before Day 12.] **Trap:** "we do not remember". Have the table.
+
+- **Q: "Daily stand-up notes — show me yesterday's."** — §9.2.6 audit. Answer: open the shared file (path?), show yesterday's entry. **Trap:** finding out at the pitch that the file is stale.
+
+- **Q: "Peer rating is confidential and AI-prohibited (§10.5 #6). Confirm you did not use AI for it."** — Policy compliance. Answer: confirm cleanly. The peer rating is in Brightspace; AI was not used. Same for individual reflections. **Trap:** rambling. One sentence, no qualifiers.
+
+#### B.2.8 — Panel-specific angles (iDaVIE maintainer hot buttons)
+
+- **Q: "Large FITS cubes can be tens of gigabytes. Does your interface assume in-memory data?"** — Domain reality. Answer: no. `IFileService.OpenAsync` returns a *handle* DTO (`DatasetHandle`), not bytes. Slices, axes, and subset reads are separate calls. The native plug-in keeps the cube; the client side only sees metadata + the slices it requested. This matches the existing iDaVIE architecture. **Trap:** "we did not consider it". It is the first question.
+
+- **Q: "The native plug-in is C++. Your interface is async C#. Where does the marshalling happen, and what is your cancellation story?"** — Real interop pain. Answer: `FitsServiceAdapter` is the only class that holds `[DllImport]`. Cancellation: `IFileService.OpenAsync(path, CancellationToken)`. The adapter polls the token between native calls (the native side itself is not cancellable mid-call, which is a known limitation we inherit, not introduce). Documented in ADR-0003 §Consequences [EVIDENCE-GAP-B.2.8a — confirm once ADR-0003 lands]. **Trap:** claiming we cancel mid-native-call. We do not.
+
+- **Q: "VR side already uses a different menu system. Are you proposing to replace that too?"** — Scope creep probe. Answer: no. VR menus are Sub-team 4's scope (§6.4). Our deliverable is the *desktop* client shell. The ViewModels are *reusable* from VR menu code, which is the architectural value; whether the VR side adopts them is Sub-team 4's call. **Trap:** offering to refactor VR. Out of scope.
+
+- **Q: "You named SteamVR in §4.2 #3 but the desktop client does not run SteamVR. Why does this constraint apply to you?"** — Constraint pedantry. Answer: it applies because shared code (e.g., `Valve.VR` types in `CanvassDesktop` today) bleeds across the desktop/VR boundary in the current codebase. Our split removes that — the ViewModel layer references neither `UnityEngine` nor `Valve.VR`. The constraint is sub-team-relevant because we are the *enforcers* of the boundary. **Trap:** "it does not really apply". It does.
+
+- **Q: "The current `CanvassDesktop` has worked for five years. Why fix it now?"** — The classic incumbent defence. Answer: incident risk (Slide 1.4 — the `UpdateMaxValue` bug). Scaling cost (every new panel deepens the god class). Strategic driver (the brief — §1.2 says Unity 6 + Python console + workspace persistence — none of those are tractable on the current shape). The current code has worked *despite* its structure, not *because* of it. **Trap:** sounding like we are insulting the original authors. Frame as "code that worked is allowed to need refactoring as the world changes".
+
+---
+
+### B.3 — Hostile / curveball questions
+
+These are the questions designed to break composure or expose unfounded confidence. Each has a one-sentence answer; if asked, do not elaborate beyond that sentence unless invited.
+
+- **Q: "Isn't this just textbook MVVM? Where is the *novelty*?"** — **A:** Novelty is not the assessment criterion (LO4: *apply* SOLID/GRASP, not invent). The right architecture for this code is well-known; the work is in showing the §4.2 constraints *force* this shape and the CK numbers *deliver* on it.
+
+- **Q: "If your design is so good, why did the maintainers not write it that way?"** — **A:** Hindsight. The original code shipped under different constraints (Unity 5, no UI Toolkit, single-client assumption). The brief now asks "given today's constraints, what does the shape look like" — that is what we did. We are not critiquing past judgement; we are responding to current requirements.
+
+- **Q: "You cite Robert Martin a lot. What is your *strongest* critique of him?"** — **A:** SRP's "single reason to change" framing is operationally vague — multiple readers disagree on what counts as a "reason". The "actor" framing (Martin 2017) is sharper; we use that one. Beyond that, the SOLID acronym sometimes obscures that ISP and DIP do most of the real work; SRP is more rhetoric than rule.
+
+- **Q: "Pick the slide you would cut if you had only 30 minutes."** — **A:** Slide 2.6 (concern map redistribution). It is supporting evidence for Slide 2.2; if compressed, 2.2 carries the load and 2.6 lives in the appendix. (Do not cut a Section 3 / 4 slide — the brief allocates 12 min to worked examples.)
+
+- **Q: "Did AI write your slides?"** — **A:** AI drafted scaffolding; humans authored the load-bearing prose (ADR Decisions, Alternatives, speaker notes). T8 log details what AI touched and where it failed.
+
+- **Q: "Your sub-team is allocated to 'Desktop GUI and Client Shell'. The brief lists you as Sub-team 5 (Die Boks) in §5.5 but you call yourselves Sub-team 6. Why?"** — **A:** §5.5 numbers are *allocation IDs*; §6.x numbers are *work-package IDs*. We are allocation 5, work package 6. We refer to "Sub-team 6" because that is the work package we read; we are formally Die Boks / Sub-team 5 in cohort coordination. (Resolved 2026-05-19 — see CLAUDE.md project header.)
+
+- **Q: "I don't believe your CK projections. Re-derive WMC for `FileTabViewModel` from first principles, live."** — **A:** WMC is the sum of method complexities (CC). The skeleton lists ~12 methods, each cyclomatic complexity 1–2 (no nested branching in the ViewModel — the validation logic lives in `SubsetBoundsViewModel`). Sum is ~15. We rounded to ~12 in the projection. If the live re-derivation gives 15, the projection is conservative-by-3, still well under the threshold of 20.
+
+- **Q: "What is one thing about your design you are uncertain about?"** — **A:** The `IUIDispatcher` abstraction may be heavier than necessary if UI Toolkit's binding system already marshals to the UI thread reliably under all event sources. We carry the abstraction because the Unity 2021 path (without UI Toolkit) needs it; once we are Unity-6-only it may simplify. Open question for Sprint 3.
+
+- **Q: "Can you defend a paragraph from `mvvm-binding-policy.md` chosen at random?"** — **A:** Yes — every section author is named (Gap #13). Whichever member is asked, navigate to the section, read the claim, then point at the binding rule that operationalises it.
+
+- **Q: "Your retro notes say sprint 1 was 'rough'. What went wrong and what changed?"** — **A:** Whatever the retro actually says (read it before the pitch). Be specific; do not generalise. [EVIDENCE-GAP-B.3a — re-read `docs/sub-team-6/deliverables/Sprint-Documents/week1-sprint-retro.md` Day 12 morning before the pitch.]
+
+---
+
+### B.4 — Honest "we do not know" answers
+
+Questions for which the right answer is to acknowledge a gap cleanly. The panel rewards calibrated uncertainty over false confidence (§4.2 #1 *or documented trade-off*).
+
+- "What is your propagation cost (DV8) number?" — Owed by Day 12 (DV8 sprint snapshot). Quality Champion is the owner.
+- "What is your mocking-difficulty count today on `CanvassDesktop`?" — Owed by Day 9 (Gap #10, BNCH-6 audit).
+- "Show me the C4 Level 1 diagram for your slice." — PlantUML source owed by Day 8 (Gap #2). Acknowledge openly.
+- "What is your runtime overhead from the indirection layer?" — Not measured. Argued from first principles (B.2.5). Measurement is post-pitch work if pursued.
+- "Does the strangler-fig migration cause UI inconsistencies for the user?" — Yes, temporarily, panel-by-panel. The mitigation is the order in which panels migrate (File / Debug first because they are textual, Render last because it shares OpenGL state). Order is in ADR-0003 [EVIDENCE-GAP-B.4a — confirm once ADR lands].
+
+---
+
+### B.5 — Speaker roster for Q&A (who fields which class of question)
+
+Per §10.5 #4 — every member must be able to defend the slides assigned to them. The roster below names the *primary* fielder; a backup is implied (whoever else is on stage).
+
+| Question class | Primary | Backup | Rationale |
+|---|---|---|---|
+| Architecture / ADRs / C4 / transport | TL | SM | Sprint TL signs architecture artefacts |
+| CK numbers / SonarQube / NDepend output | QC | TL | Quality Champion owns metrics |
+| NFRs / requirements traceability | POL | TL | PO Liaison owns requirements ↔ NFRs |
+| Process / role rotation / stand-ups / AI log | SM | POL | SM owns ceremony cadence and T8 entries |
+| Worked example code / skeletons | TL | QC | TL authors the skeletons |
+| Test strategy / coverage gates | QC | TL | Quality Champion owns testability metrics |
+| Cross-team dependencies / risk register | TL | SM | TL sits on Architecture Guild |
+| Trade-off slides / "what would you cut" | SM | TL | SM has the team-narrative perspective |
+
+[EVIDENCE-GAP-B.5a] — confirm against the Sprint 3 role allocation (CLAUDE.md mentions sprint-rotated roles; the *current* sprint's holders are the day-of fielders). Owner: SM. Due: Day 12.
+
+---
+
+### B.6 — What we will *not* say
+
+Phrases to bank-avoid in Q&A. Each has been a known anti-signal in past assessments of this kind:
+
+- "I think…" — replace with "the slide claims, and the evidence is…"
+- "AI wrote it" — never; T8 names *which artefact* and *where*.
+- "We did not have time" — replace with "out of scope per §6.6" or name the deliberate de-scope.
+- "It works in practice" — we have no production trial; do not claim one.
+- "Trivially" — nothing in this design is trivial; the panel will press.
+- "Obviously" — if obvious, the panel would not be asking.
+- "Maybe / probably" — convert to "the open question is…" with a date.
+- "We are still figuring it out" — convert to "decision is owed by Day X, named in `…`".
+
+---
+
+[EVIDENCE-GAP-B.2.3a] — Confirm `FileTabViewModel` skeleton method list against committed `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs`. Owner: TL. Due: Day 9.
+[EVIDENCE-GAP-B.2.3b] — `mvvm-binding-policy.md` §6 (lifecycle) fully written, including IDisposable contract for ViewModels with stream subscriptions. Owner: TL. Due: Day 8.
+[EVIDENCE-GAP-B.2.7a] — Role rotation table (who held SM/TL/POL/QC across sprints 1–3). Owner: SM. Due: Day 12.
+[EVIDENCE-GAP-B.2.8a] — Cancellation contract for native interop in ADR-0003 §Consequences. Owner: TL. Due: Day 8 (rolls into Gap #6).
+[EVIDENCE-GAP-B.3a] — Re-read week-1 retro the morning of the pitch; have one specific lesson ready. Owner: every member. Due: Day 12 evening.
+[EVIDENCE-GAP-B.4a] — Panel migration order documented in ADR-0003. Owner: TL. Due: Day 8.
+[EVIDENCE-GAP-B.5a] — Day-of role roster. Owner: SM. Due: Day 12.
+
+---
+
+## Cross Reference
 
 - ADR-0001 — `docs/sub-team-6/adrs/0001-mvvm-split.md`
 - ADR-0002 — `docs/sub-team-6/deliverables/D2-Architecture/client-server-transport.md`
