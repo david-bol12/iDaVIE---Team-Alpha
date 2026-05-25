@@ -29,7 +29,7 @@ This directory is the single source of truth for our sub-team's design proposal 
 |---|---|---|
 | Sub-team Scrum Master | Con Kirby | 09:00 stand-up, sub-team Kanban, impediments |
 | Sub-team Tech Lead | Mark Geary | Technical decisions, 09:15 cross-sub-team stand-up, Architecture Guild |
-| Sub-team PO Liaison | Jimmy Frostings | Translate Team PO priorities, owns sub-team backlog |
+| Sub-team PO Liaison | Jimmy Frosting | Translate Team PO priorities, owns sub-team backlog |
 | Sub-team Quality Champion | Rory Harrington | Metrics, CI status, baseline benchmark, Quality Guild |
 
 
@@ -37,10 +37,10 @@ This directory is the single source of truth for our sub-team's design proposal 
 
 | Role | Name | Responsibilities |
 |---|---|---|
-| Sub-team Scrum Master | _(fill in)_ | 09:00 stand-up, sub-team Kanban, impediments |
-| Sub-team Tech Lead | _(fill in)_ | Technical decisions, 09:15 cross-sub-team stand-up, Architecture Guild |
-| Sub-team PO Liaison | _(fill in)_ | Translate Team PO priorities, owns sub-team backlog |
-| Sub-team Quality Champion | _(fill in)_ | Metrics, CI status, baseline benchmark, Quality Guild |
+| Sub-team Scrum Master | Jimmy Frosting | 09:00 stand-up, sub-team Kanban, impediments |
+| Sub-team Tech Lead | Con Kirby | Technical decisions, 09:15 cross-sub-team stand-up, Architecture Guild |
+| Sub-team PO Liaison | Rory Harrington | Translate Team PO priorities, owns sub-team backlog |
+| Sub-team Quality Champion | Mark Geary | Metrics, CI status, baseline benchmark, Quality Guild |
 
 ## Roles — Sprint 3 (Days 1–5, 2-5 June 2026)
 
