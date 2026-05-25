@@ -82,17 +82,17 @@
 
 ## 2026-05-25 (Day 6 — Mon) — Sprint 2 Day 1 — Sprint 2 planning
 
-**Present:** 
+**Present:** Jimmy, Con, Rory, Mark
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Jimmy | Sprint 1 review & retro | Sprint 2 task coordination | None |
+| Con | Sprint 1 review & retro | _(assigned role/task)_ | None |
+| Rory | Sprint 1 review & retro | _(assigned role/task)_ | None |
+| Mark | Sprint 1 review & retro | _(assigned role/task)_ | None |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- Divided Sprint 2 tasks and assigned roles to each team member.
 
 **Raised at 09:15 cross-sub-team stand-up:**
 - _(items the SM took up)_
