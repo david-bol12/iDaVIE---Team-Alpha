@@ -21,14 +21,22 @@ The harness covers, in one run, all three of the Linux-port source fixes:
 ```
 iDaVIE---Team-Alpha/
 ├── native_plugins_cmake/
-│   └── build/libidavie_native.so   <- the plugin
+│   └── build/libidavie_native.so       <- the plugin
 └── tests/
     ├── CMakeLists.txt
-    ├── test_fits_reader.cpp
-    └── build/test_fits_reader      <- the harness
+    ├── LAYOUT.md                       <- contributor docs (what tests go where)
+    ├── test_fits_reader.cpp            <- cfitsio coverage
+    ├── test_ast_tool.cpp               <- AST smoke (WCS roundtrip)
+    ├── test_data_analysis_tool.cpp     <- analysis smoke (FindMaxMin/FindStats)
+    └── build/                          <- the three harness binaries
 ```
 
-The harness's `BUILD_RPATH` points at `native_plugins_cmake/build/`, so it
+There is one binary per native translation unit. The `SKIP_RETURN_CODE 77`
+hook in `CMakeLists.txt` is kept available so future stub binaries can
+return 77 to appear as Skipped rather than Passed. See `LAYOUT.md` for
+the rationale and the scope of each binary.
+
+Each binary's `BUILD_RPATH` points at `native_plugins_cmake/build/`, so it
 locates the `.so` at run time without `LD_LIBRARY_PATH`.
 
 ## Prerequisites
@@ -76,33 +84,53 @@ shared libraries. This flag does exactly that and nothing else.
 
 ## Run
 
-From `tests/`:
+CTest must be invoked from the **build directory**, not from `tests/` — it
+looks for `CTestTestfile.cmake` in the current dir, which only exists inside
+`build/`. Running `ctest` from `tests/` itself gives `No test configuration
+file found!`.
 
 ```bash
-./build/test_fits_reader <path-to-cube.fits>
+cd tests/build
+ctest --output-on-failure
 ```
 
-A small sample cube ships with the repo:
+Or stay in `tests/` and point CTest at the build dir explicitly
+(CMake 3.20+):
 
 ```bash
-./build/test_fits_reader ../Data/SampleData/test_volume.fits
+ctest --test-dir build --output-on-failure
+```
+
+This builds nothing; it just runs each harness against the bundled sample
+cube (`Data/SampleData/test_volume.fits`). Pending stub binaries report as
+`Skipped`, real failures as `Failed`. To run only one, use the `-R` regex:
+
+```bash
+ctest -R fits_reader --output-on-failure
+```
+
+To run a single harness directly (e.g. for a different fixture, or to read
+its stdout in full):
+
+```bash
+./test_fits_reader ../../Data/SampleData/test_volume.fits
 ```
 
 If the rpath ever breaks (e.g. the plugin `.so` moves), fall back to:
 
 ```bash
-LD_LIBRARY_PATH=../native_plugins_cmake/build \
-    ./build/test_fits_reader <cube.fits>
+LD_LIBRARY_PATH=../../native_plugins_cmake/build \
+    ./test_fits_reader <cube.fits>
 ```
 
-The harness takes exactly one argument (the FITS path) and prints to stdout.
-Exit codes:
+Each harness takes exactly one argument (the FITS path). Exit codes:
 
 | code | meaning                                      |
 |------|----------------------------------------------|
 | 0    | every step succeeded                         |
 | 1    | a plugin call failed (cfitsio status logged) |
 | 2    | wrong argument count                         |
+| 77   | pending stub — not yet implemented (CTest treats this as Skipped) |
 
 ## Expected output
 
