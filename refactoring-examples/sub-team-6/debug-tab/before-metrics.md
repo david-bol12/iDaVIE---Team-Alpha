@@ -215,9 +215,9 @@ The after-state proposal splits `DebugLogging` into four classes (skeletons at `
 |---|---|---|---|---|
 | `UnityLogStreamAdapter` | Subscribe to `Application.logMessageReceived`; translate to `ILogStream.Publish` | ~3 | 3 (`Application`, `LogType`, `ILogStream`) | < 0.30 |
 | `LogStream` | Thread-safe `ILogStream` impl; `ObservableCollection<LogEntry>` | ~4 | 2 (`LogEntry`, `ILogObserver`) | < 0.30 |
-| `DebugTabViewModel` | Subscribe `ILogStream`; expose `IReadOnlyList<LogEntry>` + `AutoScrollEnabled` | ~5 | 3 (`ILogStream`, `LogEntry`, `IDebugTabViewModel`) | < 0.40 |
+| `DebugTabViewModel` | Subscribe `ILogStream` via `ILogObserver`; expose `IReadOnlyList<LogEntry>` + `ClearEntries` | ~6 | 3 (`ILogStream`, `LogEntry`, `IDebugTabViewModel`) | < 0.40 |
 | `DebugTabView` (Unity) | Bind to ViewModel; update `ListView`; wire Save button | ~4 | 4 (`DebugTabViewModel`, `TMP_InputField`, `Scrollbar`, `Button`) | < 0.30 |
-| **Totals** | | **~16** (↓ 24 % from 21) | **≤ 4 per class** (↓ from 12 in single class) | **all ✅** |
+| **Totals** | | **~17** (↓ 19 % from 21) | **≤ 4 per class** (↓ from 12 in single class) | **all ✅** |
 
 WMC reduction comes primarily from extracting the log-rotation block (`Start()` CC = 9)
 into a dedicated `LogFileRotator` class (not yet written; planned for after-state architecture doc).
