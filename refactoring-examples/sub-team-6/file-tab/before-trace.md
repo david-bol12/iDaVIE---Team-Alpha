@@ -2,7 +2,9 @@
 
 Raw code-side trace of the production behaviour as of branch `team6`. Every message below is anchored to a file and line in the live codebase so the resulting sequence diagram is defensible at the maintainer panel.
 
-The full sequence diagram pairs this trace with a GUI walkthrough (the user-visible clicks, dialogs, panels). Sections marked **[GUI WALK]** are gaps to be filled by the walkthrough capture.
+User-visible controls (button labels, panel names, scene-file line numbers) are taken from `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/file-tab-info-docs/file-tab-scope.md` §§1, 5, 7, which is anchored to `Assets/Scenes/ui.unity` line numbers — not invented.
+
+The compiled PlantUML diagram lives next to this trace at `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/file-tab-design/before-sequence.puml`.
 
 ---
 
@@ -27,11 +29,11 @@ The full sequence diagram pairs this trace with a GUI walkthrough (the user-visi
 
 | # | Message | Source citation | Notes / smell |
 |---|---|---|---|
-| A1 | **[GUI WALK]** User clicks **File → Open** | scene asset | Need walkthrough: which menu / button label exactly |
-| A2 | `OpenButton.onClick → CanvassDesktop.BrowseImageFile()` | `CanvassDesktop.cs:306` | Wiring lives in Inspector, not code → untestable in pure C# |
+| A1 | User clicks **Browse Image** button on the `InformationPanel` of `FileLoadCanvassDesktop` | scope §1 (label) + `ui.unity:35799` (canvas) + `ui.unity:59619` (panel) | There is no user-facing "File" tab — the workflow opens on a modal canvas (see scope §"Terminology note") |
+| A2 | `BrowseImageButton.onClick → CanvassDesktop.BrowseImageFile()` | `CanvassDesktop.cs:306` | Wiring lives in Inspector, not code → untestable in pure C# |
 | A3 | `CanvassDesktop` reads `PlayerPrefs.GetString("LastPath")` | `CanvassDesktop.cs:309` | Direct global state read |
-| A4 | `CanvassDesktop → StandaloneFileBrowser.OpenFilePanelAsync(..., callback)` | `CanvassDesktop.cs:317` | Async, returns immediately; callback invoked when user picks a file |
-| A5 | **[GUI WALK]** Native OS file picker appears; user selects `*.fits` | SFB plug-in | Walkthrough: confirm dialog title, default folder |
+| A4 | `CanvassDesktop → StandaloneFileBrowser.OpenFilePanelAsync(..., callback)` | `CanvassDesktop.cs:317` | Async, returns immediately; callback invoked when user picks a file. Extension filter built in same call: `.fits` / `.fit` |
+| A5 | Native OS file picker appears (title "Open File", filter "FITS \| *.fits;*.fit"); user selects a cube file | `CanvassDesktop.cs:317` (filter args) — SFB does not expose a title string back to us | Default folder = the persisted `"LastPath"` from A3 |
 | A6 | `StandaloneFileBrowser → callback(paths)` | `CanvassDesktop.cs:317–326` | Callback closes over `CanvassDesktop` instance |
 | A7 | `callback → CanvassDesktop._browseImageFile(paths[0])` | `CanvassDesktop.cs:324` (call) / `:329` (def) | Private method, mixed concerns |
 | A8 | `CanvassDesktop → FitsReader.FitsOpenFile(out fptr, _imagePath, out status, true)` | `CanvassDesktop.cs:349` | **★ The smell.** Direct call to native-plugin wrapper from the UI layer |
@@ -44,7 +46,7 @@ The full sequence diagram pairs this trace with a GUI walkthrough (the user-visi
 | A15 | `CanvassDesktop.UpdateHeaderFromFits(fptr)` | `CanvassDesktop.cs:405` | Further DLL calls inside (header keyword reads) — collapse into one message |
 | A16 | `CanvassDesktop → FitsReader.FitsCloseFile(fptr, out status)` | `CanvassDesktop.cs:407` | Manual lifetime management of unmanaged handle |
 | A17 | `CanvassDesktop.IsLoadable()` validates axis count | `CanvassDesktop.cs:410, 431` | Inline domain rule |
-| A18 | **[GUI WALK]** Loading button becomes interactable; subset selector appears | `CanvassDesktop.cs:412–415` | Walkthrough: which panel updates visibly |
+| A18 | `Loading_container/Button` (label "Load") becomes interactable; `SubsetSelection_container` is shown | `CanvassDesktop.cs:412–423` + scope §7 (Find paths) | Both controls live under `informationPanelContent` — the same modal canvas opened at A1 |
 
 **At end of Phase A:** the FITS file has been opened, its metadata inspected, the native handle closed, and the UI is primed. **No cube exists yet.** User must click a second button.
 
@@ -54,7 +56,7 @@ The full sequence diagram pairs this trace with a GUI walkthrough (the user-visi
 
 | # | Message | Source citation | Notes / smell |
 |---|---|---|---|
-| B1 | **[GUI WALK]** User clicks the **Load** button in the File tab | scene asset | Walkthrough: confirm label & location |
+| B1 | User clicks the **Load** button (`Loading_container/Button` on `informationPanelContent`) | scope §1 (label) + scope §7 (Find path) | Same modal canvas opened at A1; not a tab in the main `Tabs_ container` |
 | B2 | `LoadButton.onClick → CanvassDesktop.LoadFileFromFileSystem()` | `CanvassDesktop.cs:927` | Inspector-wired |
 | B3 | `CanvassDesktop.StartCoroutine(LoadCubeCoroutine(_imagePath, _maskPath, hdu))` | `CanvassDesktop.cs:929` | Unity coroutine — diagram needs `activate` bar to show async lifetime |
 | B4 | `LoadCubeCoroutine`: shows progress bar, `CheckMemSpaceForCubes(...)` | `CanvassDesktop.cs:1015–1022` | Domain check (RAM vs cube size) in UI class |
@@ -70,10 +72,10 @@ The full sequence diagram pairs this trace with a GUI walkthrough (the user-visi
 | B14 | `VolumeDataSetRenderer._startFunc()` runs — texture upload, GPU resources | `VolumeDataSetRenderer.cs:358` | Internal to renderer (sub-team 3 owns the detail). Diagram should treat as one message and one return |
 | B15 | Polling loop in caller: `while (!volDSRender.started) yield return WaitForSeconds(0.1f)` | `CanvassDesktop.cs:1116–1119` | **Smell:** busy-wait via yield — async-as-pseudo-sync |
 | B16 | `volDSRender.started = true` set when renderer finishes init | `VolumeDataSetRenderer.cs:541` | Signals visibility |
-| B17 | **[GUI WALK]** Cube appears in the scene | `volDSRender` GameObject is now active and rendered | Walkthrough: confirm any animation, loading text disappearance |
+| B17 | Cube appears in the scene; `LoadingText` and `progressBar` are hidden by `postLoadFileFileSystem` shortly after | `CanvassDesktop.cs:962–963` + `VolumeDataSetRenderer.cs:541` | No transition animation in source — the cube simply pops in once `started == true` |
 | B18 | `CanvassDesktop.postLoadFileFileSystem()` | `CanvassDesktop.cs:935, called at :1131` | Final UI sync |
 | B19 | Inside `postLoadFileFileSystem`: hides `LoadingText`, `progressBar`, `WelcomeMenu`; enables Rendering/Stats/Sources/Paint tab buttons; auto-invokes `Stats_Button.onClick` | `CanvassDesktop.cs:962–976` | UI cascade — collapse to one self-message in diagram |
-| B20 | **[GUI WALK]** Welcome menu disappears, tabs come alive, Stats tab is shown | — | Walkthrough confirms |
+| B20 | `WelcomeMenu` is hidden; `Rendering_Button` / `Stats_Button` / `Sources_Button` / `Paint_Button` become interactable; `Stats_Button.onClick.Invoke()` auto-selects the Stats tab | `CanvassDesktop.cs:964, 966–976` | These four button names are the *only* user-facing tabs (scope §"Terminology note") |
 
 **At end of Phase B:** the cube is rendered and the desktop UI is in its "loaded" state.
 
@@ -105,8 +107,13 @@ Convert each row above to a `sequenceDiagram` message:
 
 ---
 
-## What's missing before this can become the final diagram
+## Status
 
-1. **GUI walkthrough notes** to fill the `[GUI WALK]` rows (A1, A5, A18, B1, B17, B20). Capture: exact button labels, menu paths, panels that appear/disappear, screenshots of key moments.
-2. Decision: single combined diagram (Phase A + B) or two diagrams. Recommend one combined diagram with a `Note` separator — keeps the "two-click" reality of the current UX visible, which itself is part of the proposal's argument.
-3. Once Mermaid is drafted, save as `before-sequence.md` in this folder. This trace doc stays as `before-trace.md` for the panel evidence.
+- [x] **GUI rows resolved** — labels and panel names sourced from `file-tab-scope.md` §§1, 5, 7 (which is anchored to `ui.unity` line numbers). No live Unity capture was needed.
+- [x] **Diagram drafted** — single combined Phase A + Phase B diagram at `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/file-tab-design/before-sequence.puml`. Kept as one diagram with a `==` separator so the "two-click" UX (Browse Image → Load) stays visible — that two-click split is itself an argument the proposal will use.
+- [x] **Notation** — PlantUML, consistent with the sibling class diagrams (`before-class-diagram.puml`, `after-class-diagram.puml`) and the existing `after-debug-sequence-diagram.puml`. Satisfies Section 10.4 (text-based, source-controlled).
+
+## Optional next refinements (not blocking)
+
+1. **Screenshot strip** for the pitch deck — five frames: Browse Image button highlighted, file picker open, file picked + Load enabled, cube appearing, Stats tab auto-selected. Not required for the artefact freeze, but a strong visual anchor for the 12-min worked-examples slot.
+2. Render the `.puml` to SVG and commit alongside (Section 10.4 still requires the text source to be authoritative; the SVG is a convenience for the slide deck).

@@ -18,30 +18,36 @@ namespace iDaVIE.Desktop.Adapters.FileTab
     /// <summary>
     /// Concrete adapter for <see cref="IFitsService"/>.
     /// All P/Invoke calls are confined here — no IntPtr escapes this class.
-    /// The ViewModel receives only plain <see cref="FitsFileInfo"/> DTOs.
+    /// The ViewModel receives only plain <see cref="FitsFileInfo"/> DTOs that
+    /// carry an opaque <see cref="IFitsHandle"/> for subsequent HDU reads.
     ///
     /// Replaces the scattered FitsReader calls in CanvassDesktop._browseImageFile
-    /// (lines 349–407) and UpdateHeaderFromFits (lines 539–568).
+    /// (lines 349–407), UpdateHeaderFromFits (lines 539–568), and
+    /// ChangeHduSelection (lines 1435–1465) — the last of which reopened the file
+    /// from disk on every dropdown selection.
     /// </summary>
     public sealed class FitsServiceAdapter : IFitsService
     {
         public Task<FitsFileInfo> OpenImageAsync(string path, CancellationToken ct = default)
-            => Task.Run(() => ReadFitsMetadata(path), ct);
+            => Task.Run(() => OpenAndReadMetadata(path), ct);
 
         public Task<FitsFileInfo> OpenMaskAsync(string path, CancellationToken ct = default)
-            => Task.Run(() => ReadFitsMetadata(path), ct);
+            => Task.Run(() => OpenAndReadMetadata(path), ct);
 
-        public Task<string> GetHeaderTextAsync(string path, int hduIndex, CancellationToken ct = default)
-            => Task.Run(() => ReadHeaderText(path, hduIndex), ct);
+        public Task<string> GetHeaderTextAsync(IFitsHandle handle, int hduIndex, CancellationToken ct = default)
+            => Task.Run(() => ReadHeaderText(handle, hduIndex), ct);
 
         // ── Core P/Invoke logic (thread-pool, away from Unity main thread) ────
 
-        private static FitsFileInfo ReadFitsMetadata(string path)
+        private static FitsFileInfo OpenAndReadMetadata(string path)
         {
             int status = 0;
             if (FitsReader.FitsOpenFile(out IntPtr fptr, path, out status, true) != 0)
                 throw new InvalidOperationException($"FITS open failed (status {status}): {path}");
 
+            // From here on we own fptr. On any failure path we must close it
+            // before rethrowing — only the success path passes ownership to the
+            // FitsHandle returned inside FitsFileInfo.
             try
             {
                 // 1. Enumerate HDUs for the dropdown
@@ -91,40 +97,77 @@ namespace iDaVIE.Desktop.Adapters.FileTab
                         axisSizes[axisNum] = (long)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture);
                 }
 
+                // Success: transfer ownership of fptr into the handle.
+                var handle = new FitsHandle(fptr, path);
+
+                // Cube footprint estimate — product of NAXIS sizes × sizeof(float).
+                // Replaces the FileInfo.Length + nelem*sizeof(float|short) computation
+                // in CanvassDesktop.CheckMemSpaceForCubes (lines 995-1013).
+                long estimatedBytes = sizeof(float);
+                foreach (var size in axisSizes.Values)
+                    estimatedBytes = checked(estimatedBytes * Math.Max(1, size));
+
                 return new FitsFileInfo
                 {
-                    FilePath   = path,
-                    HduList    = hduList,
-                    NAxis      = nAxis,
-                    AxisSizes  = axisSizes,
-                    HeaderText = headerSb.ToString(),
+                    Handle         = handle,
+                    FilePath       = path,
+                    HduList        = hduList,
+                    NAxis          = nAxis,
+                    AxisSizes      = axisSizes,
+                    HeaderText     = headerSb.ToString(),
+                    EstimatedBytes = estimatedBytes,
                 };
             }
-            finally
+            catch
             {
-                // Always close — no IntPtr outlives this method
+                // Failure: close the file before letting the exception escape so we
+                // do not leak the native pointer.
                 FitsReader.FitsCloseFile(fptr, out _);
+                throw;
             }
         }
 
-        private static string ReadHeaderText(string path, int hduIndex)
+        private static string ReadHeaderText(IFitsHandle handle, int hduIndex)
         {
-            int status = 0;
-            if (FitsReader.FitsOpenFile(out IntPtr fptr, path, out status, true) != 0)
-                throw new InvalidOperationException($"FITS open failed (status {status}): {path}");
+            if (handle is not FitsHandle fh)
+                throw new ArgumentException("Handle was not produced by this adapter.", nameof(handle));
+            if (fh.IsClosed)
+                throw new ObjectDisposedException(nameof(IFitsHandle));
 
-            try
+            int status = 0;
+            FitsReader.FitsMovabsHdu(fh.Ptr, hduIndex, out _, out status);
+            var headers = FitsReader.ExtractHeaders(fh.Ptr, out status);
+            var sb = new StringBuilder();
+            foreach (var kvp in headers)
+                sb.Append(kvp.Key).Append("\t\t ").Append(kvp.Value).Append('\n');
+            return sb.ToString();
+        }
+
+        // ── Handle implementation — sealed inside the adapter ─────────────────
+        //
+        // The ViewModel sees only IFitsHandle; the IntPtr never escapes this class.
+        // Dispose closes the native pointer exactly once and is safe to call twice.
+
+        private sealed class FitsHandle : IFitsHandle
+        {
+            private IntPtr _ptr;
+
+            public FitsHandle(IntPtr ptr, string filePath)
             {
-                FitsReader.FitsMovabsHdu(fptr, hduIndex + 1, out _, out status);
-                var headers = FitsReader.ExtractHeaders(fptr, out status);
-                var sb = new StringBuilder();
-                foreach (var kvp in headers)
-                    sb.Append(kvp.Key).Append("\t\t ").Append(kvp.Value).Append('\n');
-                return sb.ToString();
+                _ptr     = ptr;
+                FilePath = filePath;
             }
-            finally
+
+            public string FilePath { get; }
+
+            internal IntPtr Ptr      => _ptr;
+            internal bool   IsClosed => _ptr == IntPtr.Zero;
+
+            public void Dispose()
             {
-                FitsReader.FitsCloseFile(fptr, out _);
+                if (_ptr == IntPtr.Zero) return;
+                FitsReader.FitsCloseFile(_ptr, out _);
+                _ptr = IntPtr.Zero;
             }
         }
     }

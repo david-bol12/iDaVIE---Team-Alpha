@@ -37,15 +37,18 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             IFitsService       fitsService   = new FitsServiceAdapter();
             IFileDialogService dialogService = new FileDialogServiceAdapter();
             IVolumeService     volumeService = _volumeAdapter;
+            IMemoryProbe       memoryProbe   = new MemoryProbeAdapter();
 
-            _vm = new FileTabViewModel(fitsService, dialogService, volumeService);
+            _vm = new FileTabViewModel(fitsService, dialogService, volumeService, memoryProbe);
             _view.BindTo(_vm);
         }
 
         private void OnDestroy()
         {
-            // Null out the owning reference so the VM and its injected services
-            // become eligible for GC once the view also releases its reference.
+            // Dispose the VM first so any open FITS handles are released, then
+            // null out the owning reference so the object graph becomes eligible
+            // for GC once the view also releases its reference.
+            _vm?.Dispose();
             _vm = null;
         }
     }

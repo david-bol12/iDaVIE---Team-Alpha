@@ -9,30 +9,34 @@ namespace iDaVIE.Desktop.FileTab
     /// Domain interface for FITS file operations.
     /// Replaces direct FitsReader.FitsOpenFile / FitsGetHduCount / FitsReadKey /
     /// FitsGetImageSize calls that were scattered inside CanvassDesktop._browseImageFile,
-    /// UpdateHeaderFromFits, and IsLoadable.
+    /// UpdateHeaderFromFits, IsLoadable, and ChangeHduSelection.
+    ///
+    /// HDU index convention: all hduIndex parameters are <b>1-based</b> (FITS native),
+    /// not zero-based dropdown indices. The ViewModel converts at the boundary.
     /// </summary>
     public interface IFitsService
     {
         /// <summary>
         /// Opens a FITS image file, reads all HDU metadata and the primary header,
-        /// and returns a plain <see cref="FitsFileInfo"/> DTO.
-        /// The adapter closes the native file pointer before returning — no IntPtr leaks
-        /// across the ACL boundary.
+        /// and returns a <see cref="FitsFileInfo"/> DTO carrying an <see cref="IFitsHandle"/>
+        /// to the still-open file pointer. The handle stays open until the caller
+        /// disposes it — subsequent <see cref="GetHeaderTextAsync"/> calls reuse it
+        /// (no reopen).
         /// </summary>
         Task<FitsFileInfo> OpenImageAsync(string path, CancellationToken ct = default);
 
         /// <summary>
-        /// Opens a FITS mask file and returns its axis metadata.
+        /// Opens a FITS mask file and returns its axis metadata + open handle.
         /// FileTabViewModel compares the result against the loaded image to validate
         /// axis compatibility (replaces CanvassDesktop._browseMaskFile axis checks).
         /// </summary>
         Task<FitsFileInfo> OpenMaskAsync(string path, CancellationToken ct = default);
 
         /// <summary>
-        /// Returns the formatted header text for a specific HDU.
-        /// Called by FileTabViewModel when the user changes the HDU dropdown selection
-        /// (replaces CanvassDesktop.ChangeHduSelection + UpdateHeaderFromFits).
+        /// Returns the formatted header text for the given 1-based HDU index, reusing
+        /// the open handle. Replaces CanvassDesktop.ChangeHduSelection (line 1435) which
+        /// reopened the file from disk on every dropdown selection.
         /// </summary>
-        Task<string> GetHeaderTextAsync(string path, int hduIndex, CancellationToken ct = default);
+        Task<string> GetHeaderTextAsync(IFitsHandle handle, int hduIndex, CancellationToken ct = default);
     }
 }

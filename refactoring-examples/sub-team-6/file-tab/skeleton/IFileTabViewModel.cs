@@ -28,6 +28,15 @@ namespace iDaVIE.Desktop.FileTab
         bool SubsetEnabled { get; set; }
         SubsetBoundsViewModel Subset { get; }
 
+        // ── Aspect-ratio (Ratio_Dropdown on file-load modal) ─────────────────
+        /// <summary>
+        /// Display labels for the aspect-ratio dropdown ("X=Y=Z", "X=Y") — index-aligned
+        /// with <see cref="RatioMode"/>. Replaces the inspector-wired Ratio_Dropdown
+        /// options described in scope §10 Anomaly #5.
+        /// </summary>
+        IReadOnlyList<string> RatioModeOptions { get; }
+        RatioMode RatioMode { get; set; }
+
         // ── Computed / derived state ─────────────────────────────────────────
         /// <summary>
         /// True when the selected file is a loadable 3-D+ cube and (if a mask
