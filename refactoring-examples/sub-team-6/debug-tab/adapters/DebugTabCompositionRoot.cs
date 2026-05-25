@@ -35,8 +35,9 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
 
         private void OnDestroy()
         {
-            // Unsubscribe to prevent dead-observer memory leak during hot-reload
-            _logStreamAdapter.Unsubscribe(_vm!);
+            // DebugTabViewModel.Dispose() handles unsubscription from the log stream,
+            // preventing dead-observer leaks during scene teardown and hot-reload.
+            _vm?.Dispose();
         }
     }
 }

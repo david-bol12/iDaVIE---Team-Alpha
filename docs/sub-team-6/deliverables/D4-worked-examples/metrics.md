@@ -1,364 +1,392 @@
-# WE1-6 — File Tab + Debug Tab: CK + ISO 25010 Delta Worksheet
+# WE1-6 — CK + ISO 25010 Delta Worksheet (File Tab & Debug Tab)
 
 **Status:** Design proposal — all "after" figures are projected, not measured.  
 **Before source:** `SK_BNCH.md` (Understand static analysis export, Day 2 baseline).  
-**After source:** `after-class-diagram.puml`, `after-dependency-graph.puml`, `after-dsm.md`,  
+**After sources:** `after-class-diagram.puml`, `after-dependency-graph.puml`, `after-dsm.md`,  
 `uml-diagrams/after-debug-sequence-diagram.puml`, `refactor.md §3.2`.  
 **Feeds:** T4 (architecture report §Metrics), T7 (integration & metrics), Pitch slot 3.
 
 ---
 
-## 1. Shared Before-State Baseline
+## 0. How to Read This Document
 
-Both worked examples extract responsibility from the same God class. These are the exact
-measured numbers from `SK_BNCH.md`.
+`CanvassDesktop` is the single God class that both worked examples extract from.
+Its measured metrics (WMC = 63, CBO = 47, RFC = 118, LCOM = 0.955) are **partitioned once**
+into three non-overlapping concerns:
 
-| Metric | `CanvassDesktop` (before) | Threshold (Orchestrator) | Status |
-|---|:---:|:---:|:---:|
-| WMC | **63** | ≤ 40 | 🔴 +23 |
-| DIT | 1 | ≤ 4 | ✅ |
-| NOC | 0 | ≤ 5 | ✅ |
-| CBO | **47** | ≤ 25 | 🔴 +22 |
-| RFC | **118** | ≤ 50 | 🔴 +68 |
-| LCOM (H-S) | **0.955** | ≤ 0.50 | 🔴 |
+| Concern | What it covers | "Before" row |
+|---|---|---|
+| **File tab** | The 16 methods that handle file/mask browse, FITS header read, subset validation, and cube load | §2 |
+| **Debug tab** | The 40 `Debug.Log` call-sites embedded in existing methods — no dedicated class | §3 |
+| **Shared residual** | All remaining CanvassDesktop methods: rendering, stats, sources, paint, lifecycle, navigation | §4 |
 
-**CanvassDesktop CBO breakdown (47 types):** 23 project classes (e.g. `VolumeDataSetRenderer`,
-`FitsReader`, `DataAnalysis`, `FeatureMapping`) + 13 Unity/TMPro UI types + 7 `System.*` types +
-4 `Valve.VR` types.
+The same number does **not** appear in more than one "before" row. WMC = 63 is
+explained by 16 (file) + 0 (debug) + 47 (shared) = 63.
 
-**LCOM explanation:** 63 methods, 67 fields, only 189 field–method accesses. Methods operate on
-small, largely disjoint field subsets — textbook signature of a class that should be split.
-Three fields (`_restFrequency`, `inPaintMode`, `_tabsManager`) are declared but never accessed
-by any method (dead fields).
+**Note on class-level metrics.** WMC, RFC, and LCOM are computed by Understand at class level.
+WMC in this report = method count (uniform weight 1 per Understand methodology, confirmed by
+the LCOM section of `SK_BNCH.md`: "63 methods, 67 fields, 189 field-method accesses").
+CBO partitions are derived from source inspection and marked **[derived]**.
+RFC partitions are derived proportionally and marked **[derived]**.
+LCOM cannot be cleanly split — it is reported once in §4 for the full class.
 
 ---
 
-## 2. Worked Example 1 — File Tab
+## 1. Before-State Partition of CanvassDesktop
 
-### 2.1 Before State: File Tab Methods in CanvassDesktop
+Derived by counting methods per tab grouping and mapping the 47 CBO types to the
+concern that primarily introduces them.
 
-The 16 methods below are the File tab's responsibility slice of `CanvassDesktop`. They account
-for **~25 % of WMC** and are the primary driver of CBO through direct `FitsReader` P/Invoke,
-`StandaloneFileBrowser` callbacks, and three `FindObjectOfType<>` singleton hunts.
+| Concern | WMC (method count) | CBO types attributed [derived] | RFC [derived] | LCOM | DIT |
+|---|:---:|:---:|:---:|:---:|:---:|
+| File tab (16 methods) | **16** | **~8** | **~52** | — | — |
+| Debug tab (0 dedicated methods) | **0** | **0** | **0** | — | — |
+| Shared residual (47 methods) | **47** | **~39** | **~66** | 0.955 | 1 |
+| **CanvassDesktop total (measured)** | **63** | **47** | **118** | **0.955** | **1** |
 
-| Method | Lines (approx) | Concern | Code smell |
-|---|:---:|---|---|
-| `BrowseImageFile()` | ~5 | Wires UI button to SFB async callback | Mixed UI event + I/O dispatch |
-| `_browseImageFile(string)` | ~55 | FITS open, HDU parse, header read, subset reset | P/Invoke inside business logic; 5 `FitsReader.*` calls |
-| `IsLoadable()` | ~40 | NAXIS validation, axis-size extraction, Z-dropdown populate | Axis maths + UI manipulation in one method |
-| `UpdateHeaderFromFits(IntPtr)` | ~25 | FITS header dump to scroll-view `TextMeshProUGUI` | `IntPtr` (P/Invoke handle) crosses the UI layer |
-| `ChangeHduSelection(TMP_Dropdown)` | ~10 | Re-opens FITS file on each HDU dropdown change | Re-opens file on every switch; `IntPtr` lifetime not scoped |
-| `BrowseMaskFile()` | ~5 | Wires mask button to SFB callback | Same mixed-concern pattern as `BrowseImageFile` |
-| `_browseMaskFile(string)` | ~20 | Reads mask headers, validates axis match | Axis comparison logic embedded with UI updates |
-| `CheckImgMaskAxisSize()` | ~15 | **Dead code** — axis comparison duplicate | Duplicate of `_browseMaskFile` validation; no callers found |
-| `onSubsetToggleSelected(bool)` | ~10 | Show/hide subset row + focus first field | Pure UI, but lives in God class |
-| `setSubsetBounds()` | ~10 | Reset all 6 subset input fields to axis maxima | Updates 6 `TMP_InputField.text` strings inline |
-| `updateSubsetZMax(int)` | ~10 | Clamp Z-max when Z-axis dropdown changes | Direct field write + UI sync in same method |
-| `checkSubsetBounds(string)` | ~70 | Validate + clamp all 6 subset input fields | 18 `Debug.Log` calls; re-validates all fields on any single edit |
-| `LoadFileFromFileSystem()` | ~5 | Entry point — starts `LoadCubeCoroutine` | Trivial, but couples UI button directly to coroutine |
-| `CheckMemSpaceForCubes(string,string)` | ~15 | Calculates in-memory size vs `SystemInfo.systemMemorySize` | Checks *client* RAM for a server-owned resource |
-| `LoadCubeCoroutine(string,string,int)` | ~80 | Scene teardown, prefab instantiation, coroutine wait | File I/O + scene management + UI updates + coroutine lifecycle in one method; clearest SRP violation |
-| `postLoadFileFileSystem()` | ~40 | Post-load tab-button enables, dropdown populates, event subscriptions | Triggers 7 unrelated post-load UI side-effects |
+**File tab CBO types (~8):** Types used exclusively or primarily in the 16 file tab methods:
+`FitsReader`, `VolumeDataSetManager`, `IntPtr` (P/Invoke handle), `StringBuilder`
+(header text), `SystemInfo` (`CheckMemSpaceForCubes`), `FeatureMenuController`
+(`postLoadFileFileSystem`), `VolumePlayer` (`postLoadFileFileSystem`), `MenuBarBehaviour`
+(`postLoadFileFileSystem`).
 
-**WMC contributed by File tab slice:** 16 methods × avg cyclomatic complexity ≈ 1.5 = **~24** of CanvassDesktop's total WMC 63.
+**Debug CBO = 0:** `Debug.Log` calls use `UnityEngine.Debug`, a member of the `UnityEngine`
+namespace already counted in the shared CBO. The logging concern introduces no additional type.
 
-**CBO coupling introduced by File tab slice:**
-- `FitsReader` (5 P/Invoke call-sites)
-- `StandaloneFileBrowser` (2 async callback sites)
-- `VolumeDataSetRenderer` (direct field writes in `LoadCubeCoroutine`)
-- `VolumeCommandController`, `VolumeInputController`, `HistogramHelper` (3 `FindObjectOfType<>` in `Start()`, used by File tab post-load flow)
-- `PlayerPrefs` (last-path persistence)
-- `IntPtr`, `Marshal`, `StringBuilder` (3 System types for P/Invoke handles)
+**Shared residual CBO (~39):** All remaining types: `VolumeDataSetRenderer`,
+`VolumeCommandController`, `VolumeInputController`, `HistogramHelper`, `DataAnalysis`,
+`StandaloneFileBrowser`, `FeatureMapping`, `FeatureSetManager`, `FeatureTable`,
+`SourceMappingOptions`, `ColorMapUtils`, `Config`, all 13 Unity/TMPro UI types
+(`TMP_Dropdown`, `TMP_InputField`, `Toggle`, `Slider`, `Button`, `Sprite`, `TextMeshProUGUI`,
+`GameObject`, `Transform`, `Coroutine`, `PlayerPrefs`, `OxyPlot..*`, `Marshal`),
+all 4 Valve.VR types (`SteamVR_Init`, `OpenVR`, etc.), and remaining System types.
 
-### 2.2 After State: File Tab Successor Types [projected]
+---
 
-| Type | Layer | Inherits | WMC | DIT | NOC | CBO | RFC | LCOM | Threshold |
-|---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| `FileTabView` | View (Unity) | `MonoBehaviour` | **8** | 1 | 0 | **5** | **18** | **0.05** | WMC≤40 / CBO≤25 |
-| `FileTabViewModel` | ViewModel (pure C#) | `object` | **12** | 0 | 0 | **5** | **22** | **0.20** | WMC≤20 / CBO≤14 |
-| `SubsetBoundsViewModel` | ViewModel (pure C#) | `object` | **8** | 0 | 0 | **1** | **11** | **0.15** | WMC≤20 / CBO≤14 |
-| `FitsServiceAdapter` | Adapter (Unity asm) | `object` | **10** | 0 | 0 | **6** | **20** | **0.15** | WMC≤40 / CBO≤25 |
-| `StandaloneFileDialogAdapter` | Adapter (Unity asm) | `MonoBehaviour` | **4** | 1 | 0 | **4** | **8** | **0.05** | WMC≤40 / CBO≤25 |
-| `VolumeServiceAdapter` | Adapter (Unity asm) | `MonoBehaviour` | **6** | 1 | 0 | **7** | **13** | **0.15** | WMC≤40 / CBO≤25 |
-| `CanvassDesktop` (shell) | Composition root | `MonoBehaviour` | **8** | 1 | 0 | **4** | **12** | **0.10** | WMC≤40 / CBO≤25 |
+## 2. File Tab — Old vs New
 
-**All 7 types: 0 CK violations.**
+### 2.1 Old File Tab
 
-#### Method-count derivation
+The 16 methods below are the WE1 scope inside `CanvassDesktop`. Line numbers are from
+the current source; approximate cyclomatic complexity (CC) per method is estimated from
+branch count in the source.
 
-**`FileTabView` WMC = 8**  
-`BindTo`, `OnBrowseImageClicked`, `OnBrowseMaskClicked`, `OnLoadClicked`,
-`OnHduDropdownChanged`, `OnSubsetToggleChanged` (6 from `after-class-diagram.puml`)
-+ `OnEnable`, `OnDisable` (required for safe binding registration in Unity lifecycle).  
-All methods have cyclomatic complexity 1 (bind, unbind, or forward event). LCOM ≈ 0.05
-because every method touches the single `_vm : IFileTabViewModel` field.
+| Method | Line | CC [est.] | Concern | Code smell |
+|---|:---:|:---:|---|---|
+| `BrowseImageFile` | 306 | 1 | UI wiring → SFB async callback | Mixed UI event + I/O dispatch in one method |
+| `_browseImageFile` | 329 | 4 | FITS open, HDU parse, header read, subset reset | 5 `FitsReader.*` P/Invoke calls in business logic |
+| `IsLoadable` | 431 | 5 | NAXIS validation, axis-size extraction, Z-dropdown populate | Axis maths + UI manipulation in one method |
+| `UpdateHeaderFromFits` | 538 | 2 | FITS header dump to `TextMeshProUGUI` scroll-view | `IntPtr` (native handle) crosses the UI layer |
+| `onSubsetToggleSelected` | 575 | 2 | Show/hide subset row, focus first field | Pure UI logic sitting inside God class |
+| `setSubsetBounds` | 595 | 1 | Reset all 6 subset input fields to axis maxima | Direct `TMP_InputField.text` writes in 6 places |
+| `updateSubsetZMax` | 614 | 2 | Clamp Z-max when Z-axis dropdown changes | Direct field write + UI sync in same method |
+| `checkSubsetBounds` | 641 | 7 | Validate + clamp all 6 subset input fields | 18 `Debug.Log` calls; re-validates all 6 fields on any single field edit |
+| `BrowseMaskFile` | 807 | 1 | Wires mask button to SFB async callback | Same mixed-concern pattern as `BrowseImageFile` |
+| `_browseMaskFile` | 829 | 3 | Reads mask headers, validates axis match against image | Axis comparison logic intermixed with UI updates |
+| `CheckImgMaskAxisSize` | 905 | 2 | **Dead code** — axis comparison duplicate | Duplicate of `_browseMaskFile` logic; no callers found |
+| `LoadFileFromFileSystem` | 927 | 1 | Entry point — starts `LoadCubeCoroutine` | Couples UI button directly to coroutine handle |
+| `postLoadFileFileSystem` | 935 | 2 | Post-load tab enables, dropdown populates, event subscriptions | 7 unrelated UI side-effects triggered from one method |
+| `CheckMemSpaceForCubes` | 995 | 2 | Calculates in-memory size vs `SystemInfo.systemMemorySize` | Checks *client* RAM for what is a server-owned resource |
+| `LoadCubeCoroutine` | 1015 | 5 | Scene teardown, prefab instantiation, coroutine wait, post-load | File I/O + scene management + UI updates + coroutine lifecycle in one method |
+| `ChangeHduSelection` | 1435 | 2 | Re-opens FITS file on each HDU dropdown change | Re-opens file from disk on every switch; `IntPtr` lifetime not scoped |
 
-**`FileTabViewModel` WMC = 12**  
-`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `MaskAxesMatchImage`,
-`PopulateZAxisOptions`, `UpdateZAxisMax` (6 from diagram) + `IsLoadable` computed getter +
-constructor + `OnPropertyChanged` helper + 3 observable property setters
-(`SelectedHduIndex`, `SubsetEnabled`, `SelectedZAxisIndex`). Consistent with "WMC ≈ 12"
-annotation in `after-dependency-graph.puml`.  
-CBO = 5: `IFitsService`, `IFileDialogService`, `IVolumeService`, `SubsetBoundsViewModel`,
-`FitsFileInfo`. No `UnityEngine`, no `FitsReader`. Consistent with "CBO ≈ 5" annotation.
+**File tab WMC = 16, RFC ≈ 52** (16 methods + ~36 distinct external method calls: 9 FitsReader
+P/Invoke, 1 SFB async open, ~5 VolumeDataSetRenderer property writes, ~3 VolumeCommandController
+calls, ~10 Unity built-in calls, ~2 PlayerPrefs, ~3 post-load populate helpers, ~3 others).
 
-**`SubsetBoundsViewModel` WMC = 8**  
-`ResetToAxisMaxima`, `UpdateZAxisMax`, `ToDto` + 5 clamping property setters
-(`XMin`, `XMax`, `YMin`, `YMax`, `ZMin` — `ZMax` clamped via `UpdateZAxisMax`).  
-Replaces `checkSubsetBounds` (70 lines, 18 `Debug.Log` calls), `setSubsetBounds`,
-and `updateSubsetZMax` from `CanvassDesktop`. CBO = 1 (`SubsetBounds` DTO only).  
-LCOM ≈ 0.15 because all 8 methods access the 9 int state fields (XMin/XMax/YMin/YMax/ZMin/ZMax + MaxX/MaxY/MaxZ).
+**File tab thresholds as a virtual standalone class (Orchestrator role):**
 
-**`FitsServiceAdapter` WMC = 10**  
-`OpenImageAsync`, `OpenMaskAsync`, `GetHeaderTextAsync` (3 public, implementing `IFitsService`)
-+ constructor + 6 private helpers (`FitsOpen`, `ReadHduList`, `ReadAxisSizes`, `ExtractHeaderText`,
-`FitsClose`, `ThrowIfFitsError`). All 10 methods use the same `FitsReader` static facade —
-LCOM ≈ 0.15. CBO = 6: `FitsReader`, `FitsFileInfo`, `HduInfo`, `Task`, `CancellationToken`,
-`IFitsService`. No `UnityEngine` import needed — pure P/Invoke wrapper.
+| Metric | Value [derived] | Threshold | Status |
+|---|:---:|:---:|:---:|
+| WMC | 16 | ≤ 40 (O) | ✅ |
+| CBO | ~8 | ≤ 25 (O) | ✅ |
+| RFC | ~52 | ≤ 50 | 🔴 +2 |
 
-**`StandaloneFileDialogAdapter` WMC = 4**  
-`PickFileAsync` (public, implementing `IFileDialogService`) + constructor +
-`OnFileSelected` (private SFB callback adapter) + `PersistLastDirectory` (private).
-CBO = 4: `StandaloneFileBrowser`, `PlayerPrefs`, `Task<string?>`, `IFileDialogService`.
+The RFC barely exceeds the threshold even for the extracted slice — confirming that
+`FitsServiceAdapter` (which absorbs 9 of those 36 external calls) is the critical
+interface to introduce.
 
-**`VolumeServiceAdapter` WMC = 6**  
-`LoadCubeAsync` (public, implementing `IVolumeService`) + `IsCubeLoaded` getter +
-constructor + `RunLoadCoroutine` (private) + `OnLoadComplete` (private callback) +
-`MapRequest` (private DTO translation). CBO = 7: `VolumeCommandController`, `UnityEngine`
-(Coroutine), `LoadCubeRequest`, `IProgress<float>`, `CancellationToken`, `Task`,
-`IVolumeService`.
+### 2.2 New File Tab [projected]
 
-**`CanvassDesktop` shell WMC = 8**  
-`Awake`, `Start`, `OnDestroy` (Unity lifecycle) + constructor logic + 4 private wiring helpers
-(`WireFileTab`, `WireDebugTab`, `WireRenderingTab`, `TearDown`). No domain logic — only
-instantiation and `BindTo()` calls. CBO = 4: `FileTabView`, `DebugTabView`,
-`FileTabViewModel`, `DebugTabViewModel` (no concrete adapters — composition root receives
-them via injection).
+| Type | Layer | WMC | DIT | NOC | CBO | RFC | LCOM | Role threshold |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|
+| `FileTabView` | View (Unity) | **8** | 1 | 0 | **5** | **18** | **0.05** | WMC≤40 / CBO≤25 ✅ |
+| `FileTabViewModel` | ViewModel (pure C#) | **12** | 0 | 0 | **5** | **22** | **0.20** | WMC≤20 / CBO≤14 ✅ |
+| `SubsetBoundsViewModel` | ViewModel (pure C#) | **8** | 0 | 0 | **1** | **11** | **0.15** | WMC≤20 / CBO≤14 ✅ |
+| `FitsServiceAdapter` | Adapter (Unity asm) | **10** | 0 | 0 | **6** | **20** | **0.15** | WMC≤40 / CBO≤25 ✅ |
+| `StandaloneFileDialogAdapter` | Adapter (Unity asm) | **4** | 1 | 0 | **4** | **8** | **0.05** | WMC≤40 / CBO≤25 ✅ |
+| `VolumeServiceAdapter` | Adapter (Unity asm) | **6** | 1 | 0 | **7** | **13** | **0.15** | WMC≤40 / CBO≤25 ✅ |
+| **Total / max** | | **48 total / 12 max** | | | **28 total / 7 max** | **92 total / 22 max** | **0.20 max** | |
 
-### 2.3 File Tab CK Delta
+**All 6 types: 0 CK violations.**
 
-| Metric | Before (`CanvassDesktop`) | After (worst-case class) | Δ | Threshold met? |
+**Method derivation:**
+- `FileTabView` (WMC=8): `BindTo`, `OnBrowseImageClicked`, `OnBrowseMaskClicked`, `OnLoadClicked`, `OnHduDropdownChanged`, `OnSubsetToggleChanged` (6 from `after-class-diagram.puml`) + `OnEnable`, `OnDisable` (Unity binding lifecycle). Every method touches `_vm : IFileTabViewModel` → LCOM ≈ 0.05.
+- `FileTabViewModel` (WMC=12): `BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `MaskAxesMatchImage`, `PopulateZAxisOptions`, `UpdateZAxisMax` + `IsLoadable` computed getter + constructor + `OnPropertyChanged` + 3 observable property setters. Matches "WMC ≈ 12" annotation in `after-dependency-graph.puml`. CBO=5: `IFitsService`, `IFileDialogService`, `IVolumeService`, `SubsetBoundsViewModel`, `FitsFileInfo`.
+- `SubsetBoundsViewModel` (WMC=8): `ResetToAxisMaxima`, `UpdateZAxisMax`, `ToDto` + 5 clamping property setters. Replaces `checkSubsetBounds` (70 lines, 18 `Debug.Log` calls), `setSubsetBounds`, and `updateSubsetZMax`. CBO=1 (`SubsetBounds` DTO). Matches "WMC ≈ 8, CBO ≈ 1" annotation.
+- `FitsServiceAdapter` (WMC=10): `OpenImageAsync`, `OpenMaskAsync`, `GetHeaderTextAsync` + constructor + 6 private helpers (`FitsOpen`, `ReadHduList`, `ReadAxisSizes`, `ExtractHeaderText`, `FitsClose`, `ThrowIfFitsError`). Absorbs all 9 `FitsReader` P/Invoke calls from `CanvassDesktop`. No `UnityEngine` import needed. CBO=6: `FitsReader`, `FitsFileInfo`, `HduInfo`, `Task`, `CancellationToken`, `IFitsService`.
+- `StandaloneFileDialogAdapter` (WMC=4): `PickFileAsync` + constructor + `OnFileSelected` + `PersistLastDirectory`. CBO=4: `StandaloneFileBrowser`, `PlayerPrefs`, `Task<string?>`, `IFileDialogService`.
+- `VolumeServiceAdapter` (WMC=6): `LoadCubeAsync`, `IsCubeLoaded` getter + constructor + `RunLoadCoroutine` + `OnLoadComplete` + `MapRequest`. CBO=7: `VolumeCommandController`, `UnityEngine`, `LoadCubeRequest`, `IProgress<float>`, `CancellationToken`, `Task`, `IVolumeService`.
+
+### 2.3 File Tab Delta
+
+| Metric | Old (file tab slice) | New (worst-case class) | Δ | Threshold met after? |
 |---|:---:|:---:|:---:|:---:|
-| WMC (max per class) | 63 | 12 (`FileTabViewModel`) | **−51** | ✅ ≤ 20 |
-| CBO (max per class) | 47 | 7 (`VolumeServiceAdapter`) | **−40** | ✅ ≤ 25 |
-| RFC (max per class) | 118 | 22 (`FileTabViewModel`) | **−96** | ✅ ≤ 50 |
-| LCOM (max per class) | 0.955 | 0.20 (`FileTabViewModel`) | **−0.755** | ✅ ≤ 0.50 |
-| DIT | 1 | 1 (View / Adapters) | 0 | ✅ ≤ 4 |
-| NOC | 0 | 0 | 0 | ✅ ≤ 5 |
-
-| | Before | After | Δ |
-|---|:---:|:---:|:---:|
-| CK violations | 4 | 0 | **−4** |
-| Interfaces backing File tab APIs | 0 | 4 | **+4** |
-| Circular dependencies involving File tab | 2 cycles | 0 | **−2** |
-| Classes with `UnityEngine` in domain code | 1 | 0 | **−1** |
-| Dead methods (File tab) | 1 (`CheckImgMaskAxisSize`) | 0 | **−1** |
+| WMC (max per class) | 16 *(slice, not full class)* | **12** (`FileTabViewModel`) | −4 per class | ✅ ≤ 20 (VM) |
+| CBO (max per class) | ~8 *(exclusive types)* | **7** (`VolumeServiceAdapter`) | −1 per class | ✅ ≤ 25 (Adapter) |
+| RFC (max per class) | ~52 *(estimated slice total)* | **22** (`FileTabViewModel`) | −30 per class | ✅ ≤ 50 |
+| LCOM (max per class) | *(class-level — see §4)* | **0.20** (`FileTabViewModel`) | — | ✅ ≤ 0.50 |
+| Circular dependencies | 2 (`↔ VolumeCommandController`, `↔ DesktopPaintController`) | **0** | −2 | ✅ |
+| `UnityEngine` in domain code | Yes (`CanvassDesktop`) | **No** (ViewModel + DTO layers) | − | ✅ |
+| Interfaces backing file tab APIs | 0 | **4** (`IFileTabViewModel`, `IFitsService`, `IFileDialogService`, `IVolumeService`) | +4 | ✅ |
+| Dead methods | 1 (`CheckImgMaskAxisSize`) | **0** | −1 | ✅ |
+| File tab testable without Unity runner | 0 / 16 methods | **5 / 6 types** (`FileTabViewModel`, `SubsetBoundsViewModel`, `FitsServiceAdapter` + their tests) | +5 types | ✅ |
 
 ---
 
-## 3. Worked Example 2 — Debug Tab
+## 3. Debug Tab — Old vs New
 
-### 3.1 Before State: Logging in CanvassDesktop
+### 3.1 Old Debug Tab
 
-There is no Debug tab class in the current codebase. The "Debug tab" before-state is
-an *absence of design*: 40 `Debug.Log` / `Debug.LogWarning` / `Debug.LogError` call-sites
-embedded inline in `CanvassDesktop`'s existing methods, with no structure, no UI display,
-and no way to intercept or test them.
+There is no Debug tab class in the current codebase. The before-state is an absence of
+design: **40 `Debug.Log` / `Debug.LogWarning` / `Debug.LogError` call-sites** embedded
+inline in existing `CanvassDesktop` methods, with no structure, no UI panel, and no
+interception point for testing.
 
-**Scatter map of log call-sites in `CanvassDesktop.cs`:**
+**WMC = 0** (no dedicated methods).  
+**CBO = 0** (no additional types — `UnityEngine.Debug` is already counted in the shared CBO).
 
-| Method | Line(s) | Level | Message (abbreviated) |
-|---|---|:---:|---|
-| `_browseImageFile` | 351 | Log | `"Fits open failure... code #" + status` |
-| `_browseImageFile` | 372 | Log | `"Could not find EXTNAME or HDUNAME in HDU " + i` |
-| `IsLoadable` | 521 | Log | `"The list has " + count + " items, dropdown index " + idx` |
-| `checkSubsetBounds` | 649, 654, 659, 665 | Log | XMax: min violation, max violation, lower-bound violation, not-a-number |
-| `checkSubsetBounds` | 675, 680, 685, 691 | Log | YMax: same 4 conditions |
-| `checkSubsetBounds` | 701, 706, 711, 717 | Log | ZMax: same 4 conditions |
-| `checkSubsetBounds` | 727, 732, 737, 743 | Log | XMin: same 4 conditions |
-| `checkSubsetBounds` | 753, 758, 763, 769 | Log | YMin: same 4 conditions |
-| `checkSubsetBounds` | 779, 784, 789, 795 | Log | ZMin: same 4 conditions |
-| `_browseMaskFile` | 844 | Log | `"Fits open failure... code #" + status` |
-| `CheckMemSpaceForCubes` | 1008 | LogWarning | `"Cube and mask size ... exceed RAM size ..."` |
-| `CheckMemSpaceForCubes` | 1011 | Log | `"Loading cube and mask of size ... MB"` |
-| `LoadCubeCoroutine` | 1024 | Log | `"Loading image " + path + " and mask " + mask` |
-| `LoadCubeCoroutine` | 1047 | Log | `"Replacing data cube..."` |
-| `LoadCubeCoroutine` | 1075 | Log | `"Instantiating new cube prefab."` |
-| `LoadCubeCoroutine` | 1128 | Log | `completeMessage` |
-| `_browseMappingFile` | 1425 | LogError | `"Error while loading mapping file: " + ex.Message` |
-| `ChangeHduSelection` | 1443 | Log | `"Fits open failure... code #" + status` |
-| `LoadSourcesFile` | 1589 | Log | `"Minimal source mappings not set!"` |
-| `SetMaxMinPercentile` | 1792, 1802 | LogError | `"Error calculating percentiles from histogram/data"` |
-| `SetMaxMinPercentile` | 1806 | Log | `"Setting histogram scale min to percentiles..."` |
+**Call-site map (all 40 sites):**
 
-**Total call-sites:** 40 (24 in `checkSubsetBounds` alone, from the same 4-condition pattern
-repeated for each of the 6 subset bounds fields).
+| Method (line range) | Sites | Level(s) | Representative message |
+|---|:---:|:---:|---|
+| `_browseImageFile` (349–407) | 2 | Log | `"Fits open failure... code #" + status`; `"Could not find EXTNAME or HDUNAME in HDU " + i` |
+| `IsLoadable` (431–537) | 1 | Log | `"The list has " + count + " items, dropdown index " + idx` |
+| `checkSubsetBounds` — XMax (641–667) | 4 | Log | min violation; max violation; lower-bound violation; not-a-number |
+| `checkSubsetBounds` — YMax (668–694) | 4 | Log | same 4 conditions for Y axis max |
+| `checkSubsetBounds` — ZMax (695–720) | 4 | Log | same 4 conditions for Z axis max |
+| `checkSubsetBounds` — XMin (721–746) | 4 | Log | same 4 conditions for X axis min |
+| `checkSubsetBounds` — YMin (747–772) | 4 | Log | same 4 conditions for Y axis min |
+| `checkSubsetBounds` — ZMin (773–798) | 4 | Log | same 4 conditions for Z axis min |
+| `_browseMaskFile` (829–904) | 1 | Log | `"Fits open failure... code #" + status` |
+| `CheckMemSpaceForCubes` (995–1014) | 2 | Log, LogWarning | size OK message; RAM exceeded warning |
+| `LoadCubeCoroutine` (1015–1133) | 4 | Log | loading start; replacing cube; instantiating prefab; complete message |
+| `_browseMappingFile` (1322–1434) | 1 | LogError | `"Error while loading mapping file: " + ex.Message` |
+| `ChangeHduSelection` (1435–1465) | 1 | Log | `"Fits open failure... code #" + status` |
+| `LoadSourcesFile` (1579–1612) | 1 | Log | `"Minimal source mappings not set!"` |
+| `SetMaxMinPercentile` (1767–1813) | 3 | Log, LogError ×2 | percentile success; histogram error; data error |
+| **Total** | **40** | | |
 
-**Before-state problems:**
+24 of 40 sites (60 %) are in `checkSubsetBounds` alone, repeating the same 4-condition
+pattern for each of 6 subset-bounds fields. This inflates `checkSubsetBounds` from a
+logical CC of ~4 (the 4 branching conditions) to an observed CC of ~7 because each
+condition triggers an additional `Debug.Log` statement with string concatenation.
 
-| Problem | Evidence |
+**Before-state quality gaps:**
+
+| Gap | Detail |
 |---|---|
-| No structured format | Raw string concatenation — no level enum, no source tag, no timestamp |
-| Log output invisible to end user | Unity console only; no in-app Debug tab panel |
-| 24 / 40 calls come from `checkSubsetBounds` | One method emits 24 unstructured logs; none are user-visible |
-| No interception point | Cannot assert on log output in a unit test without Unity test runner + console parsing |
-| `UnityEngine.Debug` is a static class | Every log call is a hidden transitive `UnityEngine` dependency in the method that calls it |
+| No structured format | Raw string concatenation — no `Level` enum, no `Source` tag, no `Timestamp` |
+| Log output invisible to end user | Unity console only; no in-app panel |
+| No interception point for tests | Cannot assert on a `Debug.Log` call in a unit test without Unity runner + console parsing |
+| `UnityEngine.Debug` is a hidden transitive dependency | Every method that calls `Debug.Log` is coupled to `UnityEngine` in its static call graph, even if it imports no other Unity types |
+| 24 / 40 sites produce structurally identical messages | The 4-condition repeat across 6 fields is a template, not 24 independent decisions — a single parameterised method would reduce them to 1 call per field |
 
-**WMC contribution:** The 40 call-sites are inline in existing methods; they do not add new
-methods (no WMC addition) but they inflate the cyclomatic complexity of methods like
-`checkSubsetBounds` (18 calls inside one 70-line method → cyclomatic complexity ≥ 7
-just from subset-bounds branches). There is no dedicated Debug tab class: **WMC before = 0,
-CBO before = 0** (for the Debug tab concern in isolation — its coupling is absorbed into
-`CanvassDesktop`'s existing CBO-47 total).
+### 3.2 New Debug Tab [projected]
 
-### 3.2 After State: Debug Tab Successor Types [projected]
-
-The after state introduces an Observer pattern around a structured log stream,
-per `uml-diagrams/after-debug-sequence-diagram.puml` and `refactor.md §3.2`.
-
-| Type | Layer | Inherits | WMC | DIT | NOC | CBO | RFC | LCOM | Threshold |
-|---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| `DebugTabView` | View (Unity) | `MonoBehaviour` | **5** | 1 | 0 | **3** | **10** | **0.05** | WMC≤40 / CBO≤25 |
-| `DebugTabViewModel` | ViewModel (pure C#) | `object` | **7** | 0 | 0 | **3** | **12** | **0.10** | WMC≤20 / CBO≤14 |
-| `UnityLogStreamAdapter` | Adapter (Unity asm) | `object` | **5** | 0 | 0 | **4** | **10** | **0.10** | WMC≤40 / CBO≤25 |
+| Type | Layer | WMC | DIT | NOC | CBO | RFC | LCOM | Role threshold |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|
+| `DebugTabView` | View (Unity) | **5** | 1 | 0 | **3** | **10** | **0.05** | WMC≤40 / CBO≤25 ✅ |
+| `DebugTabViewModel` | ViewModel (pure C#) | **7** | 0 | 0 | **3** | **12** | **0.10** | WMC≤20 / CBO≤14 ✅ |
+| `UnityLogStreamAdapter` | Adapter (Unity asm) | **5** | 0 | 0 | **4** | **10** | **0.10** | WMC≤40 / CBO≤25 ✅ |
+| **Total / max** | | **17 total / 7 max** | | | **10 total / 4 max** | **32 total / 12 max** | **0.10 max** | |
 
 **All 3 types: 0 CK violations.**
 
 **Interfaces introduced:**
 
-| Interface | Methods | Implemented by |
+| Interface | Methods | Purpose |
 |---|:---:|---|
-| `ILogStream` | 3 (`Subscribe`, `Unsubscribe`, `Publish`) | `UnityLogStreamAdapter` |
-| `ILogObserver` | 1 (`OnNext(LogEntry)`) | `DebugTabViewModel` |
-| `IDebugTabViewModel` | 4 (`LogEntries`, `ClearCommand`, `AutoScrollEnabled`, `FilterLevel`) | `DebugTabViewModel` |
+| `ILogStream` | 3 (`Subscribe`, `Unsubscribe`, `Publish(level, source, message)`) | Log producer contract; the only interface any log caller needs to know |
+| `ILogObserver` | 1 (`OnNext(LogEntry)`) | Observer contract; `DebugTabViewModel` implements this |
+| `IDebugTabViewModel` | 4 (`LogEntries`, `ClearCommand`, `AutoScrollEnabled`, `FilterLevel`) | View binding contract |
 
-**`LogEntry` DTO fields:** `Level` (enum: Debug/Info/Warning/Error), `Source` (string),
-`Message` (string), `Timestamp` (DateTimeOffset). Replaces raw `Debug.Log` string concatenation.
+**`LogEntry` DTO** (replaces raw string concatenation):
+`Level : LogLevel` (enum: Debug / Info / Warning / Error),
+`Source : string` (e.g. `"FitsServiceAdapter"`),
+`Message : string`,
+`Timestamp : DateTimeOffset`.
 
-#### Method-count derivation
+**Method derivation:**
+- `DebugTabView` (WMC=5): `BindTo`, `OnEnable`, `OnDisable` + `AppendEntryToScrollView` (private, called on binding update) + `ScrollToBottom`. All 5 touch `_vm : IDebugTabViewModel` → LCOM ≈ 0.05. CBO=3: `IDebugTabViewModel`, `UnityEngine` (UI element), `LogEntry`.
+- `DebugTabViewModel` (WMC=7): `OnNext(LogEntry)` (implements `ILogObserver`) + `LogEntries` getter + `AutoScrollEnabled` getter/setter + `FilterLevel` getter/setter + `ClearCommand.Execute` + constructor. CBO=3: `ILogStream`, `ILogObserver` (self-implements), `LogEntry`. **Zero `UnityEngine` imports.** Consistent with "WMC ≈ 5, CBO ≈ 2" in `refactor.md §9` (+2 for filter setter and property-changed notification).
+- `UnityLogStreamAdapter` (WMC=5): `Subscribe`, `Unsubscribe`, `Publish` (3 public, implementing `ILogStream`) + `ForwardToUnityConsole` (private — maintains parity with Unity IDE console) + constructor. CBO=4: `ILogStream`, `ILogObserver`, `LogEntry`, `UnityEngine.Debug`. **This is the only class that calls `UnityEngine.Debug.*`.** All 40 former call-sites in `CanvassDesktop` become `_logStream.Publish(level, source, message)` — compiled against `ILogStream` only.
 
-**`DebugTabView` WMC = 5**  
-`BindTo`, `OnEnable`, `OnDisable` (Unity lifecycle + binding registration) +
-`AppendEntryToScrollView` (private, called on binding update) + `ScrollToBottom` (private).
-All 5 methods access `_vm : IDebugTabViewModel` → LCOM ≈ 0.05. CBO = 3:
-`IDebugTabViewModel`, `UnityEngine` (ScrollView / UI Toolkit element), `LogEntry` (display formatting).
+### 3.3 Debug Tab Delta
 
-**`DebugTabViewModel` WMC = 7**  
-Implements `ILogObserver.OnNext` (appends entry to `Entries`) +
-`IDebugTabViewModel` properties: `LogEntries` getter, `AutoScrollEnabled` getter/setter,
-`FilterLevel` getter/setter + `ClearCommand.Execute` + constructor (subscribes to `ILogStream`).
-Consistent with "WMC ≈ 5" estimate in `refactor.md §9` (difference is +2 for property
-changed notification and filter setter).  
-CBO = 3: `ILogStream`, `ILogObserver` (self-implements), `LogEntry`. **Zero `UnityEngine` imports.**
-
-**`UnityLogStreamAdapter` WMC = 5**  
-`Subscribe(ILogObserver)`, `Unsubscribe(ILogObserver)`, `Publish(LogLevel, string, string)` +
-`ForwardToUnityConsole` (private — calls `UnityEngine.Debug.Log`/`LogWarning`/`LogError` for
-IDE console parity) + constructor.  
-CBO = 4: `ILogStream`, `ILogObserver`, `LogEntry`, `UnityEngine.Debug`.  
-This is the **only** class that imports `UnityEngine.Debug` for logging. All 40 former
-`Debug.Log` call-sites in `CanvassDesktop` become `_logStream.Publish(...)` calls, which
-compile against `ILogStream` only.
-
-### 3.3 Debug Tab CK Delta
-
-The before-state comparator is not a single class but the aggregate logging burden
-absorbed into `CanvassDesktop`. The meaningful "before" figures are:
-
-| Metric | Before (absorbed in CanvassDesktop) | After (worst-case new class) | Δ |
+| Metric | Old | New | Δ |
 |---|:---:|:---:|:---:|
-| WMC (dedicated debug class) | 0 (no class — embedded) | 7 (`DebugTabViewModel`) | +7 *(new focused class)* |
-| CBO (dedicated debug class) | 0 (no class — coupling absorbed into CBO-47) | 4 (`UnityLogStreamAdapter`) | +4 *(new isolated class)* |
-| `checkSubsetBounds` cyclomatic complexity | ≥ 7 (18 log calls + branch structure) | ≤ 2 (clamping setters in `SubsetBoundsViewModel` — logging replaced by property feedback) | **−5** |
-| Unstructured log call-sites | 40 | 0 (replaced by `_logStream.Publish()`) | **−40** |
-| Classes importing `UnityEngine.Debug` for logging | ≥ 1 (`CanvassDesktop` + any other class calling `Debug.Log`) | 1 (`UnityLogStreamAdapter` only) | **−N+1** |
-| Interfaces backing log stream | 0 | 3 (`ILogStream`, `ILogObserver`, `IDebugTabViewModel`) | **+3** |
-| Log call-sites testable without Unity runner | 0 | 40 (all moved behind `ILogStream.Publish`) | **+40** |
+| Dedicated debug class | 0 | **3** (View, ViewModel, Adapter) | +3 |
+| WMC (dedicated debug class) | 0 | **7** (`DebugTabViewModel`) | +7 *(new focused class)* |
+| CBO (dedicated debug class) | 0 | **4** (`UnityLogStreamAdapter`, max) | +4 *(new isolated class)* |
+| CK violations in debug types | 0 (no class) | **0** (all within threshold) | 0 |
+| Unstructured `Debug.Log` call-sites | **40** | **0** (replaced by `ILogStream.Publish`) | **−40** |
+| Classes importing `UnityEngine.Debug` | ≥ 1 (`CanvassDesktop` + any other) | **1** (`UnityLogStreamAdapter` only) | **−N+1** |
+| `checkSubsetBounds` CC (debug contribution) | ~7 (18 log branches) | **~2** (`SubsetBoundsViewModel` clamping setters — no logging) | **−5** |
+| Interfaces backing log stream | 0 | **3** (`ILogStream`, `ILogObserver`, `IDebugTabViewModel`) | **+3** |
+| Log call-sites testable without Unity runner | **0** | **40** (all behind `ILogStream.Publish`) | **+40** |
+| Structured log fields (level, source, timestamp) | **0** | **4** (`LogEntry` DTO) | **+4** |
 
 ---
 
-## 4. Cross-Cutting Violation Summary
+## 4. Shared Residual — Old vs New
 
-Counts across both worked examples combined, relative to CanvassDesktop as the shared before-state.
+### 4.1 Old Shared (47 Methods)
 
-| Rule | Before | After (all WE1 + WE2 types) | Δ |
+The 47 methods left after removing the 16 file tab methods. These cover the remaining
+tab concerns and the class lifecycle. They share CanvassDesktop's single LCOM and
+DIT measurement since those are class-level only.
+
+| Sub-group | Methods | Concerns |
+|---|:---:|---|
+| Lifecycle & helpers | 13 | `Awake`, `Start`, `OnDestroy`, `Update`, `OnGUI`, `ShowGUI`, `CheckCubesDataSet`, `GetFirstActiveRenderer`, `SetInputIndex`, `DismissFileLoad`, `Exit`, `getActiveDataSet`, `getActiveMaskSet` |
+| Rendering tab | 14 | `PopulateRestfreqencyDropdown`, `OnRatioDropdownValueChanged`, `OnRestFrequency*` ×6, `SetRestFrequency*` ×3, `populateColorMapDropdown`, `ChangeColorMap`, `UpdateThresholdMin`, `UpdateThresholdMax`, `ResetThresholds` |
+| Stats tab | 8 | `populateStatsValue`, `UpdateUI`, `UpdateSigma`, `RestoreDefaults`, `UpdateScale`, `SetMaxMinPercentile`, `UpdateScaleMin`, `UpdateScaleMax` |
+| Sources tab | 10 | `BrowseSourcesFile`, `_browseSourcesFile`, `BrowseMappingFile`, `_browseMappingFile`, `SaveMappingFile`, `_saveMappingFile`, `ChangeSourceMapping`, `AreMappingsIncompatible`, `AreMinimalMappingsSet`, `LoadSourcesFile` |
+| Paint tab | 2 | `paintTabSelected`, `paintTabLeft` |
+| **Total** | **47** | |
+
+**Shared residual metrics [derived]:**
+
+| Metric | Value | Threshold (Orchestrator) | Status |
 |---|:---:|:---:|:---:|
-| CK violations (WMC/CBO/RFC/LCOM) | 4 | **0** | −4 |
-| Circular dependency cycles | 2 | **0** | −2 |
-| Classes with `UnityEngine` in domain/ViewModel code | 1 | **0** | −1 |
-| Public API boundaries backed by interfaces | 0 | **7** (`IFileTabViewModel`, `IFitsService`, `IFileDialogService`, `IVolumeService`, `ILogStream`, `ILogObserver`, `IDebugTabViewModel`) | +7 |
-| Dead methods | 1 (`CheckImgMaskAxisSize`) | **0** | −1 |
-| Unstructured log call-sites | 40 | **0** | −40 |
-| Classes unit-testable without Unity test runner | 0 | **5** (`FileTabViewModel`, `SubsetBoundsViewModel`, `FitsServiceAdapter`, `DebugTabViewModel`, `UnityLogStreamAdapter`) | +5 |
+| WMC | **47** | ≤ 40 | 🔴 +7 |
+| CBO | **~39** | ≤ 25 | 🔴 +14 |
+| RFC | **~66** | ≤ 50 | 🔴 +16 |
+| LCOM (full class) | **0.955** | ≤ 0.50 | 🔴 |
+| DIT | 1 | ≤ 4 | ✅ |
+
+The shared residual still violates all four thresholds even after the file tab
+extraction, confirming that the rendering, stats, and sources tab methods need
+the same MVVM extraction pattern (outside the scope of WE1 and WE2, but
+demonstrated by the same design).
+
+### 4.2 New Shared (CanvassDesktop Shell) [projected]
+
+After extracting ALL tabs (file in WE1, debug in WE2, rendering/stats/sources/paint
+by the same pattern), `CanvassDesktop` is reduced to a **composition root**:
+
+| Method | Concern |
+|---|---|
+| `Awake` | Construct adapters (`FitsServiceAdapter`, `UnityLogStreamAdapter`, etc.) |
+| `Start` | Construct ViewModels, call `BindTo` on each View |
+| `OnDestroy` | Unsubscribe all bindings, dispose adapters |
+| `WireFileTab` (private) | Instantiate `FileTabViewModel`, pass to `FileTabView.BindTo` |
+| `WireDebugTab` (private) | Instantiate `DebugTabViewModel`, pass to `DebugTabView.BindTo` |
+| `WireRenderingTab` (private) | Same pattern for rendering (out of WE1/WE2 scope) |
+| `WireSourcesTab` (private) | Same pattern for sources (out of WE1/WE2 scope) |
+| `TearDown` (private) | Null out all references |
+
+| Metric | Value [projected] | Threshold (Orchestrator) | Status |
+|---|:---:|:---:|:---:|
+| WMC | **8** | ≤ 40 | ✅ −55 |
+| CBO | **4** | ≤ 25 | ✅ −43 |
+| RFC | **12** | ≤ 50 | ✅ −106 |
+| LCOM | **0.10** | ≤ 0.50 | ✅ −0.855 |
+| DIT | 1 | ≤ 4 | ✅ |
+
+CBO = 4 reflects composition-root scope (`FileTabView`, `DebugTabView`,
+`FileTabViewModel`, `DebugTabViewModel`). The full extraction adds `RenderingTabView`,
+`StatsTabView`, `SourcesTabView` etc. bringing CBO to ~8, still well within threshold.
+
+### 4.3 Shared Delta
+
+| Metric | Old shared | New shared (shell) | Δ |
+|---|:---:|:---:|:---:|
+| WMC | 47 | **8** | **−39** |
+| CBO | ~39 | **4–8** | **−31 to −35** |
+| RFC | ~66 | **12** | **−54** |
+| LCOM | 0.955 | **0.10** | **−0.855** |
+| `FindObjectOfType<>` singleton hunts | 3 | **0** | **−3** |
+| Methods with per-frame `Update()` polling | 1 (`Update` syncs thresholds + tab key) | **0** (rendering ViewModel subscribes to renderer events) | **−1** |
+| CK violations | 4 (WMC/CBO/RFC/LCOM) | **0** | **−4** |
 
 ---
 
 ## 5. ISO 25010 Maintainability Mapping
 
-ISO 25010:2011 §4.2.7 defines five sub-characteristics. The table below rates each
-per worked example with the specific evidence.
+### 5.1 File Tab
 
-### 5.1 File Tab (WE1)
+| Sub-char | Before rating | After [proj] | Key evidence |
+|---|:---:|:---:|---|
+| **Modularity** | Poor | Good | `FileTabViewModel` CBO = 5 (interfaces only); both circular cycles eliminated. A `FitsReader` ABI change touches only `FitsServiceAdapter`. |
+| **Reusability** | Poor | Acceptable | `IFitsService`, `IFileDialogService`, `IVolumeService`, `IFileTabViewModel` are explicit swap seams. Future remote-server mode replaces adapters without touching ViewModels. |
+| **Analysability** | Poor | Good | RFC 52 → 22 (max per class). Tracing "why did the load button stay disabled?" requires reading 12 methods in `FileTabViewModel`, not scanning 1 899 lines. |
+| **Modifiability** | Poor | Good | CBO 8 exclusive → 7 max per new class. `ChangeHduSelection` re-opening the file on each switch is replaced by `IFitsService.GetHeaderTextAsync(handle, hduIndex)` — no reopen, handle is server-resident. |
+| **Testability** | Very Poor | Good | `FileTabViewModel` and `SubsetBoundsViewModel` are `object` subclasses. NUnit test: `new FileTabViewModel(mockFits, mockDialog, mockVolume)`. `checkSubsetBounds` (70 lines + 18 log calls + Unity input fields) becomes property setters on `SubsetBoundsViewModel` — `Assert.Equal(expected, vm.Subset.XMax)`. |
 
-| Sub-char | Before rating | After rating [proj] | CK driver | Evidence |
-|---|:---:|:---:|---|---|
-| **Modularity** | Poor | Good | CBO 47→7, 2 cycles→0 | `FileTabViewModel` couples only to 3 service interfaces. Both confirmed circular dependencies (`CanvassDesktop`↔`VolumeCommandController` and `CanvassDesktop`↔`DesktopPaintController`) are broken because neither adapter holds a back-reference to the View. Any change to `FitsReader`'s P/Invoke ABI is contained inside `FitsServiceAdapter` — blast radius = 1 class. |
-| **Reusability** | Poor | Acceptable | 0 interfaces → 4 | `IFitsService`, `IFileDialogService`, `IVolumeService`, and `IFileTabViewModel` are explicit re-use seams. A CLI entrypoint, a test harness, or a future remote-server mode can swap any adapter without modifying `FileTabViewModel`. The "remote-browse RPC" case (`CanvassDesktop.md §3`) requires only a new `IFileDialogService` implementation, not a rewrite of the ViewModel. |
-| **Analysability** | Poor | Good | WMC 63→12, RFC 118→22, LCOM 0.955→0.20 | `FileTabViewModel` has 12 focused methods and one responsibility (file-path lifecycle). Tracing "why did the load button stay disabled?" requires reading one 12-method class rather than scanning 1 899 lines for the `IsLoadable` return value. RFC 22 means at most 22 execution paths enter or leave `FileTabViewModel` — down from 118 in the God class. |
-| **Modifiability** | Poor | Good | CBO 47→7, RFC 118→22 | File tab modifications are now scoped: a new HDU type requires changes in `FitsServiceAdapter` and `FitsFileInfo` only; `FileTabViewModel` sees only the updated `FitsFileInfo` DTO. Before, the same change touched the P/Invoke calls, the dropdown-populate logic, and the header-display logic all inside `CanvassDesktop`. |
-| **Testability** | Very Poor | Good | LCOM 0.955→0.20, 0→4 interfaces, `UnityEngine` removed from domain | **`FileTabViewModel`** has zero `MonoBehaviour` ancestry — instantiated in NUnit with `new FileTabViewModel(mockFits, mockDialog, mockVolume)`. `checkSubsetBounds` (previously 70 lines + 18 `Debug.Log` + Unity input fields) becomes property setters on **`SubsetBoundsViewModel`** — asserted with plain `Assert.Equal`. **`FitsServiceAdapter`** tests use a mocked `FitsReader` ABI stub, running without a Unity runtime. |
+**Testability blockers resolved (WE1):**
 
-**Testability blocker inventory (WE1):**
-
-| Blocker in `CanvassDesktop` | Resolved by |
+| Blocker | Resolved by |
 |---|---|
-| `MonoBehaviour` ancestry — requires Unity test runner | `FileTabViewModel` / `SubsetBoundsViewModel` are `object` subclasses |
-| `FindObjectOfType<VolumeCommandController>()` — requires full scene | Constructor-injected `IVolumeService` |
-| `FitsReader` P/Invoke — requires native `.dll` on test machine | Isolated behind `IFitsService` — test double returns `FitsFileInfo` DTOs |
+| `MonoBehaviour` ancestry — requires Unity test runner | `FileTabViewModel` / `SubsetBoundsViewModel` have `object` as base |
+| `FindObjectOfType<VolumeCommandController>()` requires full scene | Constructor-injected `IVolumeService` |
+| `FitsReader` P/Invoke requires native `.dll` | Isolated behind `IFitsService`; test double returns `FitsFileInfo` DTOs |
 | 25+ `transform.Find(…).GetComponent<T>()` chains | `FileTabView` owns all hierarchy traversal; ViewModel never touches `Transform` |
-| `StandaloneFileBrowser` async callbacks — not mockable | `IFileDialogService.PickFileAsync()` — stubbed with `Task.FromResult("path/to/file.fits")` |
-| `CheckMemSpaceForCubes` checks `SystemInfo.systemMemorySize` | Moved to `IVolumeService.CanFit()` — server (adapter) answers its own capacity question |
+| `StandaloneFileBrowser` async callbacks not mockable | `IFileDialogService.PickFileAsync()` — stubbed with `Task.FromResult("file.fits")` |
+| `CheckMemSpaceForCubes` tests client RAM | Moved to `IVolumeService.CanFit()` — adapter answers its own capacity question |
 
-### 5.2 Debug Tab (WE2)
+### 5.2 Debug Tab
 
-| Sub-char | Before rating | After rating [proj] | CK driver | Evidence |
-|---|:---:|:---:|---|---|
-| **Modularity** | Very Poor | Good | 40 log sites → 0, 0 interfaces → 3 | All 40 `Debug.Log` call-sites are replaced by `_logStream.Publish(level, source, message)`. Log producers (`FitsServiceAdapter`, `SubsetBoundsViewModel`, etc.) depend only on `ILogStream` — they have no knowledge of the display consumer. Adding a second log consumer (e.g. a file logger for diagnostics) means implementing `ILogObserver` in a new class, with zero changes to producers. |
-| **Reusability** | Very Poor | Good | 0 → 3 interfaces | `ILogStream` and `ILogObserver` are generic interfaces with no Unity dependencies. `DebugTabViewModel` can be embedded in any future shell (CLI, web dashboard, VR overlay) that provides an `ILogStream` implementation. |
-| **Analysability** | Poor | Good | `checkSubsetBounds` cyclomatic ≥ 7 → ≤ 2 | The 18 `Debug.Log` calls in `checkSubsetBounds` disappear entirely: `SubsetBoundsViewModel`'s clamping setters return corrected values without logging — validation outcomes are expressed as observable property changes, not console noise. Remaining real errors (FITS open failure, mapping load error) surface as structured `LogEntry` records with `Level`, `Source`, and `Timestamp` fields, parseable without string inspection. |
-| **Modifiability** | Poor | Good | 40 → 0 direct `UnityEngine.Debug` dependencies | Adding a new log source (e.g. `VolumeServiceAdapter`) requires one `_logStream.Publish()` call. Changing the log display from a Unity ScrollView to a UI Toolkit `ListView` requires modifying only `DebugTabView` — `DebugTabViewModel` is unchanged because it exposes `IReadOnlyList<LogEntry>` with no UI type in its public surface. |
-| **Testability** | Very Poor | Good | 0 → 3 interfaces, `UnityEngine.Debug` isolated | `DebugTabViewModel.OnNext(entry)` is a pure method with no `UnityEngine` import — asserted directly in NUnit: call `OnNext(new LogEntry(LogLevel.Error, "FitsOpen", "status=4", ...))`, assert `Entries.Count == 1`. `UnityLogStreamAdapter` is the only class that calls `UnityEngine.Debug.*` — other 39 former call-sites are testable in a standard .NET test project. |
+| Sub-char | Before rating | After [proj] | Key evidence |
+|---|:---:|:---:|---|
+| **Modularity** | Very Poor | Good | 40 scattered sites → 0. Adding a new log source (`FitsServiceAdapter`, `VolumeServiceAdapter`) requires one `_logStream.Publish()` call with no change to `DebugTabViewModel`. Adding a second consumer (e.g. file logger) requires only a new `ILogObserver` implementation. |
+| **Reusability** | Very Poor | Good | `ILogStream` / `ILogObserver` have no Unity dependencies. `DebugTabViewModel` can be embedded in any future shell (CLI, VR overlay) that provides an `ILogStream`. |
+| **Analysability** | Poor | Good | `checkSubsetBounds` CC drops from ~7 to ~2. Remaining real errors (`FitsOpen` failure, mapping load error) surface as `LogEntry { Level=Error, Source="FitsServiceAdapter", Message=..., Timestamp=... }` — no string parsing required to read them. |
+| **Modifiability** | Poor | Good | Changing the debug panel from a Unity ScrollView to a UI Toolkit `ListView` requires modifying only `DebugTabView`. `DebugTabViewModel` exposes `IReadOnlyList<LogEntry>` with no UI type in its public surface. |
+| **Testability** | Very Poor | Good | `DebugTabViewModel.OnNext(entry)` is a pure method: `vm.OnNext(new LogEntry(LogLevel.Error, "FitsOpen", "status=4", DateTimeOffset.UtcNow)); Assert.Single(vm.LogEntries);` — zero Unity imports needed. 40 log sites are now behind `ILogStream.Publish()`, assertable with a capturing `ILogObserver` stub. |
 
-**Testability blocker inventory (WE2):**
+**Testability blockers resolved (WE2):**
 
-| Blocker in `CanvassDesktop` | Resolved by |
+| Blocker | Resolved by |
 |---|---|
-| `Debug.Log` is `UnityEngine.Debug` — static, untestable | All log calls go through `ILogStream.Publish()`; `UnityLogStreamAdapter` is the only `UnityEngine.Debug` caller |
-| 24 log calls in `checkSubsetBounds` — no assertion target | `SubsetBoundsViewModel` property setters express validation without logging; test asserts on property value |
-| No end-user visibility of log output | `DebugTabView` scrolls `LogEntry` list — smoke-testable by running the app |
-| No log level filtering | `IDebugTabViewModel.FilterLevel` property — filter by `LogLevel` enum in ViewModel without touching the View |
+| `UnityEngine.Debug` is static — cannot be mocked or redirected | All log calls go through `ILogStream.Publish()`; `UnityLogStreamAdapter` is the only `UnityEngine.Debug` caller |
+| 24 log calls in `checkSubsetBounds` — no assertion target | `SubsetBoundsViewModel` property setters replace inline validation+logging; test asserts on property value |
+| No end-user visibility of log output | `DebugTabView` scrolls `LogEntry` list; smoke-testable by running the app |
+| No log level or source filtering | `IDebugTabViewModel.FilterLevel` property filters by `LogLevel` enum in ViewModel without touching View |
 
 ---
 
-## 6. Thresholds Reference
+## 6. Aggregate Violation Summary
 
-From assignment specification §7.1:
+Counts across CanvassDesktop before vs all WE1 + WE2 successor types combined.
 
-| Role assigned to | WMC | CBO | RFC | LCOM |
+| Rule | Before | After | Δ |
+|---|:---:|:---:|:---:|
+| CK violations (WMC / CBO / RFC / LCOM) | **4** | **0** | −4 |
+| Circular dependency cycles | **2** | **0** | −2 |
+| Classes with `UnityEngine` in domain / ViewModel code | **1** | **0** | −1 |
+| Public API boundaries backed by interfaces | **0** | **7** | +7 |
+| Dead methods | **1** | **0** | −1 |
+| Unstructured `Debug.Log` call-sites | **40** | **0** | −40 |
+| Types unit-testable without Unity test runner | **0** | **5** (`FileTabViewModel`, `SubsetBoundsViewModel`, `FitsServiceAdapter`, `DebugTabViewModel`, `UnityLogStreamAdapter`) | +5 |
+
+---
+
+## 7. Thresholds Reference (Assignment Spec §7.1)
+
+| Role | WMC | CBO | RFC | LCOM |
 |---|:---:|:---:|:---:|:---:|
 | Domain / ViewModel | ≤ 20 | ≤ 14 | ≤ 50 | ≤ 0.50 |
 | Orchestrator / Adapter | ≤ 40 | ≤ 25 | ≤ 50 | ≤ 0.50 |
 
-Role assignments for after-state types:
-
-| Type | Role applied |
-|---|---|
-| `FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel` | **Domain / ViewModel** (pure C#, no framework) |
-| `FileTabView`, `DebugTabView`, `FitsServiceAdapter`, `StandaloneFileDialogAdapter`, `VolumeServiceAdapter`, `UnityLogStreamAdapter`, `CanvassDesktop` shell | **Adapter / Orchestrator** (Unity assembly) |
+Role assignments:
+- **Domain / ViewModel:** `FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`
+- **Adapter / Orchestrator:** `FileTabView`, `FitsServiceAdapter`, `StandaloneFileDialogAdapter`, `VolumeServiceAdapter`, `DebugTabView`, `UnityLogStreamAdapter`, `CanvassDesktop` shell
 
 ---
 
-## 7. Traceability
+## 8. Traceability
 
 | Artefact | Path |
 |---|---|
@@ -376,4 +404,4 @@ Role assignments for after-state types:
 | Deliverables checklist | `docs/sub-team-6/deliverables/deliverables-checklist.md` |
 | Feeds T4 | Consolidated architecture report §Metrics chapter |
 | Feeds T7 | Integration & metrics deliverable — ISO 25010 evidence section |
-| Feeds Pitch slot 3 | Worked examples slide — before/after violation count and testability blocker tables |
+| Feeds Pitch slot 3 | Worked examples slide — §6 aggregate violation table is the pitch-ready summary |

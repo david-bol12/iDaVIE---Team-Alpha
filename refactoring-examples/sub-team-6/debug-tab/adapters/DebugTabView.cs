@@ -51,6 +51,14 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
 
         // ── ViewModel → View ──────────────────────────────────────────────────
 
+        private void OnDestroy()
+        {
+            if (_vm == null) return;
+            _vm.EntriesChanged -= OnEntriesChanged;
+            _clearButton.onClick.RemoveListener(_vm.ClearEntries);
+            _vm = null;
+        }
+
         private void OnEntriesChanged()
         {
             if (_vm == null) return;

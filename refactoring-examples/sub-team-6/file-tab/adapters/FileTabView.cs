@@ -103,6 +103,33 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             SyncAll();
         }
 
+        private void OnDestroy()
+        {
+            if (_vm == null) return;
+
+            // Unsubscribe named handlers. CanExecuteChanged subscribers are anonymous
+            // lambdas; they are released when the command objects are GC'd with the VM.
+            _vm.PropertyChanged        -= OnPropertyChanged;
+            _vm.Subset.PropertyChanged -= OnSubsetPropertyChanged;
+
+            // Remove Unity UI listeners to prevent callbacks into a destroyed view.
+            _browseImageBtn.onClick.RemoveAllListeners();
+            _browseMaskBtn.onClick.RemoveAllListeners();
+            _loadBtn.onClick.RemoveAllListeners();
+            _clearMaskBtn.onClick.RemoveAllListeners();
+            _hduDropdown.onValueChanged.RemoveAllListeners();
+            _zAxisDropdown.onValueChanged.RemoveAllListeners();
+            _subsetToggle.onValueChanged.RemoveAllListeners();
+            _xMinInput.onEndEdit.RemoveAllListeners();
+            _xMaxInput.onEndEdit.RemoveAllListeners();
+            _yMinInput.onEndEdit.RemoveAllListeners();
+            _yMaxInput.onEndEdit.RemoveAllListeners();
+            _zMinInput.onEndEdit.RemoveAllListeners();
+            _zMaxInput.onEndEdit.RemoveAllListeners();
+
+            _vm = null;
+        }
+
         // ── ViewModel → View: top-level properties ────────────────────────────
 
         private void OnPropertyChanged(object? _, PropertyChangedEventArgs e)

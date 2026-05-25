@@ -27,14 +27,26 @@ namespace iDaVIE.Desktop.Adapters.FileTab
         [SerializeField] private FileTabView          _view          = null!;
         [SerializeField] private VolumeServiceAdapter _volumeAdapter = null!;
 
+        // The composition root owns the VM lifetime. Holding the reference here
+        // ensures the VM is not GC'd if the view is ever rebound, and makes the
+        // ownership chain explicit: CompositionRoot → ViewModel → View.
+        private FileTabViewModel? _vm;
+
         private void Awake()
         {
             IFitsService       fitsService   = new FitsServiceAdapter();
             IFileDialogService dialogService = new FileDialogServiceAdapter();
             IVolumeService     volumeService = _volumeAdapter;
 
-            var vm = new FileTabViewModel(fitsService, dialogService, volumeService);
-            _view.BindTo(vm);
+            _vm = new FileTabViewModel(fitsService, dialogService, volumeService);
+            _view.BindTo(_vm);
+        }
+
+        private void OnDestroy()
+        {
+            // Null out the owning reference so the VM and its injected services
+            // become eligible for GC once the view also releases its reference.
+            _vm = null;
         }
     }
 }

@@ -341,5 +341,57 @@ namespace iDaVIE.Desktop.DebugTab.Tests
             // IReadOnlyList<T> — ensure the concrete type does not expose mutation
             Assert.IsInstanceOf<System.Collections.Generic.IReadOnlyList<LogEntry>>(vm.LogEntries);
         }
+
+        // ── Entry cap ──────────────────────────────────────────────────────────
+
+        [Test]
+        public void AppendEntry_OverCap_TrimsOldestEntry()
+        {
+            // Fill past the internal MaxEntries cap (2000) and verify the oldest
+            // entries are dropped rather than the list growing unbounded.
+            var (vm, stream) = Build();
+
+            for (int i = 0; i < 2001; i++)
+                stream.Publish(LogLevel.Info, $"msg{i}");
+
+            // List must not exceed the cap
+            Assert.LessOrEqual(vm.LogEntries.Count, 2000);
+
+            // Most-recent entry must be the last one published
+            Assert.AreEqual("msg2000", vm.LogEntries[vm.LogEntries.Count - 1].Message);
+        }
+
+        // ── Dispose ────────────────────────────────────────────────────────────
+
+        [Test]
+        public void Dispose_UnsubscribesFromStream()
+        {
+            var (vm, stream) = Build();
+
+            vm.Dispose();
+            stream.Publish(LogLevel.Info, "after dispose");
+
+            // ViewModel must not receive entries after unsubscribing
+            Assert.AreEqual(0, vm.LogEntries.Count);
+        }
+
+        [Test]
+        public void Dispose_Twice_DoesNotThrow()
+        {
+            var (vm, _) = Build();
+            vm.Dispose();
+            Assert.DoesNotThrow(() => vm.Dispose());
+        }
+
+        [Test]
+        public void Dispose_LeavesExistingEntriesIntact()
+        {
+            var (vm, stream) = Build();
+            stream.Publish(LogLevel.Info, "before dispose");
+
+            vm.Dispose();
+
+            Assert.AreEqual(1, vm.LogEntries.Count);
+        }
     }
 }
