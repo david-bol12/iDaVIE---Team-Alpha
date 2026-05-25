@@ -218,6 +218,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             var (vm, fits, _, _, _) = BuildVm();
             var info = new FitsFileInfo
             {
+                Handle     = new StubFitsHandle("/data/multi.fits"),
                 FilePath   = "/data/multi.fits",
                 HduList    = new[] { new HduInfo(1, "PRIMARY", "IMAGE"), new HduInfo(2, "SCI", "IMAGE") },
                 NAxis      = 3,
@@ -525,7 +526,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         {
             var (vm, fits, _, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
-            var raised = new HashSet<string?>();
+            var raised = new List<string?>();
             vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
 
             await vm.BrowseImageCommand.ExecuteAsync();
