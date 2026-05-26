@@ -156,6 +156,24 @@ namespace DataFeatures
         /// <summary>Exports a FeatureSet to VOTable via the domain service.</summary>
         public string ExportToVoTable(FeatureSet set) => Service.ExportToVoTable(set);
 
+        /// <summary>
+        /// Creates an imported FeatureSet from a pre-loaded FeatureTable, spawns its renderer,
+        /// and applies the column mapping. Replaces FeatureSetManager.ImportFeatureSetFromTable.
+        /// </summary>
+        public FeatureSetRenderer ImportFeatureSetFromTable(
+            System.Collections.Generic.Dictionary<SourceMappingOptions, string> mapping,
+            FeatureTable table,
+            string name,
+            bool[] columnsMask,
+            bool excludeExternal)
+        {
+            var set = Catalog.CreateImportedSet(name);
+            set.FileName = name;
+            var renderer = CreateRendererForSet(set);
+            renderer.SpawnFeaturesFromTable(mapping, table, columnsMask, excludeExternal);
+            return renderer;
+        }
+
         // ── FeatureSetRenderer factory ────────────────────────────────────────
 
         /// <summary>
@@ -176,6 +194,7 @@ namespace DataFeatures
             renderer.transform.localScale     = new Vector3(1f / dims.x, 1f / dims.y, 1f / dims.z);
             renderer.transform.localPosition -= renderer.transform.localScale * 0.5f;
 
+            renderer.Initialize(_volumeRenderer);
             renderer.Index          = set.Index;
             renderer.FeatureSetType = set.SetType;
 

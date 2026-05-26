@@ -107,6 +107,11 @@ namespace DataFeatures
             VolumeRenderer = FeatureManager.VolumeRenderer;
         }
 
+        public void Initialize(VolumeDataSetRenderer volumeRenderer)
+        {
+            VolumeRenderer = volumeRenderer;
+        }
+
         /// <summary>
         /// On every frame, rerender all features marked as dirty. If feature is changed, it is supposed to be marked as dirty.
         /// </summary>
@@ -244,7 +249,13 @@ namespace DataFeatures
 
         public void SelectFeature(Feature feature)
         {
-            if (FeatureManager)
+            var visualiser = GetComponentInParent<FeatureVisualiser>();
+            if (visualiser != null)
+            {
+                visualiser.SelectFeature(feature);
+                Debug.Log($"Selected feature '{feature.Name}'");
+            }
+            else if (FeatureManager)
             {
                 FeatureManager.SelectedFeature = feature;
                 Debug.Log($"Selected feature '{feature.Name}'");

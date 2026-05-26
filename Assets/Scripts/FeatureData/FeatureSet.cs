@@ -144,6 +144,8 @@ namespace DataFeatures
             R = r; G = g; B = b; A = a;
         }
 
+        public UnityEngine.Color ToUnityColor() => new UnityEngine.Color(R, G, B, A);
+
         public static readonly FeatureColor White   = new FeatureColor(1, 1, 1);
         public static readonly FeatureColor Cyan    = new FeatureColor(0, 1, 1);
         public static readonly FeatureColor Magenta = new FeatureColor(1, 0, 1);

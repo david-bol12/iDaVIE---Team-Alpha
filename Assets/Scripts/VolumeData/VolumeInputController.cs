@@ -1390,16 +1390,15 @@ public class VolumeInputController : MonoBehaviour
         _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
     }
 
-    public void SetHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
+    public void SetHoveredFeature(FeatureVisualiser featureVisualiser, FeatureAnchor featureAnchor)
     {
-        _hoveredFeature = featureSetManager?.SelectedFeature;
+        _hoveredFeature = featureVisualiser?.Service?.SelectedFeature;
         _hoveredAnchor = featureAnchor;
-        //ActiveDataSet?.SetRegionPosition(_hoveredFeature.GetMinBounds(), true);
     }
 
-    public void ClearHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
+    public void ClearHoveredFeature(FeatureVisualiser featureVisualiser, FeatureAnchor featureAnchor)
     {
-        var hoveredFeature = featureSetManager?.SelectedFeature;
+        var hoveredFeature = featureVisualiser?.Service?.SelectedFeature;
         if (_hoveredFeature == hoveredFeature && _hoveredAnchor == featureAnchor)
         {
             _hoveredFeature = null;
