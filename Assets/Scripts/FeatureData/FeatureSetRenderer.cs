@@ -44,7 +44,7 @@ namespace DataFeatures
         public FeatureVisibility Visibility;
     }
     
-    public class FeatureSetRenderer : MonoBehaviour
+    public class FeatureSetRenderer : MonoBehaviour, IFeatureRenderer
     {
         public enum CoordTypes {  cartesian,  freqz,  velz, redz   }
 
@@ -612,6 +612,15 @@ namespace DataFeatures
         public void SaveAsVoTable(string filePath)
         {
             VoTableSaver.SaveFeatureSetAsVoTable(this, filePath);
+        }
+
+        // IFeatureRenderer explicit implementation.
+        // Converts between DataFeatures.FeatureColor (domain type, no Unity dep) and
+        // UnityEngine.Color (used internally) so the interface stays Unity-free.
+        FeatureColor IFeatureRenderer.FeatureColor
+        {
+            get => new FeatureColor(FeatureColor.r, FeatureColor.g, FeatureColor.b, FeatureColor.a);
+            set => FeatureColor = new Color(value.R, value.G, value.B, value.A);
         }
     }
 }

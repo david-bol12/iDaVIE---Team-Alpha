@@ -162,34 +162,33 @@ namespace DataFeatures
         /// Instantiates a FeatureSetRenderer prefab and configures it for <paramref name="set"/>.
         /// The renderer is the Unity/GPU counterpart of a domain FeatureSet.
         /// </summary>
-        private FeatureSetRenderer CreateRendererForSet(FeatureSet set)
+        private IFeatureRenderer CreateRendererForSet(FeatureSet set)
         {
             var dims = _volumeRenderer.GetCubeDimensions();
 
+            // Instantiate and position the concrete MonoBehaviour (Unity-specific work).
             var renderer = Instantiate(_featureSetRendererPrefab,
                                        Vector3.zero, Quaternion.identity);
             renderer.transform.SetParent(transform, false);
             renderer.name = set.Name;
             renderer.tag  = "customSet";
 
-            // Align the renderer's coordinate space with the volume cube.
             renderer.transform.localPosition  = -0.5f * Vector3.one;
             renderer.transform.localScale     = new Vector3(1f / dims.x, 1f / dims.y, 1f / dims.z);
             renderer.transform.localPosition -= renderer.transform.localScale * 0.5f;
 
-            // Convert domain colour to Unity colour.
-            renderer.FeatureColor = DomainToUnityColor(set.Color);
-            renderer.Index        = set.Index;
+            renderer.Index          = set.Index;
             renderer.FeatureSetType = set.SetType;
 
-            // Subscribe: when the domain FeatureSet changes, tell the renderer.
-            set.FeatureDirty += renderer.SetFeatureAsDirty;
+            // Wire domain events and populate through the interface — no Unity types from here.
+            IFeatureRenderer iRenderer = renderer;
+            iRenderer.FeatureColor = set.Color;
+            set.FeatureDirty += iRenderer.SetFeatureAsDirty;
 
-            // Populate existing features (e.g. after an import).
             foreach (var feature in set.Features)
-                renderer.AddFeature(feature);
+                iRenderer.AddFeature(feature);
 
-            return renderer;
+            return iRenderer;
         }
 
         // ── Anchor handle management ──────────────────────────────────────────
@@ -267,9 +266,6 @@ namespace DataFeatures
             return child != null ? child : transform;
         }
 
-        private static Color DomainToUnityColor(FeatureColor c)
-            => new Color(c.R, c.G, c.B, c.A);
-
         private static void SetGlobalScale(Transform t, Vector3 globalScale)
         {
             t.localScale = Vector3.one;
@@ -288,6 +284,19 @@ namespace DataFeatures
         public void   AppendFeatureToAscii(Feature f, string fn) { }
         public string ExportToVoTable(FeatureSet set)             => string.Empty;
         public bool   AsciiOutputExists(string fn)                => false;
+    }
+
+    /// <summary>
+    /// No-op renderer. Safe to use in tests and before WP3 delivers its implementation.
+    /// Swap out for the real FeatureSetRenderer in FeatureVisualiser.CreateRendererForSet.
+    /// </summary>
+    internal sealed class NullFeatureRenderer : IFeatureRenderer
+    {
+        public void AddFeature(Feature feature)   { }
+        public void RemoveFeature(Feature feature) { }
+        public void ClearFeatures()               { }
+        public void SetFeatureAsDirty(int index)  { }
+        public FeatureColor FeatureColor          { get; set; }
     }
 
     /// <summary>No-op loader. Returns null so callers see a clean failure path.</summary>
