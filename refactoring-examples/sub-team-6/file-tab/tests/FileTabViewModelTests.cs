@@ -12,6 +12,14 @@ namespace iDaVIE.Desktop.FileTab.Tests
 {
     // ── Test doubles ──────────────────────────────────────────────────────────
 
+    internal sealed class StubFitsHandle : IFitsHandle
+    {
+        public string FilePath { get; }
+        public bool   Disposed { get; private set; }
+        public StubFitsHandle(string filePath) => FilePath = filePath;
+        public void Dispose() => Disposed = true;
+    }
+
     internal sealed class StubFitsService : IFitsService
     {
         public FitsFileInfo? NextImageResult;
@@ -30,8 +38,13 @@ namespace iDaVIE.Desktop.FileTab.Tests
             => Task.FromResult(NextMaskResult
                 ?? throw new InvalidOperationException("StubFitsService: NextMaskResult not set"));
 
-        public Task<string> GetHeaderTextAsync(string path, int hduIndex, CancellationToken ct = default)
+        public Task<string> GetHeaderTextAsync(IFitsHandle handle, int hduIndex, CancellationToken ct = default)
             => Task.FromResult(NextHeaderText);
+    }
+
+    internal sealed class StubMemoryProbe : IMemoryProbe
+    {
+        public long TotalSystemBytes { get; set; } = 64L * 1024L * 1024L * 1024L; // 64 GiB default
     }
 
     internal sealed class StubFileDialogService : IFileDialogService
@@ -47,6 +60,8 @@ namespace iDaVIE.Desktop.FileTab.Tests
         public LoadCubeRequest?   LastRequest;
         public Exception?         ThrowOnLoad;
 
+        public event EventHandler<CubeLoadedEventArgs>? CubeLoaded;
+
         public Task LoadCubeAsync(
             LoadCubeRequest request,
             IProgress<float>? progress = null,
@@ -55,6 +70,14 @@ namespace iDaVIE.Desktop.FileTab.Tests
             if (ThrowOnLoad != null) throw ThrowOnLoad;
             LastRequest = request;
             progress?.Report(1f);
+
+            // Simulate the adapter raising the event on successful load.
+            CubeLoaded?.Invoke(this, new CubeLoadedEventArgs
+            {
+                ImagePath = request.ImagePath,
+                MaskPath  = request.MaskPath,
+                HduIndex  = request.HduIndex,
+            });
             return Task.CompletedTask;
         }
     }
@@ -64,17 +87,20 @@ namespace iDaVIE.Desktop.FileTab.Tests
     internal static class FitsFactory
     {
         public static FitsFileInfo Cube3D(int x = 512, int y = 512, int z = 100,
-            string path = "/data/test.fits") => new FitsFileInfo
+            string path = "/data/test.fits", long estimatedBytes = 0) => new FitsFileInfo
         {
-            FilePath   = path,
-            HduList    = new[] { new HduInfo(1, "PRIMARY", "IMAGE") },
-            NAxis      = 3,
-            AxisSizes  = new Dictionary<int, long> { [1] = x, [2] = y, [3] = z },
-            HeaderText = $"NAXIS  = 3\nNAXIS1 = {x}\nNAXIS2 = {y}\nNAXIS3 = {z}\n",
+            Handle         = new StubFitsHandle(path),
+            FilePath       = path,
+            HduList        = new[] { new HduInfo(1, "PRIMARY", "IMAGE") },
+            NAxis          = 3,
+            AxisSizes      = new Dictionary<int, long> { [1] = x, [2] = y, [3] = z },
+            HeaderText     = $"NAXIS  = 3\nNAXIS1 = {x}\nNAXIS2 = {y}\nNAXIS3 = {z}\n",
+            EstimatedBytes = estimatedBytes == 0 ? (long)x * y * z * sizeof(float) : estimatedBytes,
         };
 
         public static FitsFileInfo TwoDimImage(string path = "/data/flat.fits") => new FitsFileInfo
         {
+            Handle     = new StubFitsHandle(path),
             FilePath   = path,
             HduList    = new[] { new HduInfo(1, "PRIMARY", "IMAGE") },
             NAxis      = 2,
@@ -84,6 +110,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
 
         public static FitsFileInfo FourAxisCube(string path = "/data/4d.fits") => new FitsFileInfo
         {
+            Handle     = new StubFitsHandle(path),
             FilePath   = path,
             HduList    = new[] { new HduInfo(1, "PRIMARY", "IMAGE") },
             NAxis      = 4,
@@ -100,13 +127,15 @@ namespace iDaVIE.Desktop.FileTab.Tests
     public sealed class FileTabViewModelTests
     {
         private static (FileTabViewModel vm, StubFitsService fits,
-                         StubFileDialogService dialog, StubVolumeService volume)
+                         StubFileDialogService dialog, StubVolumeService volume,
+                         StubMemoryProbe probe)
             BuildVm(string? initialDialogPath = "/data/test.fits")
         {
             var fits   = new StubFitsService();
             var dialog = new StubFileDialogService { PathToReturn = initialDialogPath };
             var vol    = new StubVolumeService();
-            return (new FileTabViewModel(fits, dialog, vol), fits, dialog, vol);
+            var probe  = new StubMemoryProbe();
+            return (new FileTabViewModel(fits, dialog, vol, probe), fits, dialog, vol, probe);
         }
 
         // ── Browse image ──────────────────────────────────────────────────────
@@ -114,7 +143,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseImage_ValidCube_SetsImagePathAndIsLoadable()
         {
-            var (vm, fits, _, _) = BuildVm();
+            var (vm, fits, _, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -127,7 +156,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseImage_UserCancels_LeavesStateUnchanged()
         {
-            var (vm, fits, dialog, _) = BuildVm();
+            var (vm, fits, dialog, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
             dialog.PathToReturn  = null;   // simulate cancel
 
@@ -140,7 +169,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseImage_TwoDimensionalFile_IsNotLoadable()
         {
-            var (vm, fits, _, _) = BuildVm();
+            var (vm, fits, _, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.TwoDimImage();
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -152,7 +181,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseImage_FitsOpenThrows_SetsValidationMessage()
         {
-            var (vm, fits, _, _) = BuildVm();
+            var (vm, fits, _, _, _) = BuildVm();
             fits.ThrowOnOpen = new InvalidOperationException("native error");
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -166,7 +195,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseImage_ClearsExistingMask()
         {
-            var (vm, fits, dialog, _) = BuildVm();
+            var (vm, fits, dialog, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
             fits.NextMaskResult  = FitsFactory.Cube3D();
 
@@ -186,9 +215,10 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseImage_PopulatesHduDropdownWithHduCount()
         {
-            var (vm, fits, _, _) = BuildVm();
+            var (vm, fits, _, _, _) = BuildVm();
             var info = new FitsFileInfo
             {
+                Handle     = new StubFitsHandle("/data/multi.fits"),
                 FilePath   = "/data/multi.fits",
                 HduList    = new[] { new HduInfo(1, "PRIMARY", "IMAGE"), new HduInfo(2, "SCI", "IMAGE") },
                 NAxis      = 3,
@@ -206,7 +236,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseImage_FourAxisCube_PopulatesZAxisOptions()
         {
-            var (vm, fits, _, _) = BuildVm();
+            var (vm, fits, _, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.FourAxisCube();
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -218,7 +248,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseImage_ResetSubsetToFullCubeExtents()
         {
-            var (vm, fits, _, _) = BuildVm();
+            var (vm, fits, _, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D(x: 100, y: 200, z: 50);
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -236,7 +266,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseMask_MatchingDimensions_SetsMaskPath()
         {
-            var (vm, fits, dialog, _) = BuildVm();
+            var (vm, fits, dialog, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
             fits.NextMaskResult  = FitsFactory.Cube3D();
 
@@ -251,7 +281,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseMask_MismatchedDimensions_RejectsMask()
         {
-            var (vm, fits, dialog, _) = BuildVm();
+            var (vm, fits, dialog, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D(x: 512, y: 512, z: 100);
             fits.NextMaskResult  = FitsFactory.Cube3D(x: 256, y: 256, z: 50);
 
@@ -266,7 +296,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseMask_NotAvailableBeforeImage()
         {
-            var (vm, _, _, _) = BuildVm();
+            var (vm, _, _, _, _) = BuildVm();
 
             // BrowseMaskCommand should not be executable without a loaded image
             Assert.IsFalse(vm.BrowseMaskCommand.CanExecute());
@@ -277,7 +307,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task Load_ValidFile_PassesCorrectPathAndHduIndex()
         {
-            var (vm, fits, dialog, vol) = BuildVm();
+            var (vm, fits, dialog, vol, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -291,7 +321,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task Load_WithSubsetEnabled_PassesSubsetBounds()
         {
-            var (vm, fits, _, vol) = BuildVm();
+            var (vm, fits, _, vol, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D(x: 512, y: 512, z: 100);
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -313,7 +343,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task Load_SubsetDisabled_PassesNullSubset()
         {
-            var (vm, fits, _, vol) = BuildVm();
+            var (vm, fits, _, vol, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -326,7 +356,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task Load_WithMask_PassesMaskPathInRequest()
         {
-            var (vm, fits, dialog, vol) = BuildVm();
+            var (vm, fits, dialog, vol, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
             fits.NextMaskResult  = FitsFactory.Cube3D();
 
@@ -341,7 +371,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task Load_VolumeServiceThrows_SetsValidationMessage()
         {
-            var (vm, fits, _, vol) = BuildVm();
+            var (vm, fits, _, vol, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
             vol.ThrowOnLoad      = new Exception("load failure");
 
@@ -355,8 +385,119 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task Load_NotAvailableWithoutValidImage()
         {
-            var (vm, _, _, _) = BuildVm();
+            var (vm, _, _, _, _) = BuildVm();
             Assert.IsFalse(vm.LoadCommand.CanExecute());
+        }
+
+        // ── Aspect ratio (RatioMode → ZScale) ─────────────────────────────────
+
+        [Test]
+        public async Task Load_IsotropicRatio_PassesZScaleOne()
+        {
+            var (vm, fits, _, vol, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D(x: 512, y: 512, z: 100);
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            vm.RatioMode = RatioMode.Isotropic;
+            await vm.LoadCommand.ExecuteAsync();
+
+            Assert.AreEqual(1f, vol.LastRequest!.ZScale, 1e-6f);
+        }
+
+        [Test]
+        public async Task Load_ProportionalZRatio_ScalesZAxisRelativeToXY()
+        {
+            var (vm, fits, _, vol, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D(x: 512, y: 512, z: 100);
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            vm.RatioMode = RatioMode.ProportionalZ;
+            await vm.LoadCommand.ExecuteAsync();
+
+            // z=100, max(x,y)=512 → expected zScale ≈ 100/512
+            Assert.AreEqual(100f / 512f, vol.LastRequest!.ZScale, 1e-4f);
+        }
+
+        [Test]
+        public void RatioModeOptions_ExposesTwoLabels()
+        {
+            var (vm, _, _, _, _) = BuildVm();
+            Assert.AreEqual(2, vm.RatioModeOptions.Count);
+            Assert.AreEqual("X=Y=Z", vm.RatioModeOptions[0]);
+            Assert.AreEqual("X=Y",   vm.RatioModeOptions[1]);
+        }
+
+        // ── Memory-feasibility warning (CheckMemSpaceForCubes equivalent) ─────
+
+        [Test]
+        public async Task Load_CubeFitsInMemory_NoWarning()
+        {
+            var (vm, fits, _, _, probe) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D(estimatedBytes: 1L * 1024 * 1024 * 1024); // 1 GiB
+            probe.TotalSystemBytes = 8L * 1024 * 1024 * 1024;                                   // 8 GiB
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            await vm.LoadCommand.ExecuteAsync();
+
+            Assert.IsNull(vm.ValidationMessage);
+        }
+
+        // ── CubeLoaded event (peer-tab subscription point) ────────────────────
+
+        [Test]
+        public async Task Load_Success_RaisesCubeLoadedEventOnce()
+        {
+            var (vm, fits, _, vol, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D();
+
+            int eventCount = 0;
+            CubeLoadedEventArgs? captured = null;
+            vol.CubeLoaded += (_, e) => { eventCount++; captured = e; };
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            await vm.LoadCommand.ExecuteAsync();
+
+            Assert.AreEqual(1, eventCount);
+            Assert.IsNotNull(captured);
+            Assert.AreEqual("/data/test.fits", captured!.ImagePath);
+            Assert.IsFalse(captured.HasMask);
+        }
+
+        [Test]
+        public async Task Load_PeerTabUnsubscribes_DoesNotFireForFutureLoads()
+        {
+            var (vm, fits, _, vol, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D();
+
+            int eventCount = 0;
+            EventHandler<CubeLoadedEventArgs> handler = (_, _) => eventCount++;
+            vol.CubeLoaded += handler;
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            await vm.LoadCommand.ExecuteAsync();
+            Assert.AreEqual(1, eventCount);
+
+            // Peer tab disposes / unsubscribes — closes scope §10 Anomaly #8.
+            vol.CubeLoaded -= handler;
+
+            await vm.LoadCommand.ExecuteAsync();
+            Assert.AreEqual(1, eventCount);   // still 1; no leak
+        }
+
+        [Test]
+        public async Task Load_CubeExceedsMemory_WarnsButStillLoads()
+        {
+            var (vm, fits, _, vol, probe) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D(estimatedBytes: 16L * 1024 * 1024 * 1024); // 16 GiB
+            probe.TotalSystemBytes = 8L * 1024 * 1024 * 1024;                                    // 8 GiB
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            await vm.LoadCommand.ExecuteAsync();
+
+            Assert.IsNotNull(vm.ValidationMessage);
+            StringAssert.Contains("exceeds system memory", vm.ValidationMessage);
+            // Non-blocking — load request still went through to the volume service.
+            Assert.IsNotNull(vol.LastRequest);
         }
 
         // ── Clear mask ─────────────────────────────────────────────────────────
@@ -364,7 +505,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task ClearMask_RemovesMaskPath()
         {
-            var (vm, fits, dialog, _) = BuildVm();
+            var (vm, fits, dialog, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
             fits.NextMaskResult  = FitsFactory.Cube3D();
 
@@ -383,9 +524,9 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task PropertyChanged_ImagePath_RaisedOnBrowse()
         {
-            var (vm, fits, _, _) = BuildVm();
+            var (vm, fits, _, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
-            var raised = new HashSet<string?>();
+            var raised = new List<string?>();
             vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
 
             await vm.BrowseImageCommand.ExecuteAsync();
@@ -396,7 +537,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task PropertyChanged_IsLoading_ToggledDuringBrowse()
         {
-            var (vm, fits, _, _) = BuildVm();
+            var (vm, fits, _, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D();
             bool loadingRaised = false;
             vm.PropertyChanged += (_, e) =>

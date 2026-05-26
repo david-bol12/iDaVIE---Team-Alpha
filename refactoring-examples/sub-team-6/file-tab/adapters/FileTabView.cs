@@ -34,6 +34,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
         [Header("Dropdowns")]
         [SerializeField] private TMP_Dropdown _hduDropdown   = null!;
         [SerializeField] private TMP_Dropdown _zAxisDropdown = null!;
+        [SerializeField] private TMP_Dropdown _ratioDropdown = null!;
 
         [Header("Subset panel")]
         [SerializeField] private GameObject     _subsetPanel  = null!;
@@ -83,6 +84,8 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             // Wire dropdowns → ViewModel (two-way)
             _hduDropdown.onValueChanged.AddListener(idx => _vm.SelectedHduIndex = idx);
             _zAxisDropdown.onValueChanged.AddListener(idx => _vm.SelectedZAxisIndex = idx);
+            _ratioDropdown.onValueChanged.AddListener(idx => _vm.RatioMode = (RatioMode)idx);
+            RebuildRatioDropdown();
 
             // Wire subset toggle → ViewModel
             _subsetToggle.onValueChanged.AddListener(on => _vm.SubsetEnabled = on);
@@ -119,6 +122,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             _clearMaskBtn.onClick.RemoveAllListeners();
             _hduDropdown.onValueChanged.RemoveAllListeners();
             _zAxisDropdown.onValueChanged.RemoveAllListeners();
+            _ratioDropdown.onValueChanged.RemoveAllListeners();
             _subsetToggle.onValueChanged.RemoveAllListeners();
             _xMinInput.onEndEdit.RemoveAllListeners();
             _xMaxInput.onEndEdit.RemoveAllListeners();
@@ -160,6 +164,10 @@ namespace iDaVIE.Desktop.Adapters.FileTab
 
                 case nameof(IFileTabViewModel.SubsetEnabled):
                     _subsetToggle.SetIsOnWithoutNotify(_vm!.SubsetEnabled);
+                    break;
+
+                case nameof(IFileTabViewModel.RatioMode):
+                    _ratioDropdown.SetValueWithoutNotify((int)_vm!.RatioMode);
                     break;
 
                 case nameof(IFileTabViewModel.HeaderText):
@@ -215,6 +223,15 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             _zAxisDropdown.RefreshShownValue();
         }
 
+        private void RebuildRatioDropdown()
+        {
+            _ratioDropdown.ClearOptions();
+            foreach (var label in _vm!.RatioModeOptions)
+                _ratioDropdown.options.Add(new TMP_Dropdown.OptionData(label));
+            _ratioDropdown.SetValueWithoutNotify((int)_vm.RatioMode);
+            _ratioDropdown.RefreshShownValue();
+        }
+
         // ── Initial full sync ─────────────────────────────────────────────────
 
         private void SyncAll()
@@ -227,6 +244,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
                 nameof(IFileTabViewModel.ZAxisOptions),
                 nameof(IFileTabViewModel.IsLoadable),
                 nameof(IFileTabViewModel.SubsetEnabled),
+                nameof(IFileTabViewModel.RatioMode),
                 nameof(IFileTabViewModel.HeaderText),
                 nameof(IFileTabViewModel.ValidationMessage),
             })

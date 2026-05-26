@@ -15,24 +15,31 @@ namespace iDaVIE.Desktop.FileTab
     /// The composition root (a thin Unity MonoBehaviour) builds this and calls
     /// FileTabView.BindTo(vm) once.
     /// </summary>
-    public sealed class FileTabViewModel : IFileTabViewModel
+    public sealed class FileTabViewModel : IFileTabViewModel, IDisposable
     {
         // ── Injected services (all behind interfaces) ─────────────────────────
         private readonly IFitsService       _fitsService;
         private readonly IFileDialogService _dialogService;
         private readonly IVolumeService     _volumeService;
+        private readonly IMemoryProbe      _memoryProbe;
 
         // ── Private backing state ──────────────────────────────────────────────
         private string? _imagePath;
         private string? _maskPath;
         private readonly List<HduInfo> _hduOptions    = new();
         private readonly List<string>  _zAxisOptions  = new();
-        private int     _selectedHduIndex;
-        private int     _selectedZAxisIndex;
-        private bool    _subsetEnabled;
-        private bool    _isLoading;
-        private string? _headerText;
-        private string? _validationMessage;
+        private int      _selectedHduIndex;
+        private int      _selectedZAxisIndex;
+        private bool     _subsetEnabled;
+        private bool     _isLoading;
+        private string?  _headerText;
+        private string?  _validationMessage;
+        private RatioMode _ratioMode = RatioMode.Isotropic;
+
+        // Fixed display labels for the Ratio_Dropdown — index-aligned with RatioMode.
+        // Mirrors the two options on the original Ratio_Dropdown UI element
+        // (scope §1 / §10 Anomaly #5).
+        private static readonly string[] RatioLabels = { "X=Y=Z", "X=Y" };
 
         private FitsFileInfo? _currentImageInfo;
         private FitsFileInfo? _currentMaskInfo;
@@ -41,11 +48,13 @@ namespace iDaVIE.Desktop.FileTab
         public FileTabViewModel(
             IFitsService       fitsService,
             IFileDialogService dialogService,
-            IVolumeService     volumeService)
+            IVolumeService     volumeService,
+            IMemoryProbe       memoryProbe)
         {
             _fitsService   = fitsService   ?? throw new ArgumentNullException(nameof(fitsService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _volumeService = volumeService ?? throw new ArgumentNullException(nameof(volumeService));
+            _memoryProbe   = memoryProbe   ?? throw new ArgumentNullException(nameof(memoryProbe));
 
             Subset = new SubsetBoundsViewModel();
 
@@ -103,6 +112,14 @@ namespace iDaVIE.Desktop.FileTab
             set { _subsetEnabled = value; Notify(); }
         }
         public SubsetBoundsViewModel Subset { get; }
+
+        // ── Aspect-ratio (Ratio_Dropdown on file-load modal) ──────────────────
+        public IReadOnlyList<string> RatioModeOptions => RatioLabels;
+        public RatioMode RatioMode
+        {
+            get => _ratioMode;
+            set { if (_ratioMode == value) return; _ratioMode = value; Notify(); }
+        }
 
         // ── Derived / computed state ───────────────────────────────────────────
         public bool IsLoading
@@ -174,6 +191,11 @@ namespace iDaVIE.Desktop.FileTab
             try
             {
                 var info = await _fitsService.OpenImageAsync(path);
+                // Dispose the previous handles before replacing — the adapter holds the
+                // native file pointer open across HDU reads, so we must close it on swap.
+                _currentImageInfo?.Dispose();
+                _currentMaskInfo?.Dispose();
+                _currentMaskInfo = null;
                 _currentImageInfo = info;
                 ImagePath = path;
 
@@ -195,7 +217,7 @@ namespace iDaVIE.Desktop.FileTab
                 SubsetEnabled = false;
 
                 // Invalidate any previously selected mask when the image changes
-                _currentMaskInfo = null;
+                // (the prior mask handle was already disposed above with the image handle).
                 MaskPath = null;
 
                 NotifyIsLoadable();
@@ -229,10 +251,12 @@ namespace iDaVIE.Desktop.FileTab
 
                 if (_currentImageInfo != null && !MaskAxesMatchImage(_currentImageInfo, info))
                 {
+                    info.Dispose();   // mismatched mask — release its handle immediately
                     ValidationMessage = "Mask dimensions do not match the image cube.";
                     return;
                 }
 
+                _currentMaskInfo?.Dispose();
                 _currentMaskInfo = info;
                 MaskPath = path;
                 NotifyIsLoadable();
@@ -260,6 +284,12 @@ namespace iDaVIE.Desktop.FileTab
             ValidationMessage = null;
             try
             {
+                // Non-blocking RAM warning — replaces CanvassDesktop.CheckMemSpaceForCubes
+                // (CanvassDesktop.cs:995-1013). Matches BEFORE behaviour: warn the user,
+                // continue with the load.
+                var warning = BuildMemoryWarning();
+                if (warning != null) ValidationMessage = warning;
+
                 var request = new LoadCubeRequest
                 {
                     ImagePath      = _imagePath,
@@ -267,6 +297,7 @@ namespace iDaVIE.Desktop.FileTab
                     HduIndex       = _selectedHduIndex + 1,     // FITS HDU is 1-based
                     Subset         = _subsetEnabled ? Subset.ToDto() : null,
                     ZAxisSelection = _selectedZAxisIndex,
+                    ZScale         = ComputeZScale(_ratioMode, _currentImageInfo),
                 };
                 await _volumeService.LoadCubeAsync(request, progress: new Progress<float>());
             }
@@ -282,22 +313,58 @@ namespace iDaVIE.Desktop.FileTab
 
         private void ClearMask()
         {
+            _currentMaskInfo?.Dispose();
             _currentMaskInfo = null;
             MaskPath = null;
             NotifyIsLoadable();
+        }
+
+        /// <summary>
+        /// Releases any open FITS file handles. Called by the composition root on
+        /// OnDestroy so native pointers do not leak when the panel is torn down.
+        /// </summary>
+        public void Dispose()
+        {
+            _currentImageInfo?.Dispose();
+            _currentMaskInfo?.Dispose();
+            _currentImageInfo = null;
+            _currentMaskInfo  = null;
         }
 
         // ── Private helpers ────────────────────────────────────────────────────
 
         private async Task RefreshHduHeaderAsync(int hduIndex)
         {
-            if (_imagePath is null) return;
+            if (_currentImageInfo is null) return;
             try
             {
-                HeaderText = await _fitsService.GetHeaderTextAsync(_imagePath, hduIndex);
+                // Reuse the still-open FITS handle (FITS HDU index is 1-based).
+                // Replaces CanvassDesktop.ChangeHduSelection (line 1435) which
+                // reopened the file from disk on every dropdown selection.
+                HeaderText = await _fitsService.GetHeaderTextAsync(
+                    _currentImageInfo.Handle, hduIndex + 1);
             }
             catch { /* non-fatal — keep displaying the previous header */ }
             NotifyIsLoadable();
+        }
+
+        /// <summary>
+        /// Computes a human-readable RAM-feasibility warning, or null if the
+        /// projected cube fits in available system memory. Non-blocking — matches
+        /// the CanvassDesktop.CheckMemSpaceForCubes contract (warn, do not gate).
+        /// </summary>
+        private string? BuildMemoryWarning()
+        {
+            if (_currentImageInfo is null) return null;
+
+            long required = _currentImageInfo.EstimatedBytes
+                          + (_currentMaskInfo?.EstimatedBytes ?? 0);
+            long total = _memoryProbe.TotalSystemBytes;
+            if (total <= 0 || required <= total) return null;
+
+            double gibReq = required / (1024d * 1024d * 1024d);
+            double gibTot = total    / (1024d * 1024d * 1024d);
+            return $"Warning: estimated cube size ({gibReq:F2} GiB) exceeds system memory ({gibTot:F2} GiB). Load may fail.";
         }
 
         private void PopulateZAxisOptions(FitsFileInfo info)
@@ -336,6 +403,21 @@ namespace iDaVIE.Desktop.FileTab
         {
             long Get(int axis) => info.AxisSizes.TryGetValue(axis, out var v) ? v : 1;
             return ((int)Get(1), (int)Get(2), (int)Get(3));
+        }
+
+        /// <summary>
+        /// Pure computation — replaces the inline zScale arithmetic at
+        /// CanvassDesktop.cs:1028-1039 (driven there by _ratioDropdownIndex).
+        /// Isotropic returns 1; ProportionalZ scales Z by axisZ / max(axisX, axisY).
+        /// </summary>
+        private static float ComputeZScale(RatioMode mode, FitsFileInfo? info)
+        {
+            if (mode == RatioMode.Isotropic || info is null) return 1f;
+
+            long ax(int axis) => info.AxisSizes.TryGetValue(axis, out var v) ? v : 1;
+            long xy = Math.Max(ax(1), ax(2));
+            if (xy <= 0) return 1f;
+            return (float)ax(3) / xy;
         }
 
         /// <summary>

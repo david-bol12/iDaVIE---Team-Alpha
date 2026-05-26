@@ -40,6 +40,9 @@ namespace iDaVIE.Desktop.Adapters.FileTab
 
         public bool IsCubeLoaded => FindFirstActiveRenderer() != null;
 
+        /// <inheritdoc />
+        public event EventHandler<CubeLoadedEventArgs>? CubeLoaded;
+
         public Task LoadCubeAsync(
             LoadCubeRequest request,
             IProgress<float>? progress = null,
@@ -107,6 +110,11 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             {
                 newCube = Instantiate(_cubePrefab, Vector3.zero, Quaternion.identity);
                 newCube.transform.SetParent(_volumeDataSetManager.transform, false);
+                // Apply pre-computed Z-scale (replaces inline arithmetic at
+                // CanvassDesktop.cs:1028-1039). The VM owns the policy; the
+                // adapter only applies the resulting scalar.
+                var s = newCube.transform.localScale;
+                newCube.transform.localScale = new Vector3(s.x, s.y, s.z * request.ZScale);
                 newCube.SetActive(true);
 
                 renderer = newCube.GetComponent<VolumeDataSetRenderer>();
@@ -140,15 +148,27 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             }
 
             _commandController!.AddDataSet(renderer);
-            StartCoroutine(renderer._startFunc());
 
-            // Phase 4: poll until renderer signals ready
-            // (replaces CanvassDesktop.LoadCubeCoroutine lines 1116–1119 busy-wait)
-            while (!renderer.started)
-                yield return new WaitForSeconds(0.1f);
+            // Phase 4: await renderer initialisation. _startFunc() is the IEnumerator
+            // coroutine that sets `started = true` at its terminating yield
+            // (VolumeDataSetRenderer.cs:541-542). Yielding the StartCoroutine handle
+            // suspends this coroutine until _startFunc completes — eliminating the
+            // per-100ms polling loop in CanvassDesktop.LoadCubeCoroutine (lines 1116-1119)
+            // that previously busy-waited on the same readiness signal.
+            yield return StartCoroutine(renderer._startFunc());
 
             progress?.Report(1f);
             tcs.TrySetResult(true);
+
+            // Notify peer-tab subscribers exactly once. The adapter holds no
+            // reference to the renderer in the event payload — only a plain DTO —
+            // so unsubscribed subscribers do not leak the previous cube.
+            CubeLoaded?.Invoke(this, new CubeLoadedEventArgs
+            {
+                ImagePath = request.ImagePath,
+                MaskPath  = request.MaskPath,
+                HduIndex  = request.HduIndex,
+            });
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

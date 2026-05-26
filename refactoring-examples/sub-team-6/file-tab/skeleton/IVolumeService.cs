@@ -30,5 +30,18 @@ namespace iDaVIE.Desktop.FileTab
             LoadCubeRequest request,
             IProgress<float>? progress = null,
             CancellationToken ct = default);
+
+        /// <summary>
+        /// Raised after a cube has finished loading and is visible to the user.
+        /// Subscription point for peer-tab ViewModels (Rendering, Stats, Sources,
+        /// Paint) — replaces the ad-hoc cross-tab choreography in
+        /// CanvassDesktop.postLoadFileFileSystem (scope §5.7).
+        ///
+        /// Subscribers are responsible for their own lifetime: subscribe in the
+        /// peer-tab VM constructor, unsubscribe in its Dispose. The service holds
+        /// only the delegate reference, never the renderer instance — this is what
+        /// closes the rest-frequency subscription leak in scope §10 Anomaly #8.
+        /// </summary>
+        event EventHandler<CubeLoadedEventArgs>? CubeLoaded;
     }
 }

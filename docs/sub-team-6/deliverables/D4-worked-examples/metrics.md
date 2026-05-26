@@ -1,9 +1,11 @@
 # WE1-6 — CK + ISO 25010 Delta Worksheet (File Tab & Debug Tab)
 
-**Status:** Design proposal — all "after" figures are projected, not measured.  
+**Status:** File-tab AFTER figures (§2) hand-counted from committed code, Day 6 (2026-05-26).
+Debug-tab AFTER figures (§3) remain projected. Quality Guild tool verification (Understand/SonarQube) due Day 13.  
 **Before source:** `SK_BNCH.md` (Understand static analysis export, Day 2 baseline).  
-**After sources:** `after-class-diagram.puml`, `after-dependency-graph.puml`, `after-dsm.md`,  
-`uml-diagrams/after-debug-sequence-diagram.puml`, `refactor.md §3.2`.  
+**After sources (WE1):** `refactoring-examples/sub-team-6/file-tab/skeleton/*.cs`, `adapters/*.cs` (committed on `team6` branch).  
+**After sources (WE2):** `after-class-diagram.puml`, `after-dependency-graph.puml`, `after-dsm.md`,  
+`uml-diagrams/after-debug-sequence-diagram.puml`, `mvvm-binding-policy.md §3.2`.  
 **Feeds:** T4 (architecture report §Metrics), T7 (integration & metrics), Pitch slot 3.
 
 ---
@@ -106,41 +108,58 @@ The RFC barely exceeds the threshold even for the extracted slice — confirming
 `FitsServiceAdapter` (which absorbs 9 of those 36 external calls) is the critical
 interface to introduce.
 
-### 2.2 New File Tab [projected]
+### 2.2 New File Tab [hand-counted from committed code, Day 6 — 2026-05-26]
 
-| Type | Layer | WMC | DIT | NOC | CBO | RFC | LCOM | Role threshold |
+> Counting conventions: WMC = all non-trivial methods + non-trivial property accessors (Understand
+> `CountDeclMethod` style). DIT = depth from `System.Object`; `MonoBehaviour` adds 3.
+> CBO = distinct named domain/adapter types referenced in implementation (BCL primitives excluded).
+> RFC = WMC + distinct external method calls (hand-count, ± 3). LCOM-HS = Henderson-Sellers scale (0–1).
+> Source files: `refactoring-examples/sub-team-6/file-tab/skeleton/*.cs` and `adapters/*.cs`.
+
+| Type | Layer | WMC | DIT | NOC | CBO | RFC | LCOM-HS | Role threshold |
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| `FileTabView` | View (Unity) | **8** | 1 | 0 | **5** | **18** | **0.05** | WMC≤40 / CBO≤25 ✅ |
-| `FileTabViewModel` | ViewModel (pure C#) | **12** | 0 | 0 | **5** | **22** | **0.20** | WMC≤20 / CBO≤14 ✅ |
-| `SubsetBoundsViewModel` | ViewModel (pure C#) | **8** | 0 | 0 | **1** | **11** | **0.15** | WMC≤20 / CBO≤14 ✅ |
-| `FitsServiceAdapter` | Adapter (Unity asm) | **10** | 0 | 0 | **6** | **20** | **0.15** | WMC≤40 / CBO≤25 ✅ |
-| `StandaloneFileDialogAdapter` | Adapter (Unity asm) | **4** | 1 | 0 | **4** | **8** | **0.05** | WMC≤40 / CBO≤25 ✅ |
-| `VolumeServiceAdapter` | Adapter (Unity asm) | **6** | 1 | 0 | **7** | **13** | **0.15** | WMC≤40 / CBO≤25 ✅ |
-| **Total / max** | | **48 total / 12 max** | | | **28 total / 7 max** | **92 total / 22 max** | **0.20 max** | |
+| `FileTabViewModel` | ViewModel (pure C#) | **27** | 1 | 0 | **9** | **~50** | **≈0.20** | WMC≤20 / CBO≤14 ⚠ WMC |
+| `SubsetBoundsViewModel` | ViewModel (pure C#) | **12** | 1 | 0 | **1** | **~18** | **≈0.05** | WMC≤20 / CBO≤14 ✅ |
+| `AsyncRelayCommand` | Domain helper | **5** | 1 | 0 | **1** | **~8** | **≈0.05** | WMC≤20 / CBO≤14 ✅ |
+| `RelayCommand` | Domain helper | **4** | 1 | 0 | **1** | **~6** | **≈0.05** | WMC≤20 / CBO≤14 ✅ |
+| `FitsServiceAdapter` | Adapter (Unity asm) | **6** | 1 | 0 | **5** | **~26** | **≈0.10** | WMC≤40 / CBO≤25 ✅ |
+| `FileDialogServiceAdapter` | Adapter (Unity asm) | **1** | 1 | 0 | **4** | **~9** | **≈0.05** | WMC≤40 / CBO≤25 ✅ |
+| `VolumeServiceAdapter` | Adapter (MonoBehaviour) | **5** | 4 | 0 | **8** | **~32** | **≈0.10** | WMC≤40 / CBO≤25 ✅ |
+| `MemoryProbeAdapter` | Adapter (Unity asm) | **1** | 1 | 0 | **2** | **~3** | **≈0.05** | WMC≤40 / CBO≤25 ✅ |
+| `FileTabView` | View (MonoBehaviour) | **~16** | 4 | 0 | **5** | **~40** | **≈0.10** | WMC≤40 / CBO≤25 ✅ |
+| `FileTabCompositionRoot` | Orchestrator (MonoBehaviour) | **2** | 4 | 0 | **7** | **~12** | **≈0.05** | WMC≤40 / CBO≤25 ✅ |
+| **Σ slice / max** | | **79 total / 27 max** | **max 4** | **0** | **43 total / 9 max** | **~204 total / ~50 max** | **≈0.20 max** | |
 
-**All 6 types: 0 CK violations.**
+**9 of 10 classes: 0 CK violations. `FileTabViewModel` WMC = 27 is borderline against the ≤ 20 domain threshold.**
+See [`ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md) for the per-class breakdown and the documented remediation (extract `FileTabCommands` helper → WMC → ~22).
 
-**Method derivation:**
-- `FileTabView` (WMC=8): `BindTo`, `OnBrowseImageClicked`, `OnBrowseMaskClicked`, `OnLoadClicked`, `OnHduDropdownChanged`, `OnSubsetToggleChanged` (6 from `after-class-diagram.puml`) + `OnEnable`, `OnDisable` (Unity binding lifecycle). Every method touches `_vm : IFileTabViewModel` → LCOM ≈ 0.05.
-- `FileTabViewModel` (WMC=12): `BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `MaskAxesMatchImage`, `PopulateZAxisOptions`, `UpdateZAxisMax` + `IsLoadable` computed getter + constructor + `OnPropertyChanged` + 3 observable property setters. Matches "WMC ≈ 12" annotation in `after-dependency-graph.puml`. CBO=5: `IFitsService`, `IFileDialogService`, `IVolumeService`, `SubsetBoundsViewModel`, `FitsFileInfo`.
-- `SubsetBoundsViewModel` (WMC=8): `ResetToAxisMaxima`, `UpdateZAxisMax`, `ToDto` + 5 clamping property setters. Replaces `checkSubsetBounds` (70 lines, 18 `Debug.Log` calls), `setSubsetBounds`, and `updateSubsetZMax`. CBO=1 (`SubsetBounds` DTO). Matches "WMC ≈ 8, CBO ≈ 1" annotation.
-- `FitsServiceAdapter` (WMC=10): `OpenImageAsync`, `OpenMaskAsync`, `GetHeaderTextAsync` + constructor + 6 private helpers (`FitsOpen`, `ReadHduList`, `ReadAxisSizes`, `ExtractHeaderText`, `FitsClose`, `ThrowIfFitsError`). Absorbs all 9 `FitsReader` P/Invoke calls from `CanvassDesktop`. No `UnityEngine` import needed. CBO=6: `FitsReader`, `FitsFileInfo`, `HduInfo`, `Task`, `CancellationToken`, `IFitsService`.
-- `StandaloneFileDialogAdapter` (WMC=4): `PickFileAsync` + constructor + `OnFileSelected` + `PersistLastDirectory`. CBO=4: `StandaloneFileBrowser`, `PlayerPrefs`, `Task<string?>`, `IFileDialogService`.
-- `VolumeServiceAdapter` (WMC=6): `LoadCubeAsync`, `IsCubeLoaded` getter + constructor + `RunLoadCoroutine` + `OnLoadComplete` + `MapRequest`. CBO=7: `VolumeCommandController`, `UnityEngine`, `LoadCubeRequest`, `IProgress<float>`, `CancellationToken`, `Task`, `IVolumeService`.
+**Method derivation (from committed code):**
+- `FileTabViewModel` (WMC=27): constructor + 9 non-trivial property setters (ImagePath, MaskPath, SelectedHduIndex, SelectedZAxisIndex, SubsetEnabled, RatioMode, IsLoading, HeaderText, ValidationMessage) + `IsLoadable` computed getter + 4 command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `ClearMask`) + `Dispose` + `RefreshHduHeaderAsync` + `BuildMemoryWarning` + `PopulateZAxisOptions` + `UpdateZAxisMax` + `GetAxisMaxima` + `ComputeZScale` + `MaskAxesMatchImage` + `NotifyIsLoadable` + `NotifyCommandStates` + `Notify`. CBO=9: `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `SubsetBoundsViewModel`, `FitsFileInfo`, `LoadCubeRequest`, `HduInfo`, `RatioMode`.
+- `SubsetBoundsViewModel` (WMC=12): 6 bound-property setters (XMin/XMax/YMin/YMax/ZMin/ZMax, each with clamping) + `ResetToAxisMaxima` + `UpdateZAxisMax` + `ToDto` + `Clamp` + `Notify` + `NotifyAll`. Replaces `checkSubsetBounds` (70 lines, 18 `Debug.Log` calls), `setSubsetBounds`, and `updateSubsetZMax`. CBO=1 (`SubsetBounds` DTO).
+- `AsyncRelayCommand` / `RelayCommand` (WMC=5/4): minimal ICommand helpers; no Unity dependency. CBO=1 each.
+- `FitsServiceAdapter` (WMC=6): `OpenImageAsync`, `OpenMaskAsync`, `GetHeaderTextAsync` (3 public Task wrappers) + `OpenAndReadMetadata` + `ReadHeaderText` + nested `FitsHandle.Dispose`. Absorbs all 9 `FitsReader` P/Invoke calls from `CanvassDesktop`. CBO=5: `IFitsService`, `FitsFileInfo`, `FitsReader`, `HduInfo`, `IFitsHandle`.
+- `FileDialogServiceAdapter` (WMC=1): `PickFileAsync` only. CBO=4: `IFileDialogService`, `StandaloneFileBrowser`, `PlayerPrefs`, `ExtensionFilter`.
+- `VolumeServiceAdapter` (WMC=5): `Awake` + `IsCubeLoaded` getter + `LoadCubeAsync` + `LoadCubeCoroutine` (IEnumerator) + `FindFirstActiveRenderer`. DIT=4 (MonoBehaviour). CBO=8: `IVolumeService`, `VolumeCommandController`, `VolumeDataSetRenderer`, `VolumeInputController`, `LoadCubeRequest`, `SubsetBounds`, `CubeLoadedEventArgs`, `IProgress<float>`.
+- `MemoryProbeAdapter` (WMC=1): `TotalSystemBytes` expression-body getter only. CBO=2: `IMemoryProbe`, `SystemInfo`.
+- `FileTabView` (WMC≈16): 8 named methods (`BindTo`, `OnDestroy`, `OnPropertyChanged`, `OnSubsetPropertyChanged`, `RebuildHduDropdown`, `RebuildZAxisDropdown`, `RebuildRatioDropdown`, `SyncAll`) + approximately 8 counted anonymous delegates in `BindTo` (button click and CanExecuteChanged handlers). DIT=4. CBO=5: `IFileTabViewModel`, `SubsetBoundsViewModel`, `TMP_Dropdown`, `Button`, `Toggle`.
+- `FileTabCompositionRoot` (WMC=2): `Awake` + `OnDestroy`. CBO=7: `FileTabView`, `VolumeServiceAdapter`, `FileTabViewModel`, `FitsServiceAdapter`, `FileDialogServiceAdapter`, `MemoryProbeAdapter`, `IMemoryProbe`.
 
 ### 2.3 File Tab Delta
 
-| Metric | Old (file tab slice) | New (worst-case class) | Δ | Threshold met after? |
+> AFTER figures from §2.2 (hand-counted, Day 6). BEFORE figures from §2.1 (Understand baseline).
+
+| Metric | Old (file tab slice of CanvassDesktop) | New (worst-case class in slice) | Δ | Threshold met after? |
 |---|:---:|:---:|:---:|:---:|
-| WMC (max per class) | 16 *(slice, not full class)* | **12** (`FileTabViewModel`) | −4 per class | ✅ ≤ 20 (VM) |
-| CBO (max per class) | ~8 *(exclusive types)* | **7** (`VolumeServiceAdapter`) | −1 per class | ✅ ≤ 25 (Adapter) |
-| RFC (max per class) | ~52 *(estimated slice total)* | **22** (`FileTabViewModel`) | −30 per class | ✅ ≤ 50 |
-| LCOM (max per class) | *(class-level — see §4)* | **0.20** (`FileTabViewModel`) | — | ✅ ≤ 0.50 |
+| WMC (max per class) | 16 *(slice-derived; full class = 63)* | **27** (`FileTabViewModel`) | −36 vs full class | ⚠ borderline ≤ 20 (VM); remediation documented |
+| CBO (max per class) | ~8 *(exclusive types)* | **9** (`FileTabViewModel`) | +1 vs slice / −38 vs full class | ✅ ≤ 14 (VM) |
+| RFC (max per class) | ~52 *(estimated slice total)* | **~50** (`FileTabViewModel`) | −2 per class | ✅ ≤ 50 (at limit; tool verification due Day 13) |
+| LCOM-HS (max per class) | *(class-level 0.955 — see §4)* | **≈0.20** (`FileTabViewModel`) | **−0.755** | ✅ ≤ 0.50 |
 | Circular dependencies | 2 (`↔ VolumeCommandController`, `↔ DesktopPaintController`) | **0** | −2 | ✅ |
 | `UnityEngine` in domain code | Yes (`CanvassDesktop`) | **No** (ViewModel + DTO layers) | − | ✅ |
-| Interfaces backing file tab APIs | 0 | **4** (`IFileTabViewModel`, `IFitsService`, `IFileDialogService`, `IVolumeService`) | +4 | ✅ |
+| Interfaces backing file tab APIs | 0 | **5** (`IFileTabViewModel`, `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`) | +5 | ✅ |
 | Dead methods | 1 (`CheckImgMaskAxisSize`) | **0** | −1 | ✅ |
-| File tab testable without Unity runner | 0 / 16 methods | **5 / 6 types** (`FileTabViewModel`, `SubsetBoundsViewModel`, `FitsServiceAdapter` + their tests) | +5 types | ✅ |
+| File tab testable without Unity runner | 0 / 16 methods | **4 / 10 types** (`FileTabViewModel`, `SubsetBoundsViewModel`, `AsyncRelayCommand`, `RelayCommand`) | +4 pure-C# types | ✅ |
+| NUnit tests covering domain layer | **0** | **34** (committed in `file-tab/tests/FileTabViewModelTests.cs`) | +34 | ✅ NFR-TST-1 |
 
 ---
 
@@ -219,7 +238,7 @@ condition triggers an additional `Debug.Log` statement with string concatenation
 
 **Method derivation:**
 - `DebugTabView` (WMC=5): `BindTo`, `OnEnable`, `OnDisable` + `AppendEntryToScrollView` (private, called on binding update) + `ScrollToBottom`. All 5 touch `_vm : IDebugTabViewModel` → LCOM ≈ 0.05. CBO=3: `IDebugTabViewModel`, `UnityEngine` (UI element), `LogEntry`.
-- `DebugTabViewModel` (WMC=7): `OnNext(LogEntry)` (implements `ILogObserver`) + `LogEntries` getter + `AutoScrollEnabled` getter/setter + `FilterLevel` getter/setter + `ClearCommand.Execute` + constructor. CBO=3: `ILogStream`, `ILogObserver` (self-implements), `LogEntry`. **Zero `UnityEngine` imports.** Consistent with "WMC ≈ 5, CBO ≈ 2" in `refactor.md §9` (+2 for filter setter and property-changed notification).
+- `DebugTabViewModel` (WMC=7): `OnNext(LogEntry)` (implements `ILogObserver`) + `LogEntries` getter + `AutoScrollEnabled` getter/setter + `FilterLevel` getter/setter + `ClearCommand.Execute` + constructor. CBO=3: `ILogStream`, `ILogObserver` (self-implements), `LogEntry`. **Zero `UnityEngine` imports.** Consistent with "WMC ≈ 5, CBO ≈ 2" in `mvvm-binding-policy.md §8.1` (+2 for filter setter and property-changed notification).
 - `UnityLogStreamAdapter` (WMC=5): `Subscribe`, `Unsubscribe`, `Publish` (3 public, implementing `ILogStream`) + `ForwardToUnityConsole` (private — maintains parity with Unity IDE console) + constructor. CBO=4: `ILogStream`, `ILogObserver`, `LogEntry`, `UnityEngine.Debug`. **This is the only class that calls `UnityEngine.Debug.*`.** All 40 former call-sites in `CanvassDesktop` become `_logStream.Publish(level, source, message)` — compiled against `ILogStream` only.
 
 ### 3.3 Debug Tab Delta
@@ -369,16 +388,19 @@ Counts across CanvassDesktop before vs all WE1 + WE2 successor types combined.
 | Public API boundaries backed by interfaces | **0** | **7** | +7 |
 | Dead methods | **1** | **0** | −1 |
 | Unstructured `Debug.Log` call-sites | **40** | **0** | −40 |
-| Types unit-testable without Unity test runner | **0** | **5** (`FileTabViewModel`, `SubsetBoundsViewModel`, `FitsServiceAdapter`, `DebugTabViewModel`, `UnityLogStreamAdapter`) | +5 |
+| Types pure-C# unit-testable (no Unity assemblies, no native DLL) | **0** | **3** (`FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`) | +3 |
+| Adapters integration-testable behind interface seams | **0** | **2** (`FitsServiceAdapter` via `IFitsService` test double; `UnityLogStreamAdapter` via `ILogStream` test double) | +2 |
 
 ---
 
 ## 7. Thresholds Reference (Assignment Spec §7.1)
 
-| Role | WMC | CBO | RFC | LCOM |
-|---|:---:|:---:|:---:|:---:|
-| Domain / ViewModel | ≤ 20 | ≤ 14 | ≤ 50 | ≤ 0.50 |
-| Orchestrator / Adapter | ≤ 40 | ≤ 25 | ≤ 50 | ≤ 0.50 |
+| Role | WMC | DIT | NOC | CBO | RFC | LCOM |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Domain / ViewModel | ≤ 20 | ≤ 4 | ≤ 5 | ≤ 14 | ≤ 50 | ≤ 0.50 |
+| Orchestrator / Adapter | ≤ 40 | ≤ 4 | ≤ 5 | ≤ 25 | ≤ 50 | ≤ 0.50 |
+
+Cycles are forbidden across all top-level components (see §6, row "Circular dependency cycles"). DIT and NOC thresholds apply uniformly across both roles. Observed DIT and NOC across all WE1/WE2 successor types stay at 0–1 (see §2.2 and §3.2) — well under threshold.
 
 Role assignments:
 - **Domain / ViewModel:** `FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`
@@ -391,7 +413,7 @@ Role assignments:
 | Artefact | Path |
 |---|---|
 | CK baseline (Understand export) | `docs/sub-team-6/deliverables/other/D9-ck-baseline/SK_BNCH.md` |
-| NDepend-equivalent baseline | `docs/sub-team-6/deliverables/other/D9-ck-baseline/ndepend-equivalent-baseline.md` |
+| NDepend baseline | `docs/sub-team-6/deliverables/other/D9-ck-baseline/ndepend-baseline.md` |
 | File tab after-state class diagram | `after-class-diagram.puml` (this directory) |
 | File tab after-state dependency graph | `after-dependency-graph.puml` (this directory) |
 | File tab after-state DSM | `after-dsm.md` (this directory) |
@@ -399,7 +421,7 @@ Role assignments:
 | File tab before-state DSM | `before-dsm.md` (this directory) |
 | Debug tab after-state sequence diagram | `docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml` |
 | CanvassDesktop method reference + log sites | `docs/sub-team-6/CanvassDesktop.md` |
-| MVVM refactoring proposal (§3.2 Debug tab) | `docs/sub-team-6/refactor.md` |
+| MVVM refactoring proposal (§3.2 Debug tab) | `docs/sub-team-6/deliverables/D3-MVVM-binding-policy/mvvm-binding-policy.md` |
 | MVVM ADR | `docs/sub-team-6/adrs/0001-mvvm-split.md` |
 | Deliverables checklist | `docs/sub-team-6/deliverables/deliverables-checklist.md` |
 | Feeds T4 | Consolidated architecture report §Metrics chapter |

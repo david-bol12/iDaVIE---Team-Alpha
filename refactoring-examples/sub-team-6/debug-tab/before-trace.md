@@ -1,5 +1,11 @@
 # Debug Tab — "Log line emitted → visible in Debug tab" (current path)
 
+## TL;DR
+
+Code-anchored walkthrough of the live `DebugLogging.cs` (255-line `MonoBehaviour`). Four phases: **A** Startup wires log rotation + autosave file; **B** `OnEnable` subscribes `HandleLog` to the process-global `Application.logMessageReceived` event; **C** every `Debug.Log*` call anywhere in the process re-enters via the static hook, gets formatted as a string, enqueued into a **non-generic unbounded `Queue`**, written to disk via a `StreamWriter` opened+closed per message, then triggers an **O(N) rebuild of the entire log history** into a `StringBuilder` that replaces the whole `TMP_InputField.text`; **D** manual save reuses the queue. Catalogues **9 smells** (S1–S9) culminating in: untestable static event hook (S1), no source/timestamp captured (S2), unbounded queue (S3), per-message file I/O (S4), O(N) rebuild (S5), wholesale text replacement (S6), forced scroll (S7), four concerns in one class (S8), 44 unstructured `Debug.Log*` callers across the codebase (S9). **Headline:** `DebugLogging` passes 5/6 CK thresholds — the refactor case is **testability + structure**, not metrics.
+
+---
+
 Raw code-side trace of the production behaviour as of branch `team6`. Every message is
 anchored to a file and line in the live codebase so the resulting before-state sequence
 diagram is defensible at the maintainer panel.
