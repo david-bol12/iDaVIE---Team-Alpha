@@ -714,7 +714,7 @@ public class VolumeInputController : MonoBehaviour
         
         activeDataSet.ClearRegion();
         activeDataSet.ClearMeasure();
-        var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
+        var featureVisualiser = activeDataSet.GetComponentInChildren<FeatureVisualiser>();
         // Clear region selection by clicking selection. Attempt to select feature
         if (_selectionStopwatch.ElapsedMilliseconds < 200)
         {
@@ -722,9 +722,9 @@ public class VolumeInputController : MonoBehaviour
         }
         else
         {
-            if (featureSetManager)
+            if (featureVisualiser)
             {
-                featureSetManager.CreateSelectionFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel);
+                featureVisualiser.CreateSelectionFeature((Vector3)activeDataSet.RegionStartVoxel, (Vector3)activeDataSet.RegionEndVoxel);
             }
         }
     }

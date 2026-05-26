@@ -162,11 +162,10 @@ namespace DataFeatures
         /// Instantiates a FeatureSetRenderer prefab and configures it for <paramref name="set"/>.
         /// The renderer is the Unity/GPU counterpart of a domain FeatureSet.
         /// </summary>
-        private IFeatureRenderer CreateRendererForSet(FeatureSet set)
+        public FeatureSetRenderer CreateRendererForSet(FeatureSet set)
         {
             var dims = _volumeRenderer.GetCubeDimensions();
 
-            // Instantiate and position the concrete MonoBehaviour (Unity-specific work).
             var renderer = Instantiate(_featureSetRendererPrefab,
                                        Vector3.zero, Quaternion.identity);
             renderer.transform.SetParent(transform, false);
@@ -180,7 +179,6 @@ namespace DataFeatures
             renderer.Index          = set.Index;
             renderer.FeatureSetType = set.SetType;
 
-            // Wire domain events and populate through the interface — no Unity types from here.
             IFeatureRenderer iRenderer = renderer;
             iRenderer.FeatureColor = set.Color;
             set.FeatureDirty += iRenderer.SetFeatureAsDirty;
@@ -188,7 +186,31 @@ namespace DataFeatures
             foreach (var feature in set.Features)
                 iRenderer.AddFeature(feature);
 
-            return iRenderer;
+            return renderer;
+        }
+
+        /// <summary>
+        /// Ensures the selection FeatureSet exists and returns its renderer.
+        /// Equivalent to FeatureSetManager.CreateSelectionFeatureSet().
+        /// </summary>
+        public FeatureSetRenderer CreateSelectionRendererSet()
+        {
+            var set = Catalog.EnsureSelectionSet();
+            var renderer = CreateRendererForSet(set);
+            renderer.FeatureSetType = FeatureSetType.Selection;
+            return renderer;
+        }
+
+        /// <summary>
+        /// Creates a new mask FeatureSet and returns its renderer.
+        /// Equivalent to FeatureSetManager.CreateMaskFeatureSet().
+        /// </summary>
+        public FeatureSetRenderer CreateMaskRendererSet()
+        {
+            var set = Catalog.CreateMaskSet();
+            var renderer = CreateRendererForSet(set);
+            renderer.FeatureSetType = FeatureSetType.Mask;
+            return renderer;
         }
 
         // ── Anchor handle management ──────────────────────────────────────────
@@ -212,10 +234,8 @@ namespace DataFeatures
 
         private void RepositionAnchors(Feature feature)
         {
-            // Anchors must be children of the FeatureSetRenderer that owns this
-            // feature so they sit in the correct local coordinate space.
-            var parentTransform = feature.ParentSet != null
-                ? GetRendererTransformForSet(feature.ParentSet)
+            var parentTransform = feature.FeatureSetParent != null
+                ? feature.FeatureSetParent.transform
                 : transform;
 
             int idx = 0;
@@ -223,17 +243,13 @@ namespace DataFeatures
             for (int j = 0; j < 2; j++)
             for (int k = 0; k < 2; k++)
             {
-                var handle   = _anchorHandles[idx];
+                var handle    = _anchorHandles[idx];
                 var weighting = new Vector3(i, j, k);
 
                 handle.transform.SetParent(parentTransform, false);
                 handle.transform.localPosition =
-                    Vector3.Scale(
-                        new Vector3(feature.CornerMax.X, feature.CornerMax.Y, feature.CornerMax.Z) + Vector3.one * 0.5f,
-                        weighting)
-                    + Vector3.Scale(
-                        new Vector3(feature.CornerMin.X, feature.CornerMin.Y, feature.CornerMin.Z) - Vector3.one * 0.5f,
-                        Vector3.one - weighting);
+                    Vector3.Scale(feature.CornerMax + Vector3.one * 0.5f, weighting)
+                    + Vector3.Scale(feature.CornerMin - Vector3.one * 0.5f, Vector3.one - weighting);
 
                 SetGlobalScale(handle.transform, Vector3.one * 0.01f);
                 idx++;
@@ -256,14 +272,6 @@ namespace DataFeatures
             // A more robust implementation would accept a FeatureSet parameter.
             var local = transform.InverseTransformPoint(worldPos);
             return new Vec3(local.x, local.y, local.z);
-        }
-
-        private Transform GetRendererTransformForSet(FeatureSet set)
-        {
-            // Walks child GameObjects to find the renderer with a matching name.
-            // In a more complete implementation this would use a Dictionary<FeatureSet, Transform>.
-            var child = transform.Find(set.Name);
-            return child != null ? child : transform;
         }
 
         private static void SetGlobalScale(Transform t, Vector3 globalScale)

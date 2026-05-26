@@ -374,7 +374,7 @@ public class FeatureMenuController : MonoBehaviour
                 {
                     var key = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i];
                     var dataToAdd = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataTypes[i] == "float" ? FormattableString.Invariant($"{Convert.ToDouble(_featureSetManager.SelectedFeature.RawData[i]):F3}") : _featureSetManager.SelectedFeature.RawData[i];
-                    if (FeatureSetManager.UnitisedKeys.Contains(key.ToUpper()))
+                    if (FeatureCatalog.UnitisedKeys.Contains(key.ToUpper()))
                     {
                         dataToAdd += $" {_activeDataSet.GetDataSet().GetPixelUnit()}";  
                     }

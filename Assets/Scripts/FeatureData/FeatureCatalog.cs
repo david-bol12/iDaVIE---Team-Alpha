@@ -55,6 +55,9 @@ namespace DataFeatures
             new FeatureColor(1f,  0.5f,0f),        // orange
         };
 
+        // ── Keys whose values carry a physical unit suffix in the info panel ──
+        public static readonly string[] UnitisedKeys = { "SUM", "PEAK" };
+
         // ── Typed set registries ──────────────────────────────────────────────
         private readonly List<FeatureSet> _maskSets     = new List<FeatureSet>();
         private readonly List<FeatureSet> _importedSets = new List<FeatureSet>();
