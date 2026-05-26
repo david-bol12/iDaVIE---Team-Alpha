@@ -469,6 +469,7 @@ Outputs/
 # Config
 config.json
 CLAUDE.md
+.claude/
 
 # The following is suggested from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
