@@ -2,32 +2,31 @@
 
 Two worked examples showing before/after for the Desktop GUI refactoring proposal.
 
+All source lives under [`refactoring-examples/sub-team-6/`](../../../../refactoring-examples/sub-team-6/).
+
 ## Example 1 — File Tab
 
 Refactoring the file-open flow from a direct native-plugin call to a ViewModel command via a service gateway.
 
-- [Scope & motivation](ex1-file-tab/file-tab-info-docs/file-tab-scope.md)
-- [Code walkthrough](ex1-file-tab/file-tab-code.md)
-- [Before class diagram](ex1-file-tab/file-tab-design/before-class-diagram.puml)
-- [Before dependency graph](ex1-file-tab/file-tab-design/before-dependency-graph.puml)
-- [Before DSM](ex1-file-tab/file-tab-design/before-dsm.md)
-- [Before sequence diagram](ex1-file-tab/file-tab-design/before-sequence.puml)
-- [After class diagram](ex1-file-tab/file-tab-design/after-class-diagram.puml)
-- [After dependency graph](ex1-file-tab/file-tab-design/after-dependency-graph.puml)
-- [After DSM](ex1-file-tab/file-tab-design/after-dsm.md)
+- [Before sequence](../../../../refactoring-examples/sub-team-6/file-tab/before-sequence.md)
+- [After sequence](../../../../refactoring-examples/sub-team-6/file-tab/after-sequence.md)
+- [Class diagram](../../../../refactoring-examples/sub-team-6/file-tab/class-diagram.md)
+- [Dependency graph](../../../../refactoring-examples/sub-team-6/file-tab/dependency-graph.md)
+- [CK metrics](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md)
+- [FileTabViewModel.cs](../../../../refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs)
+- [FileTabViewModelTests.cs](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs)
 
 ## Example 2 — Debug Tab
 
 Refactoring the debug console from inline logging to an Observer of a structured logging stream.
 
-- [Code walkthrough](ex2-debug-tab/debug-tab-code.md)
-- [Before class diagram](ex2-debug-tab/debug-tab-design/before-class-diagram.puml)
-- [Before dependency graph](ex2-debug-tab/debug-tab-design/before-dependency-graph.puml)
-- [Before DSM](ex2-debug-tab/debug-tab-design/before-dsm.md)
-- [Before sequence diagram](ex2-debug-tab/debug-tab-design/before-sequence.puml)
-- [After class diagram](ex2-debug-tab/debug-tab-design/after-class-diagram.puml)
-- [After dependency graph](ex2-debug-tab/debug-tab-design/after-dependency-graph.puml)
-- [After DSM](ex2-debug-tab/debug-tab-design/after-dsm.md)
+- [Before trace](../../../../refactoring-examples/sub-team-6/debug-tab/before-trace.md)
+- [After sequence](../../../../refactoring-examples/sub-team-6/debug-tab/after-sequence.md)
+- [Class diagram](../../../../refactoring-examples/sub-team-6/debug-tab/class-diagram.md)
+- [Dependency graph](../../../../refactoring-examples/sub-team-6/debug-tab/dependency-graph.md)
+- [CK metrics](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md)
+- [DebugTabViewModel.cs](../../../../refactoring-examples/sub-team-6/debug-tab/skeleton/DebugTabViewModel.cs)
+- [DebugTabTests.cs](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs)
 
 ## Metrics
 
