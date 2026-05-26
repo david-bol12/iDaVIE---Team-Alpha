@@ -393,12 +393,14 @@ public class FitsReader
         {
             Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits copy header error {FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         Marshal.WriteInt32(keyValue, 16);
@@ -406,6 +408,7 @@ public class FitsReader
         {
             Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         Marshal.WriteInt32(keyValue, 3);
@@ -413,6 +416,7 @@ public class FitsReader
         {
             Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
@@ -424,6 +428,7 @@ public class FitsReader
         {
             Debug.LogError("Fits write image error " + FitsErrorMessage(status));
             Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
@@ -431,18 +436,21 @@ public class FitsReader
         {
             Debug.LogError("Error writing history!");
             Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsCloseFile(maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (keyValue != IntPtr.Zero)
