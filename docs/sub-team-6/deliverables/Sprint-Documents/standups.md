@@ -101,14 +101,14 @@
 
 ## 2026-05-26 (Day 7 — Tue) — Sprint 2 Day 2
 
-**Present:** 
+**Present:** Jimmy, Con, Rory, Mark
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Jimmy | Updated Kanban | Ensure brief fits the Kanban board; overseeing the slides | None |
+| Con | Updated file tab example to be in scope; updated supporting documentation for file tab; brought debug up to par with file tab | Reading through sequence and phasing documentation; reading through worked examples | None |
+| Rory | Worked on slides deck | Continuing slides deck | None |
+| Mark | CodeScene + metrics | Set up NDepend; update main testing doc | NDepend errors |
 
 **Decisions:**
 - _(decisions made in stand-up)_
