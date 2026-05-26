@@ -1,5 +1,11 @@
 # File tab — AFTER trace ("Open & load → cube visible" via MVVM + service gateway)
 
+## TL;DR
+
+MVVM split with a service gateway replaces the god-canvas. `FileTabView` (thin Unity MonoBehaviour) → `FileTabViewModel` (pure C#, no `UnityEngine` ref) → three injected interfaces: `IFileDialogService`, `IFitsService`, `IVolumeService`. `IntPtr` lifetime contained inside `FitsServiceAdapter` via `try/finally` RAII — no native handle ever crosses the ACL. The `postLoadFileFileSystem` cross-tab cascade is replaced by a single `IVolumeService.CubeLoaded(DTO)` event, which structurally closes Anomaly #8 (rest-frequency subscription leak). **Honest about what remains:** two smells *contained* — S5 (field writes onto `VolumeDataSetRenderer`) and S6 (busy-wait on `renderer.started`) — both live inside `VolumeServiceAdapter` behind `IVolumeService`. Sub-team 3 can swap them out without touching the VM or any of the **34 NUnit tests**.
+
+---
+
 This is the structural counterpart to [`before-trace.md`](before-trace.md). Every message below is anchored to a file and line in the skeleton (`skeleton/`) or adapter (`adapters/`) code that already lives in this folder, so the AFTER sequence diagram is defensible at the panel.
 
 The single visible difference at the user level: the UI no longer needs two clicks. The `LoadCommand` is enabled the moment `IsLoadable` becomes true (see `FileTabViewModel.cs:54`), so the user can either click *Open* (which auto-validates and enables *Load*) or — once a recent path is remembered — click *Load* directly. Phases A and B are kept as separate sections below to preserve a row-by-row before/after mapping.

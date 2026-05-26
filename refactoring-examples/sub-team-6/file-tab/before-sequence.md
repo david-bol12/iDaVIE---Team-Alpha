@@ -1,5 +1,11 @@
 # File tab — BEFORE sequence diagram (Mermaid)
 
+## TL;DR
+
+Mermaid `sequenceDiagram` rendering of `before-trace.md`. Two clicks drawn as one continuous diagram with a `Note` separator — the forced two-click UX is itself part of the argument. Centrepiece smells visible at a glance: the `CD → FR → DLL` triangle repeated on every metadata read, two `activate` bars on `CanvassDesktop` (SFB callback + load coroutine), `transform.Find` self-message, `FindObjectOfType` arrows, busy-wait `yield return WaitForSeconds(0.1f)` loop, and direct field writes onto `VolumeDataSetRenderer`. Pairs side-by-side with `after-sequence.md` for the panel slide.
+
+---
+
 This is the Mermaid rendering of [`before-trace.md`](before-trace.md). Every message is sourced from the trace document; line citations live there. Pair this diagram with the trace when presenting to the panel.
 
 The two clicks (`Open` and `Load`) are drawn as one continuous diagram with a `Note` separator. The visible "two-click reality" is itself part of the proposal's argument — collapsing it into a single user action is one of the AFTER design's claims.

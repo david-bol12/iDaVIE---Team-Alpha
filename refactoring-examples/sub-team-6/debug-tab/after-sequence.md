@@ -1,5 +1,11 @@
 # Debug tab — AFTER sequence diagram (Mermaid)
 
+## TL;DR
+
+Mermaid `sequenceDiagram` of the AFTER trace. ACL boundary drawn as a `box` around `[Application, UnityLogStreamAdapter, CompositionRoot, DebugTabView]`. Producer side (`AnySubsystem → Application`) deliberately unchanged — the 44 `Debug.Log*` callers are captured automatically. Centrepiece: the `LogStream.Publish → ILogObserver.OnNext` dispatch replaces the entire BEFORE `HandleLog → Queue → StreamWriter → StringBuilder → TMP_InputField` chain in one arrow. `activate` bars only on `LogStream` (during dispatch) and `DebugTabVM` (during `AppendEntry`). Two `⚠` annotations mark the contained smells (O(N) rebuild capped at 500, forced scroll-to-bottom). Phase D (teardown) shown explicitly to make symmetric Subscribe/Unsubscribe lifetime visible.
+
+---
+
 Mermaid rendering of [`after-trace.md`](after-trace.md). Pair side-by-side with the BEFORE diagram (`uml-diagrams/before-debug-sequence-diagram.puml`) on the panel slide: every BEFORE `→ HandleLog → Queue.Enqueue → StreamWriter → StringBuilder → TMP_InputField` chain collapses into the single `LogStream.Publish → ILogObserver.OnNext` dispatch here.
 
 The ACL boundary is drawn as a `box` around the Unity-side adapters. The `DebugTabVM` and `LogStream` lifelines never send a message into the box without going through an interface.

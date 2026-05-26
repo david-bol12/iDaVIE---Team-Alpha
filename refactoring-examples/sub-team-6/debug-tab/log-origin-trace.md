@@ -1,5 +1,11 @@
 # Debug Tab — Log Stream Origin Trace: CanvassDesktop & DataAnalysis
 
+## TL;DR
+
+**Where the 44 `Debug.Log*` calls actually come from.** Full catalogue across `CanvassDesktop.cs` (40 sites) + `DataAnalysis.cs` (4 sites), each classified by line, method, trigger, message text, and the after-state `source` value it would carry. Five categories: **E** native/plugin errors (E1–E10, 9 calls) · **W** warnings (W1–W3, 3 calls) · **I** load-lifecycle info (I1–I7, 8 calls) · **V** subset validation (24 calls, all in `checkSubsetBounds`) — these last 24 **disappear entirely** in the AFTER design because `SubsetBoundsViewModel` clamps in property setters and renders the corrected value inline. The four natural `source` values (`"FileTab"`, `"VolumeLoader"`, `"HistogramController"`, `"SourcesTab"`, `"DataAnalysis"`) provide direct evidence for the SRP split of `CanvassDesktop` and motivate adding `source` to `ILogStream.Publish(...)`. **E7–E10 are the cleanest ACL violations** — a P/Invoke wrapper calling `UnityEngine.Debug.Log` directly.
+
+---
+
 **Purpose:** Catalogue every `Debug.Log*` call site in `CanvassDesktop.cs` and
 `DataAnalysis.cs`, classify each by level, trigger, and responsible concern, and
 show why the before-state unstructured `(string, string, LogType)` is insufficient.

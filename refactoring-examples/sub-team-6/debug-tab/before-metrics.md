@@ -1,5 +1,11 @@
 # Debug Tab — Before-State Metrics
 
+## TL;DR
+
+**Stricter recount that supersedes the CK table in `before-trace.md`.** Uses McCabe CC-weighted WMC (= **21**, not 9) and Henderson-Sellers LCOM_HS (= **0.95**, not ~0.45). Per-method cyclomatic-complexity breakdown shows `Start()` at CC 9 (log-rotation block alone). Full CBO fan-out catalogued as 21 types (10 Unity/UI + 1 app + 2 third-party + 8 BCL — 12 non-BCL). 38-entry RFC response set tabulated. Method-field access matrix proves the LCOM failure mathematically: 6 fields, 4 disjoint clusters, `OnEnable` / `OnDisable` / `DetermineHardware` share zero fields with any other method. **Verdict:** 5/6 metrics pass, LCOM_HS fails decisively — the quantitative signal for the S8 (four-concerns-in-one-class) smell. Ends with per-class AFTER projections (WMC down 19%, CBO ≤4 per class, all LCOM_HS < 0.40).
+
+---
+
 **Source:** `Assets/Scripts/Debuggers/DebugLogging.cs` (255 lines)
 **Branch:** `team6`
 **Companion files:** `before-trace.md` (smell catalogue), `log-origin-trace.md` (call-site origin)

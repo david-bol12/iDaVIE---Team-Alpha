@@ -1,5 +1,11 @@
 # Debug tab — CK metric deltas (BEFORE vs. AFTER)
 
+## TL;DR
+
+**Frame this honestly: it's a testability refactor, not a metric refactor.** `DebugLogging` already passes 5/6 CK thresholds individually — the only failure is LCOM4 ~3 (four disjoint concern clusters). What CK metrics *can't* capture: the static `Application.logMessageReceived` hook (S1) makes the whole class untestable without Unity. AFTER splits into 7 types — all pass everything, LCOM4 = 1 per class. Domain-side `DebugTabViewModel` CBO drops from 9 → 1. Bounded `List<LogEntry>` (cap 2000) replaces unbounded non-generic `Queue`. **Test surface:** 0 → **29 NUnit tests, ~20 ms total, zero Unity dependency.** Section 4.2 compliance verified by `dotnet build` on the skeleton csproj with zero `UnityEngine` references.
+
+---
+
 > **Status: hand-counted projection — pending Quality Guild tool verification on Day 13.**
 > Numbers below were counted from the live `team6` branch using `wc`/`grep` against `Assets/Scripts/Debuggers/DebugLogging.cs` (BEFORE) and the skeleton + adapter files in this folder (AFTER). They are submitted **alongside** the SonarQube Cloud + Understand baseline that the Quality Guild owns; if their tooling reports different values, those numbers supersede this document.
 >

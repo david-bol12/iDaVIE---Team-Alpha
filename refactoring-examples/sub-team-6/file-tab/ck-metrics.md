@@ -1,5 +1,11 @@
 # File tab — CK metric deltas (BEFORE vs. AFTER)
 
+## TL;DR
+
+Hand-counted CK projection (Day-13 tool verification pending). **BEFORE `CanvassDesktop` fails 5/7 thresholds:** WMC 57 (≤40), CBO ~32 (≤25), RFC ~210 (≤50), LCOM4 ≥7 (=1), LOC 1899. **AFTER** splits into 8 classes — 9/10 pass; only `FileTabViewModel` is borderline at WMC 27 (≤20 domain), with a documented remediation (extract command bodies into `FileTabCommands` helper → WMC ~22). Headline deltas: **WMC −53%, CBO −72%, RFC −76%, LCOM4 disjoint → 1 per class**. The unit-testable surface goes from **0** (Unity required) to **34** NUnit tests running with zero Unity dependency.
+
+---
+
 > **Status: hand-counted projection — pending Quality Guild tool verification on Day 13.**
 > Numbers below were counted from the live `team6` branch using `grep`/`awk` against `Assets/Scripts/UI/CanvassDesktop.cs` (BEFORE) and the skeleton + adapter files in this folder (AFTER). They are submitted **alongside** the SonarQube Cloud + Understand baseline that the Quality Guild owns; if their tooling reports different values, those numbers supersede this document.
 >

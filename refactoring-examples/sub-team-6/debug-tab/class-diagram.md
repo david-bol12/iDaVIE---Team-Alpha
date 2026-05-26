@@ -1,5 +1,11 @@
 # Debug tab — class diagram (BEFORE vs. AFTER)
 
+## TL;DR
+
+Two side-by-side Mermaid `classDiagram` blocks. **BEFORE** = single `DebugLogging` `MonoBehaviour` with 9 outgoing arrows (Queue, StringBuilder, StreamWriter, TMP_InputField, Scrollbar, Button, SFB, PlayerPrefs, Config) plus the `Application → DebugLogging` static-event arrow that's the canonical untestable hook. **AFTER** = three packages: `Domain` (3 interfaces `IDebugTabViewModel` / `ILogStream` / `ILogObserver`, 2 concrete classes `LogStream` / `DebugTabViewModel`, `LogEntry` record + `LogLevel` enum) and `Adapters` (`UnityLogStreamAdapter`, `DebugTabView`, `DebugTabCompositionRoot`). Two-interface seam between producer side and consumer side — new observers (autosave, telemetry) attach without touching producers. **Headline numeric:** one 255-line class → 7 small types; domain `DebugTabViewModel` CBO drops from 9 collaborators to 1 (only `ILogStream`).
+
+---
+
 Mermaid `classDiagram` of the Debug-tab slice, before and after. The two diagrams are kept in this single file so the panel can flip between them without losing visual register.
 
 For numeric metric deltas (WMC, CBO, RFC, DIT, NOC, LCOM) see [`ck-metrics.md`](ck-metrics.md). For the module-level view (assemblies and packages) see [`dependency-graph.md`](dependency-graph.md). For the runtime call sequence see [`after-trace.md`](after-trace.md) and [`after-sequence.md`](after-sequence.md).

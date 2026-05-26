@@ -1,5 +1,11 @@
 # Debug tab — AFTER trace ("Log line emitted → visible in Debug tab" via Observer + MVVM)
 
+## TL;DR
+
+Observer pattern + MVVM + ACL boundary. Four phases: **A** `CompositionRoot.Awake()` wires VM → adapter → View; **B** any `Debug.Log*` call (44 sites, **unchanged**) hits `UnityLogStreamAdapter` — the only class that touches `Application.logMessageReceived` — which normalises `LogType → LogLevel` and calls `LogStream.Publish` (timestamp captured here); `LogStream` snapshots its observer list under lock and dispatches `LogEntry` records to each `ILogObserver`; `DebugTabViewModel` appends to a bounded `List<LogEntry>` (cap 2000) and raises `EntriesChanged`; `DebugTabView` rebuilds TMP text over a capped 500-line slice; **C** Clear button empties the list; **D** `Dispose` symmetrically `Unsubscribe`s. **Smells eliminated:** S2 (timestamp now captured), S3 (unbounded queue → bounded list), S4 (per-message file I/O gone), S8 (four concerns → five named classes). **Contained:** S1 (static event hook confined to one adapter), S5/S6 (TMP rebuild capped at 500 lines), S9 (44 callers captured automatically via the unchanged static event). **Remaining:** S7 — `_scrollbar.value = 0f` still fires on every `EntriesChanged`. Two open questions surfaced: should `LogEntry` carry a `source` field? should autosave come back as a separate `ILogObserver`?
+
+---
+
 Structural counterpart to [`before-trace.md`](before-trace.md). Every message below is anchored to a file and line in the skeleton (`skeleton/`) or adapter (`adapters/`) code that already lives in this folder, so the AFTER sequence diagram is defensible at the panel.
 
 A Mermaid rendering lives in [`after-sequence.md`](after-sequence.md). A higher-level PlantUML version (architectural overview, no line citations) is at [`docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml`](../../../docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml).

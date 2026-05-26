@@ -1,5 +1,11 @@
 # Debug tab — dependency graph (BEFORE vs. AFTER)
 
+## TL;DR
+
+Module-level view defending the Section 4.2 claim for the Debug-tab slice. **BEFORE:** one `Assembly-CSharp` blob, `DebugLogging` is a hub for 9 collaborators reached directly, the producer/consumer seam is a static global event. **AFTER:** three assemblies (`Domain`, `Adapters`, `Producers`) with one-way dependency. Topological sort prints 5 layers with **zero cycles**. **Key claim — non-invasive at the producer side:** the 44 existing `Debug.Log*` callers in `CanvassDesktop` + `DataAnalysis` are captured automatically via `UnityLogStreamAdapter` — no production caller is modified. Migrating any specific producer to structured `ILogStream.Publish(...)` is an opt-in follow-up refactor (own ADR per producer), not a prerequisite. `dotnet build` on `DebugTabSkeleton.csproj` succeeds with zero `UnityEngine` references.
+
+---
+
 Module-level dependency view of the Debug-tab slice. The class-level view lives in [`class-diagram.md`](class-diagram.md); the numeric coupling figures live in [`ck-metrics.md`](ck-metrics.md). This document focuses on **packages / assemblies** and the **ACL boundary**.
 
 The key claim defended here:

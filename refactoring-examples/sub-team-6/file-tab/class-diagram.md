@@ -1,5 +1,11 @@
 # File tab — class diagram (BEFORE vs. AFTER)
 
+## TL;DR
+
+Two side-by-side Mermaid `classDiagram` blocks. **BEFORE** = single `CanvassDesktop` god-class with 8 outgoing arrows (one per Unity / native subsystem) and zero interfaces — every dependency direct. **AFTER** = two `namespace` packages: `Domain` (pure C#, interfaces + `FileTabViewModel` + `SubsetBoundsViewModel` + DTOs + commands) and `Adapters` (Unity-side concrete `FileTabView`, `FitsServiceAdapter`, `FileDialogServiceAdapter`, `VolumeServiceAdapter`, `MemoryProbeAdapter`, `FileTabCompositionRoot`). Every line crossing the boundary points adapter → interface, never the reverse. `FileTabCompositionRoot` is the only class that names both layers. **Headline numeric:** one 1899-line god-class → eight focused classes; CBO contribution from the slice drops from 8 to ≤4 per class.
+
+---
+
 Mermaid `classDiagram` of the File-tab slice, before and after. The two diagrams are kept in this single file so the panel can flip between them without losing visual register.
 
 For numeric metric deltas (WMC, CBO, RFC, DIT, NOC, LCOM) see [`ck-metrics.md`](ck-metrics.md). For the module-level view (assemblies and packages) see [`dependency-graph.md`](dependency-graph.md).

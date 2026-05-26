@@ -1,5 +1,11 @@
 # File tab — dependency graph (BEFORE vs. AFTER)
 
+## TL;DR
+
+Module-level view (assemblies / packages, not classes) of the Section 4.2 claim: *domain code must not transitively depend on `UnityEngine` / `SteamVR` / native plug-ins*. **BEFORE:** one `Assembly-CSharp` blob containing everything; transitive arrow `CanvassDesktop -.-> idavie_native` is the canonical violation. **AFTER:** three assemblies (`Domain`, `Adapters`, `Subsystem`) with strictly one-way dependency — `Adapters → Domain`, never the reverse. Topological sort prints 5 layers with **zero cycles**. `dotnet test` runs against the Domain assembly alone, no Unity required. Ends with the Day-13 tool verification checklist for NDepend / DV8 / CodeScene.
+
+---
+
 Module-level dependency view of the File-tab slice. The class-level view lives in [`class-diagram.md`](class-diagram.md); the numeric coupling figures live in [`ck-metrics.md`](ck-metrics.md). This document focuses on **packages / assemblies** and the **ACL boundary**.
 
 The key claim defended here:

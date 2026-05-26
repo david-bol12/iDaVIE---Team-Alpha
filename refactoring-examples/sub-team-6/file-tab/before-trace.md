@@ -1,5 +1,11 @@
 # File tab — "Open → file loaded → cube visible" (current path)
 
+## TL;DR
+
+Code-anchored walkthrough of the live `CanvassDesktop.cs` File-tab path (1899-line god-class `MonoBehaviour`). Two phases: **A** = user clicks Browse, FITS metadata read directly via `[DllImport]` from the UI layer; **B** = user clicks Load, coroutine instantiates the cube via field-pokes on `VolumeDataSetRenderer` and busy-waits on a `started` flag. Every message is cited to a real file:line so the BEFORE sequence diagram is defensible. Catalogues **8 smells** (S1–S8) — direct DLL calls from UI, god class, `transform.Find` chains, `FindObjectOfType` singletons, public mutable-field writes, busy-wait polling, Inspector-wired handlers, unmanaged `fptr` lifetime sprawl. **Headline claim:** the workflow is a forced two-click ritual and every metadata read leaks the native handle into MonoBehaviour scope.
+
+---
+
 Raw code-side trace of the production behaviour as of branch `team6`. Every message below is anchored to a file and line in the live codebase so the resulting sequence diagram is defensible at the maintainer panel.
 
 User-visible controls (button labels, panel names, scene-file line numbers) are taken from `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/file-tab-info-docs/file-tab-scope.md` §§1, 5, 7, which is anchored to `Assets/Scenes/ui.unity` line numbers — not invented.
@@ -13,8 +19,8 @@ The compiled PlantUML diagram lives next to this trace at `docs/sub-team-6/deliv
 | Lifeline | Backing type | Notes |
 |---|---|---|
 | `User` | — | Desktop operator |
-| `OpenButton` | Unity `Button` (scene asset) | Wired to `CanvassDesktop.BrowseImageFile()` **via Inspector**, not in code |
-| `LoadButton` | Unity `Button` (scene asset) | Wired to `CanvassDesktop.LoadFileFromFileSystem()` via Inspector |
+| `OpenButton` | Unity `Button` (scene asset) | At `InformationPanel/ImageFile_container/Button` in `Assets/Scenes/ui.unity`. Wired to `CanvassDesktop.BrowseImageFile()` **via Inspector**, not in code |
+| `LoadButton` | Unity `Button` (scene asset) | At `InformationPanel/Loading_container/Button` in `Assets/Scenes/ui.unity`. Wired to `CanvassDesktop.LoadFileFromFileSystem()` via Inspector |
 | `CanvassDesktop` | `Assets/Scripts/UI/CanvassDesktop.cs` | 1899-line god-class `MonoBehaviour` |
 | `StandaloneFileBrowser` (SFB) | Third-party plug-in (`using SFB;` at line 31) | Async file dialog |
 | `FitsReader` | `Assets/Scripts/PluginInterface/FitsReader.cs` | Thin static wrapper over `idavie_native.dll` |
@@ -36,7 +42,7 @@ The compiled PlantUML diagram lives next to this trace at `docs/sub-team-6/deliv
 | A5 | Native OS file picker appears (title "Open File", filter "FITS \| *.fits;*.fit"); user selects a cube file | `CanvassDesktop.cs:317` (filter args) — SFB does not expose a title string back to us | Default folder = the persisted `"LastPath"` from A3 |
 | A6 | `StandaloneFileBrowser → callback(paths)` | `CanvassDesktop.cs:317–326` | Callback closes over `CanvassDesktop` instance |
 | A7 | `callback → CanvassDesktop._browseImageFile(paths[0])` | `CanvassDesktop.cs:324` (call) / `:329` (def) | Private method, mixed concerns |
-| A8 | `CanvassDesktop → FitsReader.FitsOpenFile(out fptr, _imagePath, out status, true)` | `CanvassDesktop.cs:349` | **★ The smell.** Direct call to native-plugin wrapper from the UI layer |
+| A8 | `CanvassDesktop → FitsReader.FitsOpenFile(out fptr, _imagePath, out status, true)` | `CanvassDesktop.cs:349` | **The smell.** Direct call to native-plugin wrapper from the UI layer |
 | A9 | `FitsReader → idavie_native.FitsOpenFileReadOnly(...)` | `FitsReader.cs:199–211` | `[DllImport("idavie_native")]` — literal P/Invoke boundary |
 | A10 | `idavie_native` returns `fptr`, `status=0` | — | Unmanaged handle leaked into MonoBehaviour scope |
 | A11 | `CanvassDesktop → FitsReader.FitsGetHduCount(fptr, out hduNum, out status)` | `CanvassDesktop.cs:358` | Second direct DLL hop |
@@ -104,16 +110,3 @@ Convert each row above to a `sequenceDiagram` message:
 - Use `activate` / `deactivate` bars on `CanvassDesktop` to show that the dialog callback (A6) and the coroutine (B3) re-enter the same lifeline asynchronously.
 - The DLL boundary (A9, and the implicit calls inside A11–A16) is the visual centrepiece — a thick arrow into `idavie_native` is what the "after" diagram replaces with a single `serviceGateway.openFits(...)` message.
 - Collapse the `UpdateHeaderFromFits` internal DLL calls into one self-call on `CanvassDesktop` labelled "read header keywords via FitsReader" — keeps the diagram readable without losing fidelity.
-
----
-
-## Status
-
-- [x] **GUI rows resolved** — labels and panel names sourced from `file-tab-scope.md` §§1, 5, 7 (which is anchored to `ui.unity` line numbers). No live Unity capture was needed.
-- [x] **Diagram drafted** — single combined Phase A + Phase B diagram at `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/file-tab-design/before-sequence.puml`. Kept as one diagram with a `==` separator so the "two-click" UX (Browse Image → Load) stays visible — that two-click split is itself an argument the proposal will use.
-- [x] **Notation** — PlantUML, consistent with the sibling class diagrams (`before-class-diagram.puml`, `after-class-diagram.puml`) and the existing `after-debug-sequence-diagram.puml`. Satisfies Section 10.4 (text-based, source-controlled).
-
-## Optional next refinements (not blocking)
-
-1. **Screenshot strip** for the pitch deck — five frames: Browse Image button highlighted, file picker open, file picked + Load enabled, cube appearing, Stats tab auto-selected. Not required for the artefact freeze, but a strong visual anchor for the 12-min worked-examples slot.
-2. Render the `.puml` to SVG and commit alongside (Section 10.4 still requires the text source to be authoritative; the SVG is a convenience for the slide deck).

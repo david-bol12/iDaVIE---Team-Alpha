@@ -1,5 +1,11 @@
 # File tab — AFTER sequence diagram (Mermaid)
 
+## TL;DR
+
+Mermaid rendering of `after-trace.md`. ACL boundary drawn as a `box` around the Unity-side adapters (`FileDialogAdapter`, `FitsAdapter`, `VolumeAdapter`, `VCC`) — the `FileTabVM` lifeline never enters that box without crossing an interface. Every BEFORE `→ DLL` and `→ VCC` arrow collapses into a single `→ interface` message. `activate` bars split cleanly: VM during command execution, Vol during the load coroutine. Two `⚠` annotations mark the contained smells (field writes, busy-wait) — honestly drawn rather than hidden. Final `Vol → Peers: CubeLoaded(DTO)` arrow replaces the 13-step `postLoadFileFileSystem` cross-tab cascade.
+
+---
+
 Mermaid rendering of [`after-trace.md`](after-trace.md). Pair side-by-side with [`before-sequence.md`](before-sequence.md) on the panel slide: every `→ DLL` and `→ VCC` arrow in the BEFORE is replaced by a single `→ interface` message here.
 
 The ACL boundary is drawn as a `box` around the Unity-side adapters. The `FileTabVM` lifeline never sends a message into the box without going through one of the three domain interfaces.
