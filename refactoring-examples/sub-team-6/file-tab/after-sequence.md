@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Mermaid rendering of `after-trace.md`. ACL boundary drawn as a `box` around the Unity-side adapters (`FileDialogAdapter`, `FitsAdapter`, `VolumeAdapter`, `VCC`) — the `FileTabVM` lifeline never enters that box without crossing an interface. Every BEFORE `→ DLL` and `→ VCC` arrow collapses into a single `→ interface` message. `activate` bars split cleanly: VM during command execution, Vol during the load coroutine. Two `⚠` annotations mark the contained smells (field writes, busy-wait) — honestly drawn rather than hidden. Final `Vol → Peers: CubeLoaded(DTO)` arrow replaces the 13-step `postLoadFileFileSystem` cross-tab cascade.
+Mermaid rendering of `after-trace.md`. ACL boundary drawn as a `box` around the Unity-side adapters (`FileDialogAdapter`, `FitsAdapter`, `VolumeAdapter`, `VCC`) — the `FileTabVM` lifeline never enters that box without crossing an interface. Every BEFORE `→ DLL` and `→ VCC` arrow collapses into a single `→ interface` message. `activate` bars split cleanly: VM during command execution, Vol during the load coroutine. One `⚠` annotation marks the contained smell (field writes onto `VolumeDataSetRenderer`) — the BEFORE busy-wait is **eliminated**, replaced by `yield return StartCoroutine(_startFunc())` coroutine suspension. Final `Vol → Peers: CubeLoaded(DTO)` arrow replaces the 13-step `postLoadFileFileSystem` cross-tab cascade.
 
 ---
 
@@ -91,12 +91,8 @@ sequenceDiagram
     Vol-->>VM: progress.Report(0.4f)
 
     Vol->>VCC: AddDataSet(renderer)
-    Vol->>Vol: StartCoroutine(renderer._startFunc())
-
-    loop while !renderer.started
-        Vol->>Vol: yield return WaitForSeconds(0.1f)
-    end
-    Note right of Vol: ⚠ busy-wait still here<br/>— contained, returned as Task
+    Vol->>Vol: yield return StartCoroutine(renderer._startFunc())
+    Note right of Vol: ★ event-driven — coroutine suspends<br/>until _startFunc completes (sets started=true<br/>at its terminating yield). BEFORE busy-wait<br/>eliminated, not contained.
 
     Vol-->>VM: tcs.TrySetResult(true) —<br/>progress.Report(1f)
 
@@ -124,17 +120,18 @@ Suggested slide layout for the panel:
 | `CD → VCC` direct singleton calls | `VM → Vol → VCC` — VCC reached only via adapter |
 | `transform.Find` self-message | `PropertyChanged` event — no self-mutation visible |
 | Two `activate` bars on `CanvassDesktop` (callback + coroutine) | `activate` bar on `VM` for the *command*, separate `activate` on `Vol` for the *coroutine* — lifelines split |
-| `★` smell annotations on the arrows themselves | `⚠` annotations on `Note right of Vol` — smells acknowledged, contained, not eliminated |
+| `★` smell annotations on the arrows themselves | One `⚠` annotation on `Note right of Vol` (field writes — S5 contained); the BEFORE busy-wait is replaced by event-driven coroutine suspension (S6 eliminated) |
 | Phase A→B separator: "must click a second button" | Phase A→B separator: "Load enabled — single click possible" |
 | `postLoadFileFileSystem` 13-step self-cascade into other tabs | One `Vol → Peers: CubeLoaded(DTO)` arrow — peer tabs subscribe themselves |
 
 ## Mapping of contained smells (honest about what remains)
 
-The two `⚠` annotations in the diagram correspond to items in `after-trace.md` → *Known limitations*:
+The single `⚠` annotation in the diagram corresponds to the one item in `after-trace.md` → *Known limitations*:
 
 | Diagram marker | Smell ID | Adapter location | Fix vector |
 |---|---|---|---|
-| `⚠ field writes still happen` | S5 | `VolumeServiceAdapter.cs:115-124` | When Sub-team 3 introduces `IRendererCommand`, swap the field writes for a command emit. The `FileTabViewModel` does not change. |
-| `⚠ busy-wait still here` | S6 | `VolumeServiceAdapter.cs:147-148` | When `VolumeDataSetRenderer` exposes a readiness `event` or `Task`, the loop becomes `await renderer.WhenStarted()`. The VM's `await _volumeService.LoadCubeAsync(...)` is unchanged. |
+| `⚠ field writes still happen` | S5 | `VolumeServiceAdapter.cs:122-131` | When Sub-team 3 introduces `IRendererCommand`, swap the field writes for a command emit. The `FileTabViewModel` does not change. |
 
-Both fixes are pure adapter-side edits — none of the 27 file-tab unit tests need to change.
+S6 (busy-wait on `renderer.started`) is **not** in this table — it was eliminated, not contained. See `after-trace.md` smell table row S6 and `VolumeServiceAdapter.cs:158`.
+
+The S5 fix is a pure adapter-side edit — none of the 34 file-tab unit tests need to change.
