@@ -42,7 +42,7 @@ The ACL boundary in the diagram is the vertical line between the *interfaces* an
 | A5 | OS native picker shown; user selects `*.fits` | SFB plug-in | Same UX. |
 | A6 | `FileDialogAdapter` writes `PlayerPrefs.SetString("LastPath", ...)` and resolves the `TaskCompletionSource` | `FileDialogServiceAdapter.cs:41-53` | The async callback is converted to a `Task<string?>` — the VM `await`s it; no callback closure into a `MonoBehaviour`. |
 | A7 | `FileTabVM` sets `IsLoading = true`; clears `ValidationMessage` | `FileTabViewModel.cs:172-173` | `INotifyPropertyChanged` drives spinner / disabled buttons declaratively. |
-| A8 | `FileTabVM → IFitsService.OpenImageAsync(path)` | `FileTabViewModel.cs:176` | **★ The replacement.** No P/Invoke from the VM. Returns a plain `FitsFileInfo` DTO. |
+| A8 | `FileTabVM → IFitsService.OpenImageAsync(path)` | `FileTabViewModel.cs:176` | **The replacement.** No P/Invoke from the VM. Returns a plain `FitsFileInfo` DTO. |
 | A9 | `FitsAdapter` runs `Task.Run(ReadFitsMetadata)` — calls `FitsReader.FitsOpenFile / FitsGetHduCount / FitsMovabsHdu / FitsReadKey / FitsCloseFile` inside a `try { ... } finally { FitsCloseFile }` block | `FitsServiceAdapter.cs:28-108` | All `IntPtr` lifetime contained to one method. **RAII achieved by `try/finally`**: no `IntPtr` outlives `ReadFitsMetadata` (`FitsServiceAdapter.cs:103-107`). Replaces BEFORE A8–A16. |
 | A10 | `FitsAdapter` returns `new FitsFileInfo { FilePath, HduList, NAxis, AxisSizes, HeaderText }` | `FitsServiceAdapter.cs:94-101`, `FitsFileInfo.cs:14-25` | Immutable DTO with `required` init-only properties. |
 | A11 | `FileTabVM` populates `_hduOptions`, `HeaderText`, Z-axis options; resets `Subset` to axis maxima; invalidates any prior mask | `FileTabViewModel.cs:177-200` | All state mutation goes through setters that raise `PropertyChanged` — the View updates automatically. Replaces BEFORE A14 (transform.Find HDU dropdown mutation). |
@@ -123,6 +123,6 @@ Both items live behind the `IVolumeService` interface and can be swapped without
 See [`after-sequence.md`](after-sequence.md). The conversion follows the same rules as [`before-trace.md` §97-104](before-trace.md):
 
 - Phases A and B drawn as one continuous diagram with a `Note` separator labelled "validation passed — Load enabled."
-- `activate` bars only on `FileTabVM` (during command execution) and `VolumeAdapter` (during the load coroutine). The View is stateless on the critical path — no `activate` bar.
+- `activate` bars on lifelines that are genuinely doing async work: `FileTabVM` (during command execution), `VolumeAdapter` (during the load coroutine), `FileDialogAdapter` (while the OS picker is open), and `FitsAdapter` (during the off-thread `Task.Run` metadata read). The View is stateless on the critical path — no `activate` bar.
 - The ACL boundary is rendered as a `box` around `[FileDialogAdapter, FitsAdapter, VolumeAdapter, VCC]` so the panel sees at a glance that no message originates *from* the VM *to* anything inside the box without going through an interface.
 - The two contained smells (B6 field writes, B10 busy-wait) are annotated with `Note right of VolumeAdapter` so the AFTER diagram is honest about what was kept.
