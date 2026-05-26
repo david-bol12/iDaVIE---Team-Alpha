@@ -560,5 +560,9 @@ About
 # local claude settings
 .claude/settings.local.json
 
+# NDepend — personal project file and generated analysis output
+*.ndproj
+NDependOut/
+
 # People can see docs
 !docs/
