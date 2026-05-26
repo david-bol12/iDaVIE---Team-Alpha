@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Two side-by-side Mermaid `classDiagram` blocks. **BEFORE** = single `CanvassDesktop` god-class with 8 outgoing arrows (one per Unity / native subsystem) and zero interfaces — every dependency direct. **AFTER** = two `namespace` packages: `Domain` (pure C#, interfaces + `FileTabViewModel` + `SubsetBoundsViewModel` + DTOs + commands) and `Adapters` (Unity-side concrete `FileTabView`, `FitsServiceAdapter`, `FileDialogServiceAdapter`, `VolumeServiceAdapter`, `MemoryProbeAdapter`, `FileTabCompositionRoot`). Every line crossing the boundary points adapter → interface, never the reverse. `FileTabCompositionRoot` is the only class that names both layers. **Headline numeric:** one 1899-line god-class → eight focused classes; CBO contribution from the slice drops from 8 to ≤4 per class.
+Two side-by-side Mermaid `classDiagram` blocks. **BEFORE** = single `CanvassDesktop` god-class with 8 outgoing arrows (one per Unity / native subsystem) and zero interfaces — every dependency direct. **AFTER** = two `namespace` packages: `Domain` (pure C#, interfaces + `FileTabViewModel` + `SubsetBoundsViewModel` + DTOs + commands) and `Adapters` (Unity-side concrete `FileTabView`, `FitsServiceAdapter`, `FileDialogServiceAdapter`, `VolumeServiceAdapter`, `MemoryProbeAdapter`, `FileTabCompositionRoot`). Every line crossing the boundary points adapter → interface, with one allowed exception: `FileTabCompositionRoot` may name both layers because composition is the one place a concrete object graph has to be assembled. **Headline numeric:** one 1899-line god-class → eight focused classes; CBO contribution from the slice drops from 8 to ≤4 per class.
 
 ---
 
@@ -167,10 +167,10 @@ classDiagram
             -FitsFileInfo? _currentImageInfo
             -FitsFileInfo? _currentMaskInfo
             -RatioMode _ratioMode
-            +BrowseImageAsync() Task
-            +BrowseMaskAsync() Task
-            +LoadAsync() Task
-            +ClearMask() void
+            -BrowseImageAsync() Task
+            -BrowseMaskAsync() Task
+            -LoadAsync() Task
+            -ClearMask() void
             +Dispose() void
             +IsLoadable bool
             -PopulateZAxisOptions(info) void
@@ -278,6 +278,23 @@ classDiagram
             +Execute() void
             +CanExecuteChanged event
         }
+
+        class AsyncRelayCommand {
+            <<internal, sealed>>
+            -Func~Task~ _execute
+            -Func~bool~ _canExecute
+            -bool _isRunning
+            +CanExecute() bool
+            +ExecuteAsync() Task
+        }
+
+        class RelayCommand {
+            <<internal, sealed>>
+            -Action _execute
+            -Func~bool~ _canExecute
+            +CanExecute() bool
+            +Execute() void
+        }
     }
 
     %% ═══ ADAPTERS (Unity assembly) ═══════════════════════════════════
@@ -366,7 +383,7 @@ classDiagram
 | `CanvassDesktop` (file-tab slice only) | ~700 of 1899 | n/a (deleted) | 8 |
 | `FileTabViewModel` | — | ~480 | 4 (interfaces only) |
 | `SubsetBoundsViewModel` | — | 117 | 1 (`SubsetBounds`) |
-| `FileTabView` | — | ~330 | 1 (`IFileTabViewModel`) |
+| `FileTabView` | — | ~255 | 1 (`IFileTabViewModel`) |
 | `FitsServiceAdapter` | — | ~165 | 3 (`IFitsService`, `IFitsHandle`, `FitsReader`) |
 | `FileDialogServiceAdapter` | — | 59 | 2 (`IFileDialogService`, SFB+PlayerPrefs) |
 | `VolumeServiceAdapter` | — | ~175 | 4 (`IVolumeService`, `CubeLoadedEventArgs`, `VCC`, `VDSR`) |
