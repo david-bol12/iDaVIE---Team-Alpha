@@ -198,12 +198,9 @@ namespace VolumeData
 
         [Range(0, 1)] public float SelectionSaturateFactor = 0.7f;
 
-        public FeatureSetManager FeatureSetManagerPrefab;
-
         private PolyLine _measuringLine;
         private CuboidLine _cubeOutline, _voxelOutline, _regionOutline, _videoCursorPositionOutline;
 
-        private FeatureSetManager _featureManager = null;
         private FeatureVisualiser _featureVisualiser = null;
         public FeatureVisualiser FeatureVisualiser => _featureVisualiser;
 
@@ -381,9 +378,6 @@ namespace VolumeData
                 _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, subsetBounds, trueBounds, IntPtr.Zero, CubeDepthAxis, CubeSlice, SelectedHdu);
 
             volumeInputController = FindObjectOfType<VolumeInputController>();
-            _featureManager = GetComponentInChildren<FeatureSetManager>();
-            if (_featureManager == null)
-                Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
             _featureVisualiser = GetComponentInChildren<FeatureVisualiser>();
             if (_featureVisualiser == null)
                 Debug.Log($"No FeatureVisualiser attached to VolumeDataSetRenderer. Attach prefab for use of Features.");

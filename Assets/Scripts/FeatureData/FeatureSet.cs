@@ -29,6 +29,16 @@ using System.Collections.ObjectModel;
 
 namespace DataFeatures
 {
+    /// <summary>Classifies what a <see cref="FeatureSet"/> represents.</summary>
+    public enum FeatureSetType
+    {
+        Unassigned,
+        Mask,
+        New,
+        Imported,
+        Selection
+    }
+
     /// <summary>
     /// Pure domain aggregate — an ordered, named collection of <see cref="Feature"/> objects
     /// with a type tag and a display colour. No Unity types; no I/O.

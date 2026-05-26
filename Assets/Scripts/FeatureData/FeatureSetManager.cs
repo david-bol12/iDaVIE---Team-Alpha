@@ -33,15 +33,6 @@ using VolumeData;
 
 namespace DataFeatures
 {
-    public enum FeatureSetType
-    {
-        Unassigned,
-        Mask,
-        New,
-        Imported,
-        Selection
-    }
-
     /// <summary>
     /// FACADE — delegates to <see cref="FeatureVisualiser"/>.
     /// See Phase 6 comment at the top of this file.

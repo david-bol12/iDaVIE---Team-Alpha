@@ -54,7 +54,6 @@ namespace DataFeatures
 
         public FeatureSetType FeatureSetType = FeatureSetType.Unassigned;
         public VolumeDataSetRenderer VolumeRenderer { get; private set; }
-        public FeatureSetManager FeatureManager { get; private set; }
         public string[] FeatureNames { get; private set; }
         public Vector3[] FeaturePositions { get; private set; }
         public Vector3[] BoxMinPositions { get; private set; }
@@ -99,12 +98,6 @@ namespace DataFeatures
             _computeBufferVertices = new ComputeBuffer(DefaultFeatureCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
             _vertices = new FeatureVertex[DefaultFeatureCapacity * VerticesPerFeature];
             _materialInstance = Material.Instantiate(LineRenderingMaterial);
-        }
-
-        public void Initialize()
-        {
-            FeatureManager = GetComponentInParent<FeatureSetManager>();
-            VolumeRenderer = FeatureManager.VolumeRenderer;
         }
 
         public void Initialize(VolumeDataSetRenderer volumeRenderer)
@@ -253,11 +246,6 @@ namespace DataFeatures
             if (visualiser != null)
             {
                 visualiser.SelectFeature(feature);
-                Debug.Log($"Selected feature '{feature.Name}'");
-            }
-            else if (FeatureManager)
-            {
-                FeatureManager.SelectedFeature = feature;
                 Debug.Log($"Selected feature '{feature.Name}'");
             }
         }
