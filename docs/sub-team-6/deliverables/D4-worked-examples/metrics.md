@@ -413,7 +413,7 @@ Role assignments:
 | Artefact | Path |
 |---|---|
 | CK baseline (Understand export) | `docs/sub-team-6/deliverables/other/D9-ck-baseline/SK_BNCH.md` |
-| NDepend-equivalent baseline | `docs/sub-team-6/deliverables/other/D9-ck-baseline/ndepend-equivalent-baseline.md` |
+| NDepend baseline | `docs/sub-team-6/deliverables/other/D9-ck-baseline/ndepend-baseline.md` |
 | File tab after-state class diagram | `after-class-diagram.puml` (this directory) |
 | File tab after-state dependency graph | `after-dependency-graph.puml` (this directory) |
 | File tab after-state DSM | `after-dsm.md` (this directory) |

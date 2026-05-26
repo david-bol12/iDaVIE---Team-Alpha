@@ -11,12 +11,13 @@
 
 NDepend requires compiled .NET assemblies (`.dll` files). iDaVIE is a Unity 2021.3 project — no build output exists in the repository (the `Library/` folder is gitignored), and NDepend is not installed in the CI environment. This document derives the equivalent metrics from:
 
-- **CK baseline figures** — Understand static analysis export (`SK_BNCH.md`), which provides WMC, DIT, NOC, CBO, RFC, and LCOM for all 8 in-scope classes.
-- **Afferent coupling (Ca)** — grep-based count of files in `Assets/Scripts/` that reference each class (excluding the class's own file).
+- **NDepend v2026.1.5 (CanvassDesktop)** — real metrics from NDepend analysis on 2026-05-26: `NbTypesUsed` (Ce), `NbTypesUsingMe` (Ca), `LCOMHS`, `NbMethodsAndConstructors`, `CyclomaticComplexity`, `DepthOfInheritance`, `NbChildren`. These replace all previously-derived figures for `CanvassDesktop`. Marked **[NDepend]**.
+- **CK baseline figures** — Understand static analysis export (`SK_BNCH.md`), which provides WMC, DIT, NOC, CBO, RFC, and LCOM for the remaining 7 in-scope classes.
+- **Afferent coupling (Ca)** — grep-based count of files in `Assets/Scripts/` that reference each class (excluding the class's own file). Replaced by NDepend `NbTypesUsingMe` for `CanvassDesktop`.
 - **Source inspection** — `using` directives and `FindObjectOfType<>` patterns in each `.cs` file to identify namespace dependencies and circular runtime coupling.
 - **NDepend formulas** — instability, abstractness, and distance from main sequence computed per the standard NDepend definitions.
 
-Figures are marked **[derived]** where computed from source rather than produced by the tool directly. The CK figures are **[Understand export]** and are identical to those used in `SK_BNCH.md`.
+Figures are marked **[derived]** where computed from source rather than produced by the tool directly. The CK figures are **[Understand export]** and are identical to those used in `SK_BNCH.md`. CanvassDesktop figures updated to **[NDepend]** where real data is available.
 
 ---
 
@@ -24,7 +25,7 @@ Figures are marked **[derived]** where computed from source rather than produced
 
 | Class | File | Role |
 |---|---|---|
-| `CanvassDesktop` | `Assets/Scripts/UI/CanvassDesktop.cs` (1 899 lines) | Orchestrator (O) |
+| `CanvassDesktop` | `Assets/Scripts/UI/CanvassDesktop.cs` (1 899 file lines / 836 NDepend LOC) | Orchestrator (O) |
 | `DesktopPaintController` | `Assets/Scripts/UI/DesktopPaintController.cs` (1 558 lines) | Adapter (A) |
 | `PaintMenuController` | `Assets/Scripts/Menu/PaintMenuController.cs` (371 lines) | Orchestrator (O) |
 | `VideoUiManager` | `Assets/Scripts/VideoMaker/VideoUiManager.cs` (439 lines) | Adapter (A) |
@@ -44,15 +45,15 @@ Abstract classes defined anywhere in scope: **0**
 NDepend computes these per-namespace or per-assembly. Applied here at class level for the in-scope slice.
 
 **Definitions:**
-- **Ce** (efferent coupling) = types this class depends on. Taken from `CBO` in `SK_BNCH.md` as the closest available proxy. [Understand export]
-- **Ca** (afferent coupling) = number of files in `Assets/Scripts/` that import or directly reference this class. [derived]
+- **Ce** (efferent coupling) = types this class depends on. `NbTypesUsed` from NDepend for `CanvassDesktop` [NDepend]; `CBO` from `SK_BNCH.md` for remaining 7 classes [Understand export]. Note: NDepend counts all referenced types including Unity/System namespaces, so Ce values are higher than Understand's project-scoped CBO.
+- **Ca** (afferent coupling) = number of types referencing this class. `NbTypesUsingMe` from NDepend for `CanvassDesktop` [NDepend]; grep-based file count for remaining 7 classes [derived].
 - **Instability I** = Ce / (Ca + Ce). Range 0 (stable) → 1 (unstable).
 - **Abstractness A** = abstract types in this type / total types. All 8 classes are concrete `MonoBehaviour` subclasses with no abstract members. **A = 0.00** for all.
 - **Distance from main sequence D** = |A + I − 1|. With A = 0: D = 1 − I. Ideal D = 0 (on the main sequence line). D near 1 indicates the "Zone of Pain" (stable + concrete) or "Zone of Uselessness" (abstract + unstable).
 
 | Class | Ce (CBO) | Ca | I (instability) | A | D (distance) | Zone |
 |---|:---:|:---:|:---:|:---:|:---:|---|
-| `CanvassDesktop` | 47 | 7 | **0.87** | 0.00 | 0.13 | Acceptable — unstable concrete ⚠ high Ce |
+| `CanvassDesktop` | 117 | 4 | **0.97** | 0.00 | 0.03 | Highly unstable concrete — extreme Ce ⚠ [NDepend] |
 | `DesktopPaintController` | 21 | 1 | **0.95** | 0.00 | 0.05 | On main sequence |
 | `PaintMenuController` | 9 | 4 | **0.69** | 0.00 | 0.31 | Moderate — concrete, somewhat stable |
 | `VideoUiManager` | 17 | 1 | **0.94** | 0.00 | 0.06 | On main sequence |
@@ -61,17 +62,17 @@ NDepend computes these per-namespace or per-assembly. Applied here at class leve
 | `SourceRow` | 3 | 1 | **0.75** | 0.00 | 0.25 | Moderate — small class |
 | `TabsManager` | 4 | 1 | **0.80** | 0.00 | 0.20 | Acceptable |
 
-**Reading:** All classes are concrete (A = 0) and mostly unstable (high I). On their own, high-I concrete classes are healthy leaf/adapter nodes. The architectural concern is not the instability value but the **magnitude of Ce** — `CanvassDesktop` (Ce = 47) is an unstable class with an enormous outgoing fan-out, making it highly sensitive to changes anywhere in the system.
+**Reading:** All classes are concrete (A = 0) and mostly unstable (high I). On their own, high-I concrete classes are healthy leaf/adapter nodes. The architectural concern is not the instability value but the **magnitude of Ce** — `CanvassDesktop` (Ce = 117 [NDepend]) is an unstable class with an enormous outgoing fan-out, making it highly sensitive to changes anywhere in the system. The Ce figure is higher than the Understand CBO (47) because NDepend counts all referenced types including Unity and System namespaces; both measures agree that the fan-out is pathological.
 
 **Propagation cost [derived]:** Direct afferent impact = Ca / 101 × 100%.
 
 | Class | Direct afferent impact | Note |
 |---|---|---|
-| `CanvassDesktop` | 7 / 101 = **6.9%** | Transitive impact substantially higher — 7 dependents include central VolumeData classes |
+| `CanvassDesktop` | 4 / 243 = **1.6%** | Direct fan-in lower than grep estimate; transitive impact substantially higher — dependents include central VolumeData classes [NDepend] |
 | `PaintMenuController` | 4 / 101 = **4.0%** | 4 classes reference it directly |
 | All others | ≤ 2.0% | Low direct fan-in |
 
-`CanvassDesktop`'s transitive propagation cost is significantly higher than its 6.9% direct figure because its dependents (`VolumeCommandController`, `VolumeDataSetRenderer`) are themselves widely referenced across the codebase.
+`CanvassDesktop`'s transitive propagation cost is significantly higher than its 1.6% direct figure (4 of 243 types in Assembly-CSharp [NDepend]) because its dependents (`VolumeCommandController`, `VolumeDataSetRenderer`) are themselves widely referenced across the codebase.
 
 ---
 
@@ -152,7 +153,7 @@ These are the rules NDepend would encode as CQLinq queries. Results are derived 
 
 | Class | WMC | Threshold | Violation |
 |---|:---:|:---:|:---:|
-| `CanvassDesktop` | 63 | 40 (O) | 🔴 +23 |
+| `CanvassDesktop` | 64 | 40 (O) | 🔴 +24 [NDepend] |
 | `DesktopPaintController` | 57 | 40 (A) | 🔴 +17 |
 | `PaintMenuController` | 24 | 40 (O) | ✅ |
 | `VideoUiManager` | 17 | 40 (A) | ✅ |
@@ -169,7 +170,7 @@ These are the rules NDepend would encode as CQLinq queries. Results are derived 
 
 | Class | CBO | Threshold | Violation |
 |---|:---:|:---:|:---:|
-| `CanvassDesktop` | 47 | 25 (O) | 🔴 +22 |
+| `CanvassDesktop` | 117 | 25 (O) | 🔴 +92 [NDepend] |
 | `DesktopPaintController` | 21 | 25 (A) | ✅ |
 | `PaintMenuController` | 9 | 25 (O) | ✅ |
 | `VideoUiManager` | 17 | 25 (A) | ✅ |
@@ -182,18 +183,18 @@ These are the rules NDepend would encode as CQLinq queries. Results are derived 
 
 ### Rule 3 — High Response For a Class (RFC threshold)
 
-*Threshold: RFC > 50.*
+*Threshold: RFC > 50. Note: NDepend does not compute RFC directly. Understand RFC figures are retained below; NDepend Cyclomatic Complexity (CC) is added as an additional data point where available.*
 
-| Class | RFC | Violation |
-|---|:---:|:---:|
-| `CanvassDesktop` | 118 | 🔴 +68 |
-| `DesktopPaintController` | 99 | 🔴 +49 |
-| `VideoUiManager` | 64 | 🔴 +14 |
-| `PaintMenuController` | 56 | 🔴 +6 |
-| `HistogramMenuController` | 36 | ✅ |
-| `HistogramHelper` | 23 | ✅ |
-| `SourceRow` | 11 | ✅ |
-| `TabsManager` | 7 | ✅ |
+| Class | RFC (Understand) | CC (NDepend) | Violation |
+|---|:---:|:---:|:---:|
+| `CanvassDesktop` | 118 | **298** | 🔴 RFC +68 / CC far exceeds any threshold [NDepend] |
+| `DesktopPaintController` | 99 | — | 🔴 +49 |
+| `VideoUiManager` | 64 | — | 🔴 +14 |
+| `PaintMenuController` | 56 | — | 🔴 +6 |
+| `HistogramMenuController` | 36 | — | ✅ |
+| `HistogramHelper` | 23 | — | ✅ |
+| `SourceRow` | 11 | — | ✅ |
+| `TabsManager` | 7 | — | ✅ |
 
 **Violations: 4**
 
@@ -203,7 +204,7 @@ These are the rules NDepend would encode as CQLinq queries. Results are derived 
 
 | Class | LCOM | Violation |
 |---|:---:|:---:|
-| `CanvassDesktop` | 0.955 | 🔴 |
+| `CanvassDesktop` | 0.97 | 🔴 [NDepend LCOMHS] |
 | `DesktopPaintController` | 0.940 | 🔴 |
 | `PaintMenuController` | 0.919 | 🔴 |
 | `VideoUiManager` | 0.863 | 🔴 |

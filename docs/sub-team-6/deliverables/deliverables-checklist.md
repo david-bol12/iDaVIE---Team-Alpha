@@ -93,7 +93,7 @@
 | # | Deliverable | Form | Due | Our contribution |
 |---|---|---|---|---|
 | **T1** [x] | GitHub fork with full assessment history | Repository | Continuous; frozen 4 Jun 11:00 | Our commits, ADRs, diagrams, examples | 
-| **T2** [~] | Baseline maintainability benchmark report | PDF + raw tool exports | Day 2 (19 May) | [~] CK baseline (`D9-ck-baseline/SK_BNCH.md`) + SonarQube smells (`D9-ck-baseline/SonarQube Baseline report.md`) DONE for our 8 classes; NDepend-equivalent baseline DONE (`D9-ck-baseline/ndepend-equivalent-baseline.md` — derived, see methodology note); CodeScene churn/hotspots + DV8 still owed |
+| **T2** [~] | Baseline maintainability benchmark report | PDF + raw tool exports | Day 2 (19 May) | [~] CK baseline (`D9-ck-baseline/SK_BNCH.md`) + SonarQube smells (`D9-ck-baseline/SonarQube Baseline report.md`) DONE for our 8 classes; NDepend baseline DONE (`D9-ck-baseline/ndepend-baseline.md` — CanvassDesktop from NDepend v2026.1.5; remaining 7 classes from Understand); CodeScene churn/hotspots + DV8 still owed |
 | **T3** [ ] | **Architecture overview** (C4 + ADR log + plug-in ABI spec) | PDF | **Day 10 (29 May)** | [ ] Client-shell C4 view (context/container/component); our ADRs feed into team ADR log |
 | **T4** [ ] | Consolidated refactoring proposal report (max 60 pp excl. appendices) | PDF | Frozen 4 Jun 11:00; submitted 5 Jun 14:00–16:00 | [ ] Our chapter: client architecture, MVVM policy, both worked examples, CK deltas |
 | **T5** [ ] | Pitch | Live + slide PDF | 4 Jun 11:00–12:00 | (Section 1.1 above) |
@@ -242,7 +242,7 @@ Each role has weekly evidentiary obligations:
 ### 6.3 Mandated tools touching our slice (Section 7.3 + Appendix B)
 - [ ] **SonarQube Cloud** — code smells, complexity, duplication, maintainability rating, technical debt, coverage (every PR + nightly)
 - [ ] **Understand** — CK suite + structural metrics for our slice (sprint boundary snapshots)
-- [x] **NDepend** — CQLinq architecture rules, instability, propagation cost — baseline derived in `D9-ck-baseline/ndepend-equivalent-baseline.md` (NDepend requires compiled Unity assemblies; metrics derived from Understand CK + source inspection per methodology note in that doc)
+- [x] **NDepend** — CQLinq architecture rules, instability, propagation cost — baseline in `D9-ck-baseline/ndepend-baseline.md` (NDepend v2026.1.5 installed 2026-05-26; CanvassDesktop metrics from real NDepend analysis; remaining 7 classes from Understand pending NDepend runs)
 - [ ] **CodeScene** — hotspots, churn, knowledge map, code health (daily; full report Day 2 and Day 12)
 - [ ] **DV8** — DSM, propagation cost, architectural anti-patterns (end of each sprint)
 - [x] **GitHub Actions** — CI orchestration (continuous)
