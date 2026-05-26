@@ -71,7 +71,7 @@ Reverse-direction references are a CI failure. This enforces §4.2.2 (no cycles)
 - `iDaVIE.Client.ViewModel` is unit-testable with NUnit + Moq, no Unity Editor required — satisfies LO6 and NFR-TST-1 (≥ 70 % branch/line on domain code).
 - Unity 2021.3 → Unity 6 UI Toolkit migration is scoped to `iDaVIE.Client.View` only — satisfies LO5 and ARCH-7.
 - Composition root replaces all `FindObjectOfType<>` singleton lookups; dependencies are explicit and mockable.
-- WMC, RFC, CBO, and LCOM for the refactored classes are projected to fall within §7.1 thresholds (see `docs/sub-team-6/refactor.md` §9 for per-class estimates).
+- WMC, RFC, CBO, and LCOM for the refactored classes are projected to fall within §7.1 thresholds (see `docs/sub-team-6/deliverables/D3-MVVM-binding-policy/mvvm-binding-policy.md` §8.1 for per-class estimates).
 
 **Negative:**
 

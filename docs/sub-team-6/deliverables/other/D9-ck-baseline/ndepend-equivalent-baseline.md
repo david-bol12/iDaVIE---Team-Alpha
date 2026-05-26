@@ -275,7 +275,7 @@ The circular dependencies (Cycles 1 and 2) must be broken **before** any MVVM ex
 1. **Break Cycle 1** — introduce `ICanvassDesktopEvents` (or equivalent notification interface) so `VolumeCommandController` subscribes to events rather than holding a typed back-reference. Alternatively, move the callback logic into a mediator.
 2. **Break Cycle 2** — `DesktopPaintController` should receive paint-mode state via an injected `IPaintModeService` rather than fetching `CanvassDesktop` via `FindObjectOfType`.
 
-Once cycles are broken, the MVVM decomposition described in `refactor.md` and `adrs/0001-mvvm-split.md` proceeds with no further cyclic risk.
+Once cycles are broken, the MVVM decomposition described in `docs/sub-team-6/deliverables/D3-MVVM-binding-policy/mvvm-binding-policy.md` and `adrs/0001-mvvm-split.md` proceeds with no further cyclic risk.
 
 **Projected Day 13 snapshot** (after MVVM split) — see `docs/sub-team-6/metrics/projection.md` (to be created, feeds T2 and T4).
 
@@ -287,7 +287,7 @@ Once cycles are broken, the MVVM decomposition described in `refactor.md` and `a
 |---|---|
 | CK baseline (Understand) | `docs/sub-team-6/deliverables/other/D9-ck-baseline/SK_BNCH.md` |
 | SonarQube smells baseline | `docs/sub-team-6/deliverables/other/D9-ck-baseline/SonarQube Baseline report.md` |
-| MVVM refactoring proposal | `docs/sub-team-6/refactor.md` |
+| MVVM refactoring proposal | `docs/sub-team-6/deliverables/D3-MVVM-binding-policy/mvvm-binding-policy.md` |
 | ADR — MVVM split | `docs/sub-team-6/adrs/0001-mvvm-split.md` |
 | Before-state DSM (File tab) | `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/before-dsm.md` |
 | Deliverables checklist (D9, T2) | `docs/sub-team-6/deliverables/deliverables-checklist.md` |

@@ -5,7 +5,7 @@ Debug-tab AFTER figures (§3) remain projected. Quality Guild tool verification 
 **Before source:** `SK_BNCH.md` (Understand static analysis export, Day 2 baseline).  
 **After sources (WE1):** `refactoring-examples/sub-team-6/file-tab/skeleton/*.cs`, `adapters/*.cs` (committed on `team6` branch).  
 **After sources (WE2):** `after-class-diagram.puml`, `after-dependency-graph.puml`, `after-dsm.md`,  
-`uml-diagrams/after-debug-sequence-diagram.puml`, `refactor.md §3.2`.  
+`uml-diagrams/after-debug-sequence-diagram.puml`, `mvvm-binding-policy.md §3.2`.  
 **Feeds:** T4 (architecture report §Metrics), T7 (integration & metrics), Pitch slot 3.
 
 ---
@@ -238,7 +238,7 @@ condition triggers an additional `Debug.Log` statement with string concatenation
 
 **Method derivation:**
 - `DebugTabView` (WMC=5): `BindTo`, `OnEnable`, `OnDisable` + `AppendEntryToScrollView` (private, called on binding update) + `ScrollToBottom`. All 5 touch `_vm : IDebugTabViewModel` → LCOM ≈ 0.05. CBO=3: `IDebugTabViewModel`, `UnityEngine` (UI element), `LogEntry`.
-- `DebugTabViewModel` (WMC=7): `OnNext(LogEntry)` (implements `ILogObserver`) + `LogEntries` getter + `AutoScrollEnabled` getter/setter + `FilterLevel` getter/setter + `ClearCommand.Execute` + constructor. CBO=3: `ILogStream`, `ILogObserver` (self-implements), `LogEntry`. **Zero `UnityEngine` imports.** Consistent with "WMC ≈ 5, CBO ≈ 2" in `refactor.md §9` (+2 for filter setter and property-changed notification).
+- `DebugTabViewModel` (WMC=7): `OnNext(LogEntry)` (implements `ILogObserver`) + `LogEntries` getter + `AutoScrollEnabled` getter/setter + `FilterLevel` getter/setter + `ClearCommand.Execute` + constructor. CBO=3: `ILogStream`, `ILogObserver` (self-implements), `LogEntry`. **Zero `UnityEngine` imports.** Consistent with "WMC ≈ 5, CBO ≈ 2" in `mvvm-binding-policy.md §8.1` (+2 for filter setter and property-changed notification).
 - `UnityLogStreamAdapter` (WMC=5): `Subscribe`, `Unsubscribe`, `Publish` (3 public, implementing `ILogStream`) + `ForwardToUnityConsole` (private — maintains parity with Unity IDE console) + constructor. CBO=4: `ILogStream`, `ILogObserver`, `LogEntry`, `UnityEngine.Debug`. **This is the only class that calls `UnityEngine.Debug.*`.** All 40 former call-sites in `CanvassDesktop` become `_logStream.Publish(level, source, message)` — compiled against `ILogStream` only.
 
 ### 3.3 Debug Tab Delta
@@ -421,7 +421,7 @@ Role assignments:
 | File tab before-state DSM | `before-dsm.md` (this directory) |
 | Debug tab after-state sequence diagram | `docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml` |
 | CanvassDesktop method reference + log sites | `docs/sub-team-6/CanvassDesktop.md` |
-| MVVM refactoring proposal (§3.2 Debug tab) | `docs/sub-team-6/refactor.md` |
+| MVVM refactoring proposal (§3.2 Debug tab) | `docs/sub-team-6/deliverables/D3-MVVM-binding-policy/mvvm-binding-policy.md` |
 | MVVM ADR | `docs/sub-team-6/adrs/0001-mvvm-split.md` |
 | Deliverables checklist | `docs/sub-team-6/deliverables/deliverables-checklist.md` |
 | Feeds T4 | Consolidated architecture report §Metrics chapter |
