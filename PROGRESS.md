@@ -57,7 +57,7 @@ Format: date, what was completed, what's in progress, any blockers.
 - [ ] Section 5 — SOLID/GRASP Principle Mapping (S2-D06)
 - [x] Section 6 — Migration Path (S2-D07) — §5.8 written to `docs/design-document.md`: Strangler Fig strategy, 7 phases (seam introduction → IMaskMode → FoveatedSamplingPolicy → VolumeMaterialBinder → VolumeCameraDriver → VolumeTextureManager → coordinator handoff → URP migration), per-phase entry/exit conditions, performance gates, shadow-mode step, rollback cost per phase, summary table — 2026-05-27
 - [x] Section 7 — Risks and Trade-offs (S2-D08) — §10 expanded to full 3-subsection treatment (performance overhead, coordinator complexity, interface versioning) + 8-row risk register — 2026-05-27
-- [ ] Section 8 — Day 13 Projected CK Metrics (S2-D09)
+- [x] Section 8 — Day 13 Projected CK Metrics (S2-D09) — `docs/design-document.md` §6.2 and §6.3 written 2026-05-27: per-class projection table (10 classes, all 6 CK metrics, meets-target column), detailed notes on VolumeMaterialBinder CBO=11 and VolumeTextureManager WMC=20 headroom, delta narrative paragraph referencing 46-file cycle break and LCOM collapse
 - [ ] Sub-team review (S2-D10)
 - [ ] Finalise `docs/design-document.md` (S2-D11)
 
@@ -95,7 +95,7 @@ Format: date, what was completed, what's in progress, any blockers.
 ### ⏳ Sprint 2 — Section 6.3 Deliverables
 - [ ] `docs/rendering-layer-design.md` (S2-S01 to S2-S03)
 - [ ] `docs/shader-asset-policy.md` (S2-S04 to S2-S05)
-- [ ] `docs/metrics-worksheet.md` Day 13 projected column (S2-S06 to S2-S07)
+- [x] `docs/metrics-worksheet.md` Day 13 projected column (S2-S06 to S2-S07) — Section 2 table filled (10 classes, all 6 metrics), Section 3 delta summary written (before/worst/best comparison), Section 4 justification prose for WMC / CBO / LCOM with LCOM formula note — 2026-05-27
 
 ### ⏳ Sprint 2 — SOLID/GRASP Audit
 - [x] Structured violation audit of current VDSR (S2-A01) — 17-violation table (V-01→V-17, 6 Critical / 8 High / 1 Medium) written to `docs/design-document.md` §7.1 — 2026-05-25; source: `docs/Codebase Exploration/SOLID_GRASP_Violations.md`
@@ -146,7 +146,6 @@ Format: date, what was completed, what's in progress, any blockers.
 ## Session Log
 
 ### 2026-05-27 (session 3)
-
 - [S2-E1-05] `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeCameraDriver.cs` drafted
   — Scope: narrow (camera matrix, clip planes, projection mode) — matches formal design doc §5.2 targets; cursor tracking / outlines / teleport excluded by design
   — Includes `VolumeCoordinateService` static helper (pure C#, zero UnityEngine API calls) — fixes V-10 DIP: replaces all `transform.InverseTransformPoint` calls (before/ lines 713, 739, 857) with `WorldToObjectSpace(point, Matrix4x4)`, testable in edit mode without a scene
@@ -158,6 +157,12 @@ Format: date, what was completed, what's in progress, any blockers.
   — Projected CK: WMC=9 combined (VolumeCameraDriver=5, VolumeCoordinateService=4), CBO≤4, LCOM=0.0 — all within targets (WMC target ≤12 for this class)
   — Per-frame loop usage documented inline (Steps 1–5, on-demand coordinate conversion example)
   — Design decision: "return value struct" pattern (consistent with FoveatedSamplingPolicy → FoveationParameters); VolumeCameraDriver does NOT hold IRenderPipeline — coordinator forwards FrustumPlanes to pipeline, reducing CBO from target ≤6 to actual ≤4
+- [S2-E2-03] `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode` finalised in `refactoring-examples/team3/example2-MaskModes/after/`
+  — All three promoted from stubs to fully annotated implementations aligned with locked IMaskMode signatures (S2-E2-02)
+  — Key changes from stubs: `ShaderKeyword` property used in `EnableKeyword()` call (no hardcoded string duplication); `_MASK_DISABLED` added to the mutual-exclusion disable block (DisabledMaskMode is now an explicit mode per S2-E2-02); null-guard for `maskTexture` — `Debug.Assert` under `#if UNITY_ASSERTIONS`, silent early return in RELEASE to avoid `SetTexture(null)` Unity warning
+  — Full inline commentary: CONTEXT (source switch-case origin), BEHAVIOUR, SHADER SIDE, NULL-SAFETY CONTRACT, CK METRICS table (WMC=2, DIT=1, NOC=0, CBO=1, RFC=4, LCOM=0.0 per class), SOLID/GRASP alignment (SRP/OCP/LSP/ISP/DIP + Protected Variations + Indirection)
+  — `IsolateMaskMode`: `OutsideAlpha = 0.15f` named constant documented with extraction rationale and OCP extension note (add constructor param to this class only if value needs to be configurable)
+  — XML `<summary>` + `<remarks>` on all public members; `<inheritdoc/>` on interface members
 
 ### 2026-05-27 (session 2)
 - [S2-E2-02] `refactoring-examples/example2-MaskModes/after/IMaskMode.cs` finalised
@@ -192,6 +197,12 @@ Format: date, what was completed, what's in progress, any blockers.
 
 ### 2026-05-25 (session 6)
 - [S2-D03] `docs/design-document.md` §4.2 Target Architecture (To-Be) written — five-class breakdown table, per-class bullet justifications, IRenderPipeline abstraction, IMaskMode Strategy, cross-team contracts, diagram references
+
+### 2026-05-27 (session 8)
+- [S2-D09] `docs/design-document.md` §6.2 Day 13 Projection table written — 10-class table (VolumeRenderCoordinator, VolumeMaterialBinder, VolumeTextureManager, VolumeCameraDriver, FoveatedSamplingPolicy, ApplyMaskMode, InverseMaskMode, IsolateMaskMode, DisabledMaskMode, UrpRenderPipeline) with all 6 CK metrics + meets-target column; per-class notes on CBO=11 inventory for VolumeMaterialBinder and WMC=20 headroom for VolumeTextureManager
+- [S2-D09] §6.3 Delta Summary paragraph written — WMC 74→20 worst-case, CBO 31→11 worst-case, 46-file cycle broken, LCOM 0.81→0.05 max, cross-reference to metrics-worksheet.md
+- [S2-S06/S2-S07] `docs/metrics-worksheet.md` Section 2 filled — projected table (10 classes), LCOM = 0 for all new classes, Henderson-Sellers formula note; Section 3 delta table (before/worst class/best class); Section 4 justification prose (WMC, CBO, LCOM) with formula rationale
+- Merge conflict in PROGRESS.md (lines 64–112) resolved — HEAD (✅) version kept; stale branch lines removed
 
 ### 2026-05-27 (session 6)
 - Confirmed both refactoring examples complete in `refactoring-examples/team3/`
