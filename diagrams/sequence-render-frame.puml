@@ -1,0 +1,196 @@
+@startuml sequence-render-frame
+'
+' iDaVIE Sub-team 3 — Rendering Engine
+' Sequence diagram: one rendered frame in the proposed architecture
+' Team Alpha | Cache Me If You Can | Sprint 2 | 2026-05-25
+'
+' Source for step numbering: docs/Codebase Exploration/RenderFrame_CallSequence.md
+' All participants are the proposed AFTER classes (class-after.puml)
+'
+
+title One Rendered Frame — Proposed Architecture\n(replaces Update() lines 1022–1118 in VolumeDataSetRenderer)
+
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+skinparam participant {
+  BackgroundColor #D6EAF8
+  BorderColor     #2471A3
+}
+skinparam actor {
+  BackgroundColor #FDFEFE
+  BorderColor     #BDC3C7
+}
+skinparam sequence {
+  ArrowColor          #2471A3
+  LifeLineBorderColor #7FB3D3
+  GroupBorderColor    #1ABC9C
+  GroupBodyBackgroundColor #F0FFFC
+  NoteBackgroundColor #FEF9E7
+  NoteBorderColor     #F39C12
+}
+
+' ══════════════════════════════════════════════════
+'  PARTICIPANTS
+' ══════════════════════════════════════════════════
+actor "Unity Engine\n(player loop)" as Unity
+participant "VolumeRender\nCoordinator" as VRC
+participant "VolumeMaterial\nBinder" as VMB
+participant "VolumeTexture\nManager" as VTM
+participant "VolumeCameraDriver" as VCD
+participant "Foveated\nSamplingPolicy" as FSP
+participant "IGazeProvider\n[Sub-team 4]" as GP
+participant "IMaskMode\n(active strategy)" as MM
+participant "IRenderPipeline\n(URP / HDRP)" as RP
+
+' ══════════════════════════════════════════════════
+'  STEP 1 — Unity calls Update() on the coordinator
+' ══════════════════════════════════════════════════
+Unity -> VRC : Update()\n<color:#888>[was: VDSR.Update() — 97 lines]</color>
+
+activate VRC
+
+' ══════════════════════════════════════════════════
+'  STEP 2 — Camera parameters
+' ══════════════════════════════════════════════════
+note over VRC, VCD
+  <b>Step 2 — Camera / clip-plane data</b>
+  (was: inline matrix maths in Update())
+end note
+
+VRC -> VCD : GetFrameParameters()
+activate VCD
+  VCD -> RP : GetActiveCameraData()
+  activate RP
+  RP --> VCD : CameraData\n(view matrix, projection, clip planes)
+  deactivate RP
+  VCD --> VRC : CameraParameters
+deactivate VCD
+
+' ══════════════════════════════════════════════════
+'  STEP 3 — Foveated sample rate
+' ══════════════════════════════════════════════════
+note over VRC, FSP
+  <b>Step 3 — Foveated sampling decision</b>
+  (was: Update() lines 1042–1053)
+end note
+
+VRC -> FSP : ComputeSteps(radialDistance)
+activate FSP
+
+  alt foveated rendering enabled
+    FSP -> GP : GazeFocusPoint
+    activate GP
+    GP --> FSP : Vector2(focusX, focusY)
+    deactivate GP
+    FSP --> VRC : stepsHigh (foveal)\nor stepsLow (peripheral)\nbased on radial distance
+  else foveated rendering disabled
+    FSP --> VRC : _maxSteps (flat rate)
+  end
+
+deactivate FSP
+
+' ══════════════════════════════════════════════════
+'  STEP 4 — Texture readiness check
+' ══════════════════════════════════════════════════
+note over VRC, VTM
+  <b>Step 4 — GPU texture readiness</b>
+  (was: RegenerateCubes() scattered across Update())
+end note
+
+VRC -> VTM : EnsureTextureReady()
+activate VTM
+
+  alt texture is stale (crop changed / first load)
+    VTM -> VTM : GenerateDownsampledCube()\n<color:#888>enforces 4 GB cap + 368 MB budget</color>
+    VTM -> VTM : UploadToGPU()\n<color:#888>FilterMode.Point — always</color>
+  else texture is current
+    note over VTM : cache hit — no upload
+  end
+
+  VTM --> VRC : Texture3D (dataCube)\nTexture3D (maskCube)
+deactivate VTM
+
+' ══════════════════════════════════════════════════
+'  STEP 5 — Bind all shader properties
+' ══════════════════════════════════════════════════
+note over VRC, VMB
+  <b>Step 5 — Material / shader property sync</b>
+  (was: 25+ SetFloat/SetInt/SetVector in Update())
+end note
+
+VRC -> VMB : SyncShaderState(\n  cameraParams,\n  dataCube,\n  maskCube,\n  sampleRate\n)
+activate VMB
+
+  ' 5a — Render pipeline keywords
+  VMB -> RP : SetPipelineKeyword("_FOVEATED", enabled)
+  activate RP
+  RP --> VMB
+  deactivate RP
+
+  ' 5b — Scaling / colour map uniforms (replaces 15+ SetFloat calls)
+  VMB -> VMB : PushScalingUniforms()\n<color:#888>SetFloat × 6: bias, contrast, alpha,\ngamma, threshMin, threshMax</color>
+
+  ' 5c — Foveation uniforms
+  VMB -> VMB : PushFoveationUniforms(stepsLow, stepsHigh)\n<color:#888>SetInt × 2: _StepsLow, _StepsHigh\nSetFloat × 3: start, end, jitter</color>
+
+  ' 5d — Mask mode strategy (replaces switch statement)
+  VMB -> MM : Apply(material, maskCube)
+  activate MM
+  note right of MM
+    OCP: each mode class sets its own
+    keywords — no switch statement.
+    Adding a mode = new class only.
+  end note
+  MM --> VMB : (shader keywords set, _MaskTex bound)
+  deactivate MM
+
+  VMB --> VRC : (all uniforms synced)
+deactivate VMB
+
+' ══════════════════════════════════════════════════
+'  STEP 6 — Schedule the render pass
+' ══════════════════════════════════════════════════
+note over VRC, RP
+  <b>Step 6 — Schedule draw call / render pass</b>
+  (was: OnRenderObject() direct draw)
+end note
+
+VRC -> RP : ScheduleVolumeRenderPass(\n  VolumeRenderParameters\n)
+activate RP
+note right of RP
+  URP: RenderPassEvent.BeforeRenderingOpaques
+  HDRP: CustomPass injection
+  Both paths hidden behind IRenderPipeline.
+end note
+RP --> VRC : (render pass enqueued)
+deactivate RP
+
+deactivate VRC
+
+' ══════════════════════════════════════════════════
+'  STEP 7 — GPU execution (outside our code)
+' ══════════════════════════════════════════════════
+note over Unity
+  <b>Step 7 — GPU executes ray-march shader</b>
+  VolumeRender.shader / ColourMap*.shader
+  → ray steps determined by foveation uniforms
+  → pixels composited on screen
+  Target: ≥ 90 fps invariant maintained
+end note
+
+' ══════════════════════════════════════════════════
+'  NOTES
+' ══════════════════════════════════════════════════
+note over VRC, RP
+  <b>Performance contract</b>
+  All steps 2–6 are CPU-side uniform pushes — O(1).
+  No per-frame heap allocation.
+  GPU work is unchanged from before; only the
+  CPU-side dispatch and property-push path changes.
+  90 fps invariant: unaffected by this refactoring.
+end note
+
+@enduml
