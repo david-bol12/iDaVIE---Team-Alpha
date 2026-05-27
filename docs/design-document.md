@@ -894,16 +894,45 @@ DIT = 1 reflects direct inheritance from `MonoBehaviour`. NOC = 0: no subclasses
 
 ### 6.2 Day 13 Projection (Proposed)
 
-- Table: one row per new class with projected WMC, DIT, NOC, CBO, RFC, LCOM values.
-- Column: "Meets target?" against brief thresholds.
-- Note that projected values are derived from the worked refactoring examples — not speculative.
-- Classes to include: `VolumeRenderCoordinator`, `VolumeMaterialBinder`, `VolumeTextureManager`,
-  `VolumeCameraDriver`, `FoveatedSamplingPolicy`, `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode`.
+All values are derived directly from the worked refactoring examples in `refactoring-examples/team3/` — not speculative. Each class file header contains the per-method WMC breakdown and CBO coupling inventory that underlies these figures.
+
+| Class | WMC | DIT | NOC | CBO | RFC | LCOM | Meets target? |
+|-------|-----|-----|-----|-----|-----|------|---------------|
+| `VolumeRenderCoordinator` | 3 | 1 | 0 | 6 | 12 | 0.00 | ✅ all |
+| `VolumeMaterialBinder` | 16 | 0 | 0 | 11 | 22 | 0.05 | ✅ all |
+| `VolumeTextureManager` | 20 | 0 | 0 | 8 | 20 | 0.05 | ✅ all |
+| `VolumeCameraDriver` | 9 | 0 | 0 | 4 | 18 | 0.00 | ✅ all |
+| `FoveatedSamplingPolicy` | 7 | 0 | 0 | 6 | 14 | 0.00 | ✅ all |
+| `ApplyMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
+| `InverseMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
+| `IsolateMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
+| `DisabledMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
+| `UrpRenderPipeline` (adapter) | 8 | 0 | 0 | 14 | 20 | 0.00 | ✅ (adapter target ≤ 40 / ≤ 25) |
+| Target (domain) | ≤ 20 | ≤ 4 | ≤ 5 | ≤ 14 | ≤ 50 | ≤ 0.5 | — |
+| Target (adapter) | ≤ 40 | ≤ 4 | ≤ 5 | ≤ 25 | ≤ 50 | ≤ 0.5 | — |
+
+**Notes on specific values:**
+- `VolumeRenderCoordinator` DIT = 1: it inherits `MonoBehaviour` (unavoidable in Unity); no other class in the proposal inherits from Unity types.
+- `VolumeMaterialBinder` CBO = 11: Material (1), Texture3D (1), IMaskMode (1), IRenderPipeline (1), VolumeRenderState (1), IVolumeMaterialBinder (self-interface, not counted), 3 shader-keyword string constants folded into Material calls, FoveatedSamplingConfig (1), VolumeColourMap (1). All within the ≤ 14 domain limit.
+- `VolumeTextureManager` WMC = 20: exactly at the domain limit; per-method breakdown in the class header confirms no single method exceeds CC = 4.
+- `FoveatedSamplingPolicy` CBO = 6: IGazeProvider (1), FoveatedSamplingConfig (1), FoveationParameters (1), FoveationZone (enum, 1), Mathf (1), Vector2 (1). All Unity math types — unavoidable in a foveation policy class; within the ≤ 14 limit.
 
 ### 6.3 Delta Summary
 
-- One-line narrative: total WMC reduction, CBO reduction, LCOM improvement.
-- State that all new domain classes meet or beat the brief's NFR thresholds.
+Splitting `VolumeDataSetRenderer` into nine focused classes eliminates every CK threshold
+violation. Total WMC falls from 74 to a maximum of 20 per class (and no more than 60
+summed across the five core classes, replacing a single class that carried 74 alone).
+CBO drops from 31 to a maximum of 11 per domain class, breaking the 46-file dependency
+cycle that carried a 39.8% propagation cost. LCOM collapses from 0.81 — the signature of
+four unrelated field clusters in one class — to ≤ 0.05 per class, each of which operates
+on a single field cluster by construction. Every proposed class meets or beats the brief's
+NFR thresholds. The two classes closest to their limits (`VolumeMaterialBinder` at CBO = 11
+and `VolumeTextureManager` at WMC = 20) have documented per-member inventories in their
+file headers; neither has headroom to accumulate further technical debt without crossing
+the target line, which is an intentional design signal.
+
+Full before/after numbers using the Understand tool's raw formula are in
+`docs/metrics-worksheet.md §2–3`.
 
 ---
 
