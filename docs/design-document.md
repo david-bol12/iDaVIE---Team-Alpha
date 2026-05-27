@@ -10,9 +10,9 @@
 
 *Brief reference: Section 9.2 — opening orientation for the maintainer panel*
 
-- One-paragraph summary of what this document covers and what the sub-team is proposing.
-- State the single key claim: `VolumeDataSetRenderer` (~1 400 lines, WMC ~74, CBO ~31) is a monolith that violates SRP, OCP, and DIP; the proposal splits it into four focused classes behind clean interfaces.
-- Identify the two concrete refactoring examples demonstrated in `refactoring-examples/`.
+- This document aims to outline the results of the analysis of the iDavie project, using  CK metrics to evaluate code health, performance and maintainability. These metrics aim to expose design-flaws. In addition, this document proposes modifications to the codebase's architecture and design to improve performance and stability.
+- The file with the largest number of violations is VolumeDataSetRenderer. `VolumeDataSetRenderer` (~1 400 lines, WMC ~74, CBO ~31) is a monolith that violates SRP, OCP, and DIP; the proposal splits it into four focused classes behind clean interfaces.
+- The document outlines the two concrete refactoring examples demonstrated in `refactoring-examples/`.
 - Note that no production code is changed — this is a design-only proposal.
 
 ---
