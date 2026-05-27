@@ -183,22 +183,64 @@ The current `Update()` loop polls `firstActiveRenderer.ThresholdMin` every frame
 | `_restFrequency` field (declared, never read) | Removed — dead code confirmed by LCOM field-access analysis |
 | Colormap dropdown wiring in `Start()` | `RenderingTabView.OnColorMapChanged()` → `ChangeColorMapCommand` |
 
-### 3.4 InformationTabViewModel
+### 3.4 StatsTabViewModel
+
+The Stats tab today is eight methods on `CanvassDesktop` (`populateStatsValue`, `UpdateUI`, `UpdateSigma`, `RestoreDefaults`, `UpdateScale`, `SetMaxMinPercentile`, `UpdateScaleMin`, `UpdateScaleMax`) that read in-memory float buffers and write sliders / labels directly. They share state with the Render tab via `CanvassDesktop` fields — moving the slider in Render silently changes Stats. That cross-tab coupling is the proximate cause of defect **B-03** (slider sync) named in `D1/requirements.md` §2.
 
 **Owns:**
-- `HeaderText` (string) — formatted FITS header dump
-- `AxisInfo` (list of axis key/value pairs)
-- `NAxis`, `ImageSize`, `MaskSize`
+- `Histogram` (`IReadOnlyList<HistogramBin>`) — bound to the chart control
+- `PercentilePresets` (list of `{Label, Lower, Upper}`) — the quick-pick row
+- `ManualMin`, `ManualMax` (float, two-way bindable)
+- `ScaleMode` (enum: `Linear` / `Log`)
+- `SigmaOverlay` (float — multiplier for the σ band)
+- Commands: `ApplyPercentileCommand`, `RestoreDefaultsCommand`, `RecomputeHistogramCommand`
 
-Populated by `IFitsService.GetHeaderAsync(path)` returning a plain DTO — no Unity types.
+The `IsExactPercentile` toggle currently freezes the UI on large cubes (defect **B-04**); the ViewModel exposes `IsRecomputing` so the View can show a progress indicator instead.
+
+Histogram and percentile work belong to the same domain as the volume renderer, so `IVolumeService` is the natural producer. Two surface additions over the WE1 contract:
+- `Task<IReadOnlyList<HistogramBin>> ComputeHistogramAsync(int bins, CancellationToken ct)` — exact percentiles on demand.
+- `event Action<HistogramChangedEventArgs>? HistogramChanged` — fires when the loaded cube or thresholds change, replacing the per-frame `Update()` poll.
 
 **Split from current code:**
 
 | Current (CanvassDesktop) | Proposed home |
 |---|---|
-| `UpdateHeaderFromFits(fptr)` writes raw string directly to scroll view | `InformationTabView` bound to `HeaderText` property |
-| FITS header parsed inline inside `_browseImageFile()` | `IFitsService.GetHeaderAsync(path)` returns `FitsHeaderDto` |
-| Axis dimensions extracted ad-hoc; no structured type | `InformationTabViewModel.AxisInfo` list populated from `FitsHeaderDto` |
+| `populateStatsValue()` reads buffer on tab show | `StatsTabViewModel` subscribes to `IVolumeService.HistogramChanged`; no tab-show side effect |
+| `UpdateUI()` mutates sliders + labels directly | View binds to `Histogram`, `ManualMin`, `ManualMax`, `ScaleMode` — no imperative UI writes |
+| `SetMaxMinPercentile(p)` freezes UI for exact computation | `ApplyPercentileCommand` issues `ComputeHistogramAsync` with `IProgress<float>`; View shows progress |
+| `UpdateScale()` reaches into Render tab's threshold fields | `IVolumeService.SetThresholds(min, max)` — Render tab observes the same event |
+| `RestoreDefaults()` re-reads renderer state | `RestoreDefaultsCommand` calls `IVolumeService.ResetThresholds()` |
+
+### 3.5 SourcesTabViewModel
+
+The Sources tab today is ten methods on `CanvassDesktop` (`BrowseSourcesFile`, `_browseSourcesFile`, `BrowseMappingFile`, `_browseMappingFile`, `SaveMappingFile`, `_saveMappingFile`, `ChangeSourceMapping`, `AreMappingsIncompatible`, `AreMinimalMappingsSet`, `LoadSourcesFile`) that handle two file dialogs, JSON mapping I/O, per-column validation, and a singleton-lookup feature-set load. Mapping-rule logic is intermixed with UI updates. Defect **B-05** (WCS vs (x,y,z) one-voxel offset, open issue #464) sits in this code.
+
+**Owns:**
+- `CataloguePath`, `MappingPath` (observable strings)
+- `AvailableColumns` (`IReadOnlyList<ColumnDescriptor>`) — populated after a catalogue is opened
+- `ColumnMappings` (`IDictionary<MappingRole, string>`) — bound to per-role dropdowns
+- `MinimalMappingsSet` (bool, computed) — gates the Load button
+- `ValidationMessage` (string?) — surfaces "WCS ↔ voxel mismatch" etc.
+- Commands: `BrowseCatalogueCommand`, `BrowseMappingCommand`, `SaveMappingCommand`, `LoadCatalogueCommand`
+
+Catalogue parsing is server-side (VOTable / FITS table — the same brief-§6.6 logic that puts FITS reading server-side). Mapping JSON is small enough to stay client-local but consistent with persistence, it should route through `IConfigService` rather than direct file I/O.
+
+Two domain interfaces are needed (out-of-scope for the worked examples; gestures only):
+- `ICatalogueService` — `OpenCatalogueAsync(path)` returns a `CatalogueInfo { Columns, RowCount, SuggestedMappings }`. Implemented by a `CatalogueServiceAdapter` gateway proxy that dispatches `catalogue.open` / `catalogue.close` over `IServiceGateway`.
+- `IFeatureSetService` — `LoadFromCatalogueAsync(datasetId, mappings)` materialises features in the running session.
+
+**Split from current code:**
+
+| Current (CanvassDesktop) | Proposed home |
+|---|---|
+| `BrowseSourcesFile()` opens dialog, then calls `_browseSourcesFile` | `BrowseCatalogueCommand` → `IFileDialogService.PickFileAsync` → `ICatalogueService.OpenCatalogueAsync` |
+| `_browseSourcesFile()` reads VOTable / FITS catalogue via native reader | `ICatalogueService` server-side; client sees only `CatalogueInfo` DTO |
+| `AreMinimalMappingsSet()` / `AreMappingsIncompatible()` validation | Computed property `MinimalMappingsSet` + private `Validate()` method |
+| `SaveMappingFile()` / `_saveMappingFile()` JSON serialisation | `SaveMappingCommand` → `IConfigService.SaveMappingAsync(path, ColumnMappings)` |
+| `LoadSourcesFile()` via `FindObjectOfType<FeatureSetManager>()` | `LoadCatalogueCommand` → `IFeatureSetService.LoadFromCatalogueAsync` |
+| WCS ↔ voxel offset bug **B-05** | Mapping role enum makes WCS vs voxel coordinate an explicit choice rather than an implicit field-order assumption; `Validate()` rejects incompatible combinations |
+
+These two sections are **design gestures**, not worked examples — the brief mandates only File and Debug as full worked examples (D4). They show the same MVVM split applies, and they identify the new interfaces (`IStatsService` extension, `ICatalogueService`, `IFeatureSetService`) the Architecture Guild needs to ratify before any of these tabs ships.
 
 ---
 
@@ -328,21 +370,28 @@ The existing `CanvassDesktop.Start()` does singleton hunting via `FindObjectOfTy
 
 ```csharp
 // Composition root (pseudo-code — design only)
-var fitsService    = new FitsServiceAdapter();        // wraps FitsReader P/Invoke
-var volumeService  = new VolumeServiceAdapter();      // wraps VolumeCommandController
-var fileDialogSvc  = new StandaloneFileDialogAdapter();
-var logStream      = new UnityLogStreamAdapter();     // wraps Debug.Log
+var gateway        = new JsonRpcServiceGateway(sessionPipeName);   // ADR-0002 transport
+await gateway.ConnectAsync();
+
+var fitsService    = new FitsServiceAdapter(gateway);              // gateway proxy
+var logStream      = new GatewayLogStreamAdapter(gateway);         // gateway proxy
+var volumeService  = new VolumeServiceAdapter();                   // Unity adapter
+var dialogService  = new StandaloneFileDialogAdapter();            // Unity adapter
+var memoryProbe    = new MemoryProbeAdapter();                     // Unity adapter
+var catalogue     = new CatalogueServiceAdapter(gateway);          // gateway proxy (gesture — §3.5)
 var dispatcher     = new UnityMainThreadDispatcher();
 
-var fileVM    = new FileTabViewModel(fitsService, fileDialogSvc, volumeService);
-var debugVM   = new DebugTabViewModel(logStream, dispatcher);
-var renderVM  = new RenderingTabViewModel(volumeService);
-var infoVM    = new InformationTabViewModel(fitsService);
+var fileVM     = new FileTabViewModel(fitsService, dialogService, volumeService, memoryProbe);
+var debugVM    = new DebugTabViewModel(logStream, dispatcher);
+var renderVM   = new RenderingTabViewModel(volumeService);
+var statsVM    = new StatsTabViewModel(volumeService);
+var sourcesVM  = new SourcesTabViewModel(catalogue, dialogService);
 
 fileTabView.BindTo(fileVM);
 debugTabView.BindTo(debugVM);
 renderingTabView.BindTo(renderVM);
-informationTabView.BindTo(infoVM);
+statsTabView.BindTo(statsVM);
+sourcesTabView.BindTo(sourcesVM);
 ```
 
 ### 5.2 Wiring Rules
@@ -365,15 +414,16 @@ informationTabView.BindTo(infoVM);
 The ACL lives at the Service Gateway boundary only:
 
 ```
-Domain code (ViewModels)         Service adapters (Unity-dependent)
-─────────────────────────        ──────────────────────────────────
-IFitsService                ◄──── FitsServiceAdapter   (FitsReader P/Invoke)
-IVolumeService              ◄──── VolumeServiceAdapter (VolumeCommandController)
-IFileDialogService          ◄──── StandaloneFileDialogAdapter
-ILogStream                  ◄──── UnityLogStreamAdapter (Debug.Log)
+Domain code (ViewModels)         Service adapters (Gateway Layer, ACL)
+─────────────────────────        ──────────────────────────────────────────
+IFitsService                ◄──── FitsServiceAdapter         (gateway proxy — JSON-RPC)
+ILogStream                  ◄──── GatewayLogStreamAdapter    (gateway proxy — JSON-RPC notifications)
+IVolumeService              ◄──── VolumeServiceAdapter       (Unity adapter — VolumeCommandController)
+IFileDialogService          ◄──── StandaloneFileDialogAdapter (Unity adapter — SFB)
+IConfigService              ◄──── ConfigServiceAdapter       (Unity adapter — PlayerPrefs)
 ```
 
-Rule: nothing left of the `◄────` line may `using UnityEngine`, `using Valve.VR`, or `[DllImport]`.
+Rule: nothing left of the `◄────` line may `using UnityEngine`, `using Valve.VR`, or `[DllImport]`. The two **gateway proxies** also forbid those usings on their own side — they compile against `iDaVIE.Client.Gateway` only. The three **Unity adapters** are the only classes permitted to touch the Unity SDK (see ADR-0001 Decision item 3 in `D2/architecture.md`).
 
 **DTO contract (Gateway ↔ ViewModel):**
 - DTOs are immutable plain C# records.
