@@ -1,10 +1,12 @@
-# TEST-2 — UI Toolkit Page-Object Pattern for Integration Tests
+# UI Toolkit Page-Object Pattern for Integration Tests (Tier 3)
+
+**Parent doc:** [`test-strategy.md`](test-strategy.md) · **Spec refs:** §6.6 ST · §9.2.4 · §4.2 #4 · §7.2 · LO6
 
 ---
 
 ## 1. Goal
 
-Specify a repeatable integration-test pattern for the View layer of the MVVM split (ADR-0001), so that UXML-backed panels can be exercised against a real `IFileTabViewModel` / `IDebugTabViewModel` without leaking UI Toolkit selector strings into tests. Page objects are the seam: they make selector changes a one-file edit, and they keep test intent readable on the pitch slide.
+Specify a repeatable integration-test pattern for the View layer of the MVVM split (rationale in the [D2 architecture doc](../D2-Architecture/architecture.md)), so that UXML-backed panels can be exercised against a real `IFileTabViewModel` / `IDebugTabViewModel` without leaking UI Toolkit selector strings into tests. Page objects are the seam: they make selector changes a one-file edit, and they keep test intent readable on the pitch slide.
 
 Together with `viewmodel-unit-tests.md`, this discharges the two Software Testing bullets in §6.6.
 
@@ -47,7 +49,7 @@ Five rules, in priority order. Every page object must satisfy all five.
 
 1. **One page object per UXML panel.** Named `{Panel}Page` — `FileTabPage`, `DebugTabPage`. File lives alongside the corresponding View under `…/IntegrationTests/Pages/`.
 2. **Constructed from a root `VisualElement`.** The test owns the `UIDocument` lifecycle and passes the root in; the page does not load UXML itself. This keeps pages reusable across editor and runtime test rigs.
-3. **Public surface is intent-only.** Methods read like user actions (`PickImage("/data/cube.fits")`, `ClickLoad()`); properties read like user-visible state (`ValidationText`, `IsLoadButtonEnabled`). No `VisualElement`, no `Q<T>` result, no UXML node ever leaks out. **ISP target ≤ 7 public members per page** — mirrors §7.1 and the `BNCH-7` interface-size audit.
+3. **Public surface is intent-only.** Methods read like user actions (`PickImage("/data/cube.fits")`, `ClickLoad()`); properties read like user-visible state (`ValidationText`, `IsLoadButtonEnabled`). No `VisualElement`, no `Q<T>` result, no UXML node ever leaks out. **ISP target ≤ 7 public members per page** — mirrors §7.1 and the interface-size audit in each worked example's [ck-metrics](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md).
 4. **Selector strings exist nowhere else.** Every `root.Q<Button>("load-cube-btn")` is encapsulated in its page. UXML `name` attributes are treated as a stability contract owned by the View team; renaming one is a breaking change visible in exactly one file.
 5. **Event simulation uses UI Toolkit event types.** `NavigationSubmitEvent` for buttons, `ChangeEvent<T>` for text fields and dropdowns, `PointerDownEvent` / `PointerUpEvent` for list selection — dispatched via `element.SendEvent(evt)`. Driving at the `InputSystem` layer is the wrong abstraction for this test layer and is forbidden.
 
@@ -159,7 +161,7 @@ For VM-driven async paths, prefer awaiting the ViewModel's notification surface 
 
 View-layer coverage is reported but not gated. Justification: UI Toolkit panels are configuration-heavy and their behaviour is exercised by the ViewModel tests in transitive form; a strict branch target on `View` would either inflate to noise (binding boilerplate) or push us into testing UI Toolkit itself.
 
-This matches the layered table in `docs/sub-team-6/test-strategy.md` §2 and §7.2 of the spec ("Unity-bound code tracked but not in strict target").
+This matches the layered table in [`test-strategy.md`](test-strategy.md) §2 and §7.2 of the spec ("Unity-bound code tracked but not in strict target").
 
 ---
 
@@ -178,20 +180,19 @@ This matches the layered table in `docs/sub-team-6/test-strategy.md` §2 and §7
 
 | Item | Reference |
 |---|---|
-| MVVM split decision | [ADR-0001 — MVVM split](../../adrs/0001-mvvm-split.md) |
+| MVVM split decision | [D2 architecture doc](../D2-Architecture/architecture.md) (ADR rationale lives there — no separate ADR files) |
 | File-tab ViewModel under test | [`refactoring-examples/sub-team-6/file-tab/skeleton/IFileTabViewModel.cs`](../../../../refactoring-examples/sub-team-6/file-tab/skeleton/IFileTabViewModel.cs) |
 | Debug-tab ViewModel under test | [`refactoring-examples/sub-team-6/debug-tab/skeleton/IDebugTabViewModel.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/skeleton/IDebugTabViewModel.cs) |
-| ViewModel-side unit-test strategy | [`viewmodel-unit-tests.md`](viewmodel-unit-tests.md) |
-| Consolidated test strategy (2–4 pp) | [`docs/sub-team-6/test-strategy.md`](../../test-strategy.md) — §5 should link here |
-| Interface-size audit (ISP ≤ 7) | BNCH-7 |
+| ViewModel-side unit-test strategy (Tier 1) | [`viewmodel-unit-tests.md`](viewmodel-unit-tests.md) |
+| Parent test strategy | [`test-strategy.md`](test-strategy.md) — §5 links here |
+| Interface-size audit (ISP ≤ 7) | In-line in each worked example's ck-metrics ([file-tab](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md), [debug-tab](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md)) |
 | Assignment spec | §6.6 ST bullet 2 · §9.2.4 · §4.2 #4 · §7.2 testability · LO6 |
 
 ---
 
 ## 11. Definition of Done
 
-- [ ] This document committed to `docs/sub-team-6/deliverables/D5-testing/ui-toolkit.md`
+- [x] This document committed to `docs/sub-team-6/deliverables/D5-testing/ui-toolkit.md`
+- [x] [`test-strategy.md`](test-strategy.md) §5 carries a one-line pointer to this document
+- [x] `FileTabPage` worked snippet included inline (§6) — design-only deliverable, no `Assets/` changes per assignment rules
 - [ ] Peer-reviewed by at least one other sub-team member
-- [ ] Linked from `docs/sub-team-6/README.md`
-- [ ] `docs/sub-team-6/test-strategy.md` §5 replaced with a one-line pointer to this document
-- [ ] `FileTabPage` snippet committed under `refactoring-examples/sub-team-6/file-tab/skeleton/test/`

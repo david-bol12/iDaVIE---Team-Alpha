@@ -1,11 +1,12 @@
-# TEST-1 — ViewModel Unit-Test Strategy
+# ViewModel Unit-Test Strategy (Tier 1)
 
+**Parent doc:** [`test-strategy.md`](test-strategy.md) · **Spec refs:** §6.6 ST · §9.2.4 · §4.2 #4 · §7.1–7.2 · LO6
 
 ---
 
 ## 1. Goal
 
-Establish a repeatable, Unity-free unit-test strategy for all ViewModel classes produced by the MVVM split (ADR-01). Prove that business logic is testable in isolation — no Unity Editor, no scene, no native plug-ins — and achieve **≥ 70 % branch and line coverage** on domain code.
+Establish a repeatable, Unity-free unit-test strategy for all ViewModel classes produced by the MVVM split (rationale in [D2 architecture doc](../D2-Architecture/architecture.md)). Prove that business logic is testable in isolation — no Unity Editor, no scene, no native plug-ins — and achieve **≥ 70 % branch and line coverage** on domain code.
 
 ---
 
@@ -13,9 +14,9 @@ Establish a repeatable, Unity-free unit-test strategy for all ViewModel classes 
 
 | In scope | Out of scope |
 |---|---|
-| All classes under the proposed `ViewModel/` namespace | `View/` layer (Unity Test Framework handles that — TEST-2) |
-| `ServiceGateway` client stub | Server-side code (other sub-teams) |
-| `IServiceGateway`, `ILogStream`, `IFileTabViewModel`, `IDebugTabViewModel` interface contracts | Unity MonoBehaviours / UI Toolkit wiring |
+| All classes under the proposed `ViewModel/` namespace | `View/` layer (Unity Test Framework handles that — [`ui-toolkit.md`](ui-toolkit.md)) |
+| `IFileTabViewModel`, `IDebugTabViewModel`, `ILogStream`, `ILogObserver`, `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IFitsHandle` interface contracts | Unity MonoBehaviours / UI Toolkit wiring |
+| Pure-C# domain logic and Observer wiring | Server-side / JSON-RPC gateway (Sub-team 1) |
 
 ---
 
@@ -29,18 +30,18 @@ Establish a repeatable, Unity-free unit-test strategy for all ViewModel classes 
 | **Coverlet** | latest | Branch + line coverage collection |
 | **ReportGenerator** | latest | HTML + Cobertura reports for CI |
 
-Tests live in a plain **.NET class library project** (`DesktopClient.Tests/`) that references only:
-- `DesktopClient.ViewModels` (our new project, no `UnityEngine` dependency)
-- `NUnit`, `Moq`, `Coverlet` NuGet packages
+Tests live in plain **.NET class library projects** under [`refactoring-examples/sub-team-6/`](../../../../refactoring-examples/sub-team-6/): `file-tab/tests/FileTabTests.csproj` and `debug-tab/tests/DebugTabTests.csproj`. Each references only:
+- the ViewModel skeleton csproj (no `UnityEngine` dependency — `dotnet build` succeeds with 0 warnings, 0 errors);
+- `NUnit`, `Moq`, `Coverlet` NuGet packages.
 
-Unity is never imported. This is the hard guarantee that enforces the anti-corruption layer.
+Unity is never imported. This is the hard guarantee that enforces the anti-corruption layer. The 63 committed tests (34 file-tab + 29 debug-tab) run in **~20 ms total** on the debug-tab side; the file-tab side has not yet been timed but uses the same stack.
 
 ---
 
 ## 4. Dependency isolation rules
 
 1. **No `UnityEngine` in `ViewModel/`** — any ViewModel that `using UnityEngine` fails the build (`<Nullable>enable</Nullable>` + `<WarningsAsErrors>` in the `.csproj`).
-2. **All external services behind interfaces** — `IServiceGateway`, `ILogStream`, `IDialogService`, `IPanel`. Moq mocks these.
+2. **All external services behind interfaces** — `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IFitsHandle` (file tab); `ILogStream`, `ILogObserver` (debug tab). Moq mocks every one of these in the committed suites — §4.2 #4 satisfied.
 3. **No `FindObjectOfType` / `MonoBehaviour` in ViewModel** — enforced by the standalone project: these types don't exist.
 4. **Static clock / randomness injected** — `ISystemClock` interface so time-dependent logic is deterministic.
 
@@ -64,46 +65,53 @@ public class FileTabViewModelTests
 ```
 
 Categories:
-- `ViewModel` — pure ViewModel logic
-- `Gateway` — `ServiceGateway` client stub with mock transport
-- `Integration` — ViewModel + Gateway together (no Unity still)
+- `ViewModel` — pure ViewModel logic (the committed 63 tests)
+- `LogStream` — `LogStream` Observer-dispatch class (debug tab)
 
 ---
 
 ## 6. Mock patterns
 
-### 6.1 Happy path — `IServiceGateway`
+### 6.1 Happy path — split service interfaces
 
-This pattern tests the normal success case: the gateway succeeds, the ViewModel updates its state correctly, and it delegates to the gateway exactly once with the right arguments.
+This pattern tests the normal success case: each service succeeds, the ViewModel updates its state correctly, and it delegates to the services exactly once with the right arguments.
 
-`IServiceGateway` is the interface that separates ViewModel logic from the actual transport layer (named pipe / gRPC). By mocking it with Moq, the test controls what the gateway returns without needing a running server. `ReturnsAsync` makes the mock complete successfully with a known `CubeMetadata` value. After the command executes, the test uses `Verify` to assert the gateway was called with the exact file path — catching bugs where the ViewModel mangles or ignores the input — and then asserts that `IsLoading` is `false` and `ErrorMessage` is `null`, proving the ViewModel cleaned up its busy state and did not surface a spurious error.
+The four split interfaces (`IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`) separate ViewModel logic from native plug-ins, the OS file dialog, Unity's volume renderer, and the OS memory query. Mocking each with Moq lets the test drive the success path without a single Unity API or P/Invoke call. After `BrowseImageCommand` executes, the test asserts the dialog and FITS service were called as expected, then asserts that `IsLoadable` flips to `true` and `ErrorMessage` is `null`, proving the ViewModel cleaned up and surfaced no spurious error.
 
 ```csharp
-var gateway = new Mock<IServiceGateway>();
-gateway.Setup(g => g.LoadCubeAsync(It.IsAny<string>(), CancellationToken.None))
-       .ReturnsAsync(new CubeMetadata { AxisCount = 3 });
+var fits   = new Mock<IFitsService>();
+var dialog = new Mock<IFileDialogService>();
+var volume = new Mock<IVolumeService>();
+var memory = new Mock<IMemoryProbe>();
 
-var vm = new FileTabViewModel(gateway.Object);
-await vm.OpenCubeCommand.ExecuteAsync("/data/cube.fits");
+dialog.Setup(d => d.PickFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>()))
+      .ReturnsAsync("/data/cube.fits");
+fits.Setup(f => f.OpenImageAsync("/data/cube.fits"))
+    .ReturnsAsync(new FitsFileInfo { /* 3-axis cube */ });
 
-gateway.Verify(g => g.LoadCubeAsync("/data/cube.fits", CancellationToken.None), Times.Once);
-Assert.That(vm.IsLoading, Is.False);
+var vm = new FileTabViewModel(fits.Object, dialog.Object, volume.Object, memory.Object);
+await vm.BrowseImageCommand.ExecuteAsync(null);
+
+dialog.Verify(d => d.PickFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>()), Times.Once);
+fits  .Verify(f => f.OpenImageAsync("/data/cube.fits"), Times.Once);
+Assert.That(vm.IsLoadable,   Is.True);
 Assert.That(vm.ErrorMessage, Is.Null);
 ```
 
-### 6.2 Error path — gateway throws
+### 6.2 Error path — service throws
 
-This pattern tests fault handling: when the gateway raises an exception (network timeout, bad file path, server error), the ViewModel must catch it, surface a human-readable message through `ErrorMessage`, and leave `IsLoading` as `false` so the UI does not get stuck in a spinning state.
+This pattern tests fault handling: when a service raises an exception (bad header, missing file, OS failure), the ViewModel must catch it, surface a human-readable message through `ErrorMessage`, and leave `IsLoadable` as `false` so the Load button stays disabled.
 
-The mock is configured with `ThrowsAsync` so the awaited call throws `GatewayException` instead of returning a value. The ViewModel is expected to catch this internally — the test itself should not throw — and map the exception message to the `ErrorMessage` property. This verifies that error handling lives in the ViewModel rather than leaking into the View or going unhandled.
+The mock is configured with `ThrowsAsync` so the awaited call throws `FitsServiceException` instead of returning a value. The ViewModel is expected to catch this internally — the test itself should not throw — and map the exception message to the `ErrorMessage` property. This verifies that error handling lives in the ViewModel rather than leaking into the View or going unhandled.
 
 ```csharp
-gateway.Setup(g => g.LoadCubeAsync(...)).ThrowsAsync(new GatewayException("timeout"));
+fits.Setup(f => f.OpenImageAsync(It.IsAny<string>()))
+    .ThrowsAsync(new FitsServiceException("invalid header"));
 
-await vm.OpenCubeCommand.ExecuteAsync("/bad/path.fits");
+await vm.BrowseImageCommand.ExecuteAsync(null);
 
-Assert.That(vm.ErrorMessage, Is.EqualTo("timeout"));
-Assert.That(vm.IsLoading, Is.False);
+Assert.That(vm.ErrorMessage, Is.EqualTo("invalid header"));
+Assert.That(vm.IsLoadable,   Is.False);
 ```
 
 ### 6.3 Observer test — `ILogStream` (Debug tab)
@@ -130,7 +138,6 @@ Assert.That(vm.Entries[0].Message, Is.EqualTo("VR init slow"));
 | Namespace | Branch target | Line target | Measured by |
 |---|---|---|---|
 | `ViewModel/` | ≥ 70 % | ≥ 70 % | Coverlet + CI gate |
-| `ServiceGateway/` client | ≥ 70 % | ≥ 70 % | Coverlet + CI gate |
 | `View/` (Unity) | tracked | tracked | Unity Test Framework, not gated |
 
 Run locally:
@@ -148,7 +155,7 @@ CI (Quality Guild pipeline) will fail the build if either gate is missed on `mai
 
 | Concern | Why excluded | Handled by |
 |---|---|---|
-| UI Toolkit bindings | Requires Unity runtime | TEST-2 (page-object pattern) |
+| UI Toolkit bindings | Requires Unity runtime | [`ui-toolkit.md`](ui-toolkit.md) (page-object pattern) |
 | Named-pipe transport | I/O boundary | Gateway integration test with test server stub |
 | Unity MonoBehaviour lifecycle | Requires scene | Manual smoke test list |
 
@@ -158,10 +165,10 @@ CI (Quality Guild pipeline) will fail the build if either gate is missed on `mai
 
 | Item | Reference |
 |---|---|
-| MVVM split decision | ADR-01 ([adrs/0001-mvvm-split.md](../adrs/0001-mvvm-split.md)) |
-| Interface contracts | ARCH-8 |
-| Full test strategy document | TEST-4 ([test-strategy.md](../test-strategy.md)) |
-| Worked test spec for `OpenCubeCommand` | TEST-3 |
+| MVVM split decision | [D2 architecture doc](../D2-Architecture/architecture.md) (ADR rationale lives there — no separate ADR files) |
+| Interface contracts | [`file-tab/skeleton/IFileTabViewModel.cs`](../../../../refactoring-examples/sub-team-6/file-tab/skeleton/IFileTabViewModel.cs), [`debug-tab/skeleton/IDebugTabViewModel.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/skeleton/IDebugTabViewModel.cs) |
+| Parent test strategy | [`test-strategy.md`](test-strategy.md) |
+| Worked test suites | [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) (34), [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) (29) |
 | CK thresholds this strategy defends | §7.1 — RFC ≤ 50, LCOM ≤ 0.5 on ViewModel classes |
 | Assignment spec reference | §9.2.4, §6.6 ST, LO6 |
 
@@ -169,9 +176,8 @@ CI (Quality Guild pipeline) will fail the build if either gate is missed on `mai
 
 ## 10. Definition of Done checklist
 
-- [ ] This doc committed to `docs/sub-team-6/deliverables/TEST-1.md`
+- [x] This doc committed to `docs/sub-team-6/deliverables/D5-testing/viewmodel-unit-tests.md`
+- [x] `FileTabSkeleton.csproj` and `DebugTabSkeleton.csproj` exist under `refactoring-examples/sub-team-6/` and build with 0 warnings, 0 errors, zero `UnityEngine` references
+- [x] Worked suites carry 63 passing NUnit tests in total (34 + 29)
+- [ ] Coverage report generated and screenshot committed alongside (or CI badge added) — Quality Guild Day 13 snapshot
 - [ ] Peer-reviewed by at least one other sub-team member
-- [ ] Linked from `docs/sub-team-6/README.md`
-- [ ] `DesktopClient.Tests/` project skeleton exists under `refactoring-examples/sub-team-6/` with at least three passing stub tests
-- [ ] Coverage report generated and screenshot committed alongside (or CI badge added)
-- [ ] TEST-4 (full test strategy doc) updated to reference this strategy

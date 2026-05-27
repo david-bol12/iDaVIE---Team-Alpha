@@ -3,20 +3,20 @@
 **Owner:** Sub-team 6 (Die Boks / Team Alpha)
 **Spec refs:** §6.6 ST · §9.2.4 · §4.2 · §7.1–7.2 · LO6
 **Last revised:** 2026-05-26 (Day 7)
-**Status:** Complete. Detail specs live under `deliverables/D5-testing/`.
+**Status:** Complete. Tier-1 and tier-3 detail specs live alongside this doc — [`viewmodel-unit-tests.md`](viewmodel-unit-tests.md) and [`ui-toolkit.md`](ui-toolkit.md).
 
 ---
 
 ## 1. Purpose and Scope
 
-This document defines the testability strategy for the **Desktop GUI and Client Shell** work package — the MVVM split of `CanvassDesktop.cs` into a Unity-free ViewModel layer, a UI Toolkit View layer, and a Service Gateway client. It:
+This document defines the testability strategy for the **Desktop GUI and Client Shell** work package — the MVVM split of `CanvassDesktop.cs` into a Unity-free ViewModel layer and a UI Toolkit View layer, with the four split service interfaces that today stand in for a future Service Gateway. It:
 
 - demonstrates that the after-state design produces classes that are independently testable (LO6, §4.2.4, NFR-TST-1/2);
 - evidences the improvement over the before-state using mocking-difficulty counts (BNCH-6) and CK metric deltas;
 - specifies concrete test shapes for the two worked examples (File tab, Debug tab);
 - maps to the assignment's four coverage / testability metrics families (§7.2).
 
-**In scope:** `ViewModel/`, `ServiceGateway/` client, View integration via page-objects, manual smoke flows.
+**In scope:** `ViewModel/` (pure C#), the four split service interfaces consumed by the ViewModels, View integration via page-objects, manual smoke flows.
 **Out of scope:** server-side code (Sub-teams 1–4); render / stats / sources tabs (no AFTER skeleton in D4); pixel-level visual testing.
 
 ---
@@ -28,7 +28,7 @@ The four-tier pyramid below mirrors the architectural layer boundaries. Each tie
 | Tier | Layer under test | Framework | Unity required? | Coverage gate |
 |---|---|---|---|---|
 | 1 — ViewModel unit | `ViewModel/` (pure C#) | NUnit 3 + Moq 4 | No — standalone `.NET` project | ≥ 70 % branch + line |
-| 2 — Gateway unit | `ServiceGateway/` client stub | NUnit 3 + Moq 4 | No | ≥ 70 % branch + line |
+| 2 — Gateway unit | JSON-RPC client + transport | NUnit 3 + Moq 4 | No | Owned by Sub-team 1 — out of scope here (see §4) |
 | 3 — View integration | `View/` panels via page-objects | Unity Test Framework (Play Mode) | Yes | Tracked, **not** gated |
 | 4 — Smoke | Full desktop shell, real file, VR scene | Manual checklist | Yes | Pass/fail checklist |
 
@@ -38,65 +38,66 @@ The four-tier pyramid below mirrors the architectural layer boundaries. Each tie
 
 ## 3. Tier 1 — ViewModel Unit Tests
 
-**Detailed spec:** [deliverables/D5-testing/viewmodel-unit-tests.md](deliverables/D5-testing/viewmodel-unit-tests.md)
+**Detailed spec:** [viewmodel-unit-tests.md](viewmodel-unit-tests.md)
 
 ### 3.1 Project structure
 
 ```
-DesktopClient.Tests/
-  DesktopClient.Tests.csproj   ← references only ViewModel + NUnit + Moq + Coverlet
-  FileTabViewModelTests.cs
-  DebugTabViewModelTests.cs
-  ServiceGatewayClientTests.cs
+refactoring-examples/sub-team-6/
+  file-tab/
+    skeleton/FileTabSkeleton.csproj   ← ViewModel + NUnit + Moq + Coverlet; no UnityEngine reference
+    tests/FileTabViewModelTests.cs    ← 34 NUnit tests, zero Unity dependency
+  debug-tab/
+    skeleton/DebugTabSkeleton.csproj
+    tests/DebugTabTests.cs            ← 29 NUnit tests, ~20 ms total
 ```
 
-The `.csproj` has `<WarningsAsErrors>true</WarningsAsErrors>` and a `<Forbidden>UnityEngine</Forbidden>` NDepend / custom analyser rule. Any `using UnityEngine` breaks the build.
+`dotnet build` on either skeleton csproj completes with **0 warnings 0 errors and zero `UnityEngine` references** — the Section 4.2 #3 invariant is enforced by the project file, not by convention. See [`refactoring-examples/sub-team-6/debug-tab/dependency-graph.md`](../../../../refactoring-examples/sub-team-6/debug-tab/dependency-graph.md).
 
 ### 3.2 Test shapes — File tab ViewModel
 
-Tests follow **MethodUnderTest\_Scenario\_ExpectedBehaviour** naming and Arrange / Act / Assert structure.
+`FileTabViewModel` is constructed with four split service interfaces (no consolidated `IServiceGateway` façade is shipped — that consolidation is left as a future Sub-team 1 concern; see §4). Tests follow **MethodUnderTest\_Scenario\_ExpectedBehaviour** naming and Arrange / Act / Assert structure.
 
 ```csharp
 [Category("ViewModel")]
 public class FileTabViewModelTests
 {
     [Test]
-    public void OpenCube_HappyPath_CallsGatewayWithExpectedArgs()
+    public async Task BrowseImageAsync_HappyPath_PopulatesHeaderAndEnablesLoad()
     {
-        var gateway = new Mock<IServiceGateway>();
-        gateway.Setup(g => g.LoadCubeAsync("/data/cube.fits", CancellationToken.None))
-               .ReturnsAsync(new CubeMetadata { AxisCount = 3 });
+        var fits   = new Mock<IFitsService>();
+        var dialog = new Mock<IFileDialogService>();
+        var volume = new Mock<IVolumeService>();
+        var memory = new Mock<IMemoryProbe>();
 
-        var vm = new FileTabViewModel(gateway.Object);
-        await vm.OpenCubeCommand.ExecuteAsync("/data/cube.fits");
+        dialog.Setup(d => d.PickFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>()))
+              .ReturnsAsync("/data/cube.fits");
+        fits.Setup(f => f.OpenImageAsync("/data/cube.fits"))
+            .ReturnsAsync(new FitsFileInfo { /* 3-axis cube */ });
 
-        gateway.Verify(g => g.LoadCubeAsync("/data/cube.fits", CancellationToken.None), Times.Once);
-        Assert.That(vm.IsLoading, Is.False);
+        var vm = new FileTabViewModel(fits.Object, dialog.Object, volume.Object, memory.Object);
+        await vm.BrowseImageCommand.ExecuteAsync(null);
+
+        Assert.That(vm.ImagePath,  Is.EqualTo("/data/cube.fits"));
+        Assert.That(vm.IsLoadable, Is.True);
         Assert.That(vm.ErrorMessage, Is.Null);
     }
 
     [Test]
-    public void OpenCube_GatewayThrows_SetsErrorMessageAndClearsIsLoading()
+    public async Task BrowseImageAsync_ServiceThrows_SurfacesValidationMessage()
     {
-        gateway.Setup(g => g.LoadCubeAsync(...))
-               .ThrowsAsync(new GatewayException("timeout"));
+        fits.Setup(f => f.OpenImageAsync(It.IsAny<string>()))
+            .ThrowsAsync(new FitsServiceException("invalid header"));
 
-        await vm.OpenCubeCommand.ExecuteAsync("/bad/path.fits");
+        await vm.BrowseImageCommand.ExecuteAsync(null);
 
-        Assert.That(vm.ErrorMessage, Is.EqualTo("timeout"));
-        Assert.That(vm.IsLoading, Is.False);
+        Assert.That(vm.ErrorMessage, Is.EqualTo("invalid header"));
+        Assert.That(vm.IsLoadable,   Is.False);
     }
-
-    [Test]
-    public void OpenCube_WhileLoading_CommandIsIgnoredAndNoDoubleCall() { ... }
-
-    [Test]
-    public void BrowseMask_AxesMismatch_SetsValidationMessage() { ... }
-
-    [Test]
-    public void IsLoadable_FalseUntilValidCubeSelected() { ... }
 }
 ```
+
+The committed suite at `refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs` carries 34 such tests covering happy paths, error paths, axis-mismatch validation, RAM-feasibility (`IMemoryProbe`), the `CubeLoaded` event on `IVolumeService`, and the `IsLoadable` gate.
 
 ### 3.3 Test shapes — Debug tab ViewModel (Observer pattern)
 
@@ -127,31 +128,25 @@ public class DebugTabViewModelTests
 }
 ```
 
-### 3.4 Minimum required test count
+### 3.4 Delivered test count (Day 7 snapshot)
 
-| Class | Required tests | Rationale |
-|---|---|---|
-| `FileTabViewModel` | ≥ 5 | Happy path, error path, double-click guard, mask mismatch, `IsLoadable` gate |
-| `DebugTabViewModel` | ≥ 3 | Append, order, clear |
-| `ServiceGatewayClient` (stub) | ≥ 3 | Serialise request, deserialise response, timeout |
+| Class | Required | **Delivered** | Evidence |
+|---|---:|---:|---|
+| `FileTabViewModel` | ≥ 5 | **34** | [`file-tab/tests/FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) |
+| `DebugTabViewModel` + `LogStream` | ≥ 3 | **29** | [`debug-tab/tests/DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) |
+| **Total** | — | **63** | `dotnet test` runtime ~20 ms (debug-tab measured) — zero Unity dependency |
 
 ---
 
-## 4. Tier 2 — Gateway Unit Tests
+## 4. Tier 2 — Gateway Unit Tests (out of scope)
 
-The `ServiceGateway` client serialises `IServiceGateway` calls to JSON-RPC over a named pipe. Tests mock the transport (`ITransport`) and assert that:
-
-- a `LoadCubeAsync("/data/cube.fits")` call serialises to the correct JSON-RPC method and params;
-- a successful JSON-RPC response deserialises into the expected `CubeMetadata` DTO;
-- a transport timeout maps to a `GatewayException` with a user-readable message.
-
-No running server is needed. The transport mock returns canned byte sequences. These tests live in the same `DesktopClient.Tests/` project, under `[Category("Gateway")]`.
+A consolidated `IServiceGateway` façade is **not** implemented in either worked example — File tab depends on four split service interfaces, Debug tab depends on `ILogStream`. The JSON-RPC client and named-pipe transport are owned by **Sub-team 1** ([architecture.md](../D2-Architecture/architecture.md) — Service Gateway section); their unit tests live with their code. If a gateway façade is later introduced over the four interfaces, the tier-2 slot here is reserved for those tests with the same NUnit + mock-transport pattern.
 
 ---
 
 ## 5. Tier 3 — View Integration Tests (Page-Object Pattern)
 
-**Detailed spec:** [deliverables/D5-testing/ui-toolkit.md](deliverables/D5-testing/ui-toolkit.md)
+**Detailed spec:** [ui-toolkit.md](ui-toolkit.md)
 
 ### 5.1 Pattern
 
@@ -160,7 +155,7 @@ One **Page Object** class per UXML panel (`FileTabPage`, `DebugTabPage`). Each p
 - is constructed from a `VisualElement` root — the test owns the `UIDocument` lifecycle;
 - exposes intent-only methods and properties (`PickImage(string)`, `ClickLoad()`, `ValidationText`, `IsLoadButtonEnabled`);
 - encapsulates all `root.Q<T>("name")` selector strings — no selector leaks into test bodies;
-- has ≤ 7 public members (ISP target; BNCH-7 audit).
+- has ≤ 7 public members (ISP target; interface-size audit lives in each worked example's `ck-metrics.md`).
 
 Tests run inside **Unity Test Framework Play Mode**. The composition root is bypassed: each test constructs a real ViewModel from mocked services, attaches it to a fresh `UIDocument`, and drives via the page object. Every event dispatch is followed by `yield return null` to flush UI Toolkit's binding pass before asserting.
 
@@ -201,7 +196,7 @@ Smoke tests are manual at this stage. They exercise the full desktop shell (real
 | SM-6 | Switch desktop tabs | File tab active | All five tabs render without error; active tab state preserved |
 | SM-7 | Close and reopen desktop panel | Panel visible | Panel reopens to previous tab; no null reference exceptions in console |
 
-SM-1 through SM-7 map directly to the five rows in the [requirements behaviour catalogue](requirements.md §2) and the two user-observable outcomes in the worked examples (File tab and Debug tab).
+SM-1 through SM-7 map directly to the five rows in the [requirements behaviour catalogue](../D1-requirements/requirements.md) §2 and the two user-observable outcomes in the worked examples (File tab and Debug tab).
 
 ---
 
@@ -210,9 +205,8 @@ SM-1 through SM-7 map directly to the five rows in the [requirements behaviour c
 | Assembly / namespace | Branch target | Line target | Gated in CI? | Measured by |
 |---|---|---|---|---|
 | `iDaVIE.Client.ViewModel` | **≥ 70 %** | **≥ 70 %** | Yes — build fails below threshold | Coverlet + ReportGenerator |
-| `iDaVIE.Client.ServiceGateway` (client) | **≥ 70 %** | **≥ 70 %** | Yes | Coverlet + ReportGenerator |
 | `iDaVIE.Client.View` (UI Toolkit) | tracked | tracked | No | Unity Test Framework + Coverlet |
-| **Overall (all three)** | **≥ 50 %** | **≥ 50 %** | Yes | SonarQube aggregate |
+| **Overall (client slice)** | **≥ 50 %** | **≥ 50 %** | Yes | SonarQube aggregate |
 
 The View layer is tracked but not gated. Justification: UI Toolkit binding boilerplate and UXML configuration are configuration-heavy; a strict gate would inflate to noise or force testing of the framework itself. The ViewModel gate is the load-bearing metric for §7.2 and NFR-TST-1.
 
@@ -230,7 +224,7 @@ reportgenerator -reports:coverage.xml -targetdir:coverage-report -reporttypes:Ht
 | Tool | Version | Role | Who owns |
 |---|---|---|---|
 | **NUnit 3** | ≥ 3.14 | Test runner + assertions for tiers 1 & 2 | Sub-team 6 |
-| **Moq 4** | ≥ 4.20 | Interface mocking (`IServiceGateway`, `ILogStream`, `IFitsService`, `IDialogService`) | Sub-team 6 |
+| **Moq 4** | ≥ 4.20 | Interface mocking (`IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IFitsHandle`, `ILogStream`, `ILogObserver`) | Sub-team 6 |
 | **.NET 7 SDK** (standalone) | match Unity 2021 Mono | Build + run tier 1 & 2 tests outside Unity | Sub-team 6 |
 | **Coverlet** | latest | Branch + line coverage for standalone project | Sub-team 6 |
 | **ReportGenerator** | latest | HTML + Cobertura report for CI | Sub-team 6 |
@@ -248,7 +242,7 @@ Sub-team 6 owns the `DesktopClient.Tests/` project and the Unity `IntegrationTes
 Four hard rules, enforced structurally (not by convention):
 
 1. **`ViewModel/` project does not reference `UnityEngine`.** The standalone `.csproj` has no Unity SDK reference; `using UnityEngine` is a compile error. This is the primary enforcement of §4.2.3 and NFR-REU-3.
-2. **All external services behind interfaces.** `IServiceGateway`, `ILogStream`, `IFitsService`, `IDialogService`, `IPanel`. Moq mocks these in every tier 1/2 test. No concrete service class is imported into `ViewModel/`.
+2. **All external services behind interfaces.** File tab depends on `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IFitsHandle`; Debug tab depends on `ILogStream` and `ILogObserver`. Every public boundary is an interface and every interface has ≥ 1 Moq test double in the committed suites — §4.2 #4 satisfied.
 3. **No `FindObjectOfType` or `MonoBehaviour` in ViewModel.** These types do not exist in the standalone project; no enforcement rule needed.
 4. **Static clock injected.** Any time-dependent logic uses `ISystemClock` so tests are deterministic.
 
@@ -271,19 +265,22 @@ The Quality Guild owns the team-wide CI/CD pipeline (`T6`). Sub-team 6 plugs int
 - **PR gate:** `dotnet test DesktopClient.Tests/` must pass; coverage must meet the §7 thresholds. The gate runs on every PR to `main`.
 - **Coverage upload:** Coverlet Cobertura XML is uploaded to SonarQube Cloud for the aggregate badge.
 - **NDepend rule:** a `no-unityrefs-in-viewmodel` CQLinq rule asserts that no type in `iDaVIE.Client.ViewModel` has a transitive dependency on `UnityEngine.*`. This runs on `main` only (NDepend licence is shared).
-- **Unity play-mode tests:** run manually before each sprint review (not in automated CI — Unity Editor license not available on the GitHub Actions runner). Results are screen-captured and committed to `deliverables/D5-testing/`.
+- **Unity play-mode tests:** run manually before each sprint review (not in automated CI — Unity Editor license not available on the GitHub Actions runner). Results are screen-captured and committed alongside this doc.
 
 ---
 
 ## 11. Testability-Improvement Evidence
 
-The gap between before and after is quantified in two places:
+Every row below points at an artefact a panel reviewer can open in this repo.
 
 | Artefact | What it shows |
 |---|---|
-| [BNCH-6 — Mocking-difficulty count](deliverables/other/T2-baseline-benchmark/BNCH-3.md) | Before: 205 call sites in `CanvassDesktop` that require a live Unity scene or native DLL to test. After: 0 in the ViewModel layer. |
-| [BNCH-7 — Interface-size audit](deliverables/BNCH-6.md) | Every interface produced by the MVVM split has ≤ 7 public members (ISP target). Each has ≥ 1 test double in the tier 1 test suite. |
-| CK metric projection ([metrics.md](deliverables/D4-worked-examples/metrics.md)) | WMC, RFC, LCOM, CBO deltas for `FileTabViewModel` and `DebugTabViewModel` vs the monolithic `CanvassDesktop`. |
+| [BNCH-6 — Mocking-difficulty count](../BNCH-6.md) | Before: 205 call sites in `CanvassDesktop` that require a live Unity scene or native DLL to test. After: 0 in the ViewModel layer (205 → 0 static/Unity; 6 → 0 `FindObjectOfType`; 36 → 0 P/Invoke / `StandaloneFileBrowser`). |
+| [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) | **34 NUnit tests** on `FileTabViewModel` — zero `using UnityEngine`, mocks four split service interfaces. |
+| [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) | **29 NUnit tests** on `DebugTabViewModel` + `LogStream` — zero `using UnityEngine`, `dotnet test` runtime **~20 ms**. |
+| [`debug-tab/dependency-graph.md`](../../../../refactoring-examples/sub-team-6/debug-tab/dependency-graph.md) | `dotnet build` on `DebugTabSkeleton.csproj` completes with **0 warnings, 0 errors, zero `UnityEngine` references** — §4.2 #3 enforced structurally. |
+| CK metric projection ([metrics.md](../D4-worked-examples/metrics.md), [file-tab/ck-metrics.md](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md), [debug-tab/ck-metrics.md](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md)) | WMC, RFC, LCOM, CBO deltas for `FileTabViewModel` and `DebugTabViewModel` vs the monolithic `CanvassDesktop`. |
+| Interface-size audit (in [`debug-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md) and [`file-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md)) | Every interface produced by the MVVM split has ≤ 7 public members (ISP target). Each has ≥ 1 Moq test double in the committed tier-1 suites. |
 
 ---
 
@@ -291,12 +288,12 @@ The gap between before and after is quantified in two places:
 
 | Item | Reference |
 |---|---|
-| MVVM split decision | [ADR-0001](adrs/0001-mvvm-split.md) |
-| File-tab worked example | [deliverables/D4-worked-examples/ex1-file-tab/](deliverables/D4-worked-examples/ex1-file-tab/) |
-| Debug-tab worked example | [deliverables/D4-worked-examples/ex2-debug-tab/](deliverables/D4-worked-examples/ex2-debug-tab/) |
-| ViewModel unit-test detail spec | [deliverables/D5-testing/viewmodel-unit-tests.md](deliverables/D5-testing/viewmodel-unit-tests.md) |
-| UI Toolkit page-object detail spec | [deliverables/D5-testing/ui-toolkit.md](deliverables/D5-testing/ui-toolkit.md) |
-| Mocking-difficulty baseline | [deliverables/BNCH-6.md](deliverables/BNCH-6.md) |
-| CK metric baseline + projection | [deliverables/D4-worked-examples/metrics.md](deliverables/D4-worked-examples/metrics.md) |
-| Testability NFRs | [requirements.md §3 — NFR-TST-1/2/3](requirements.md) |
+| MVVM split decision | [D2 Architecture](../D2-Architecture/architecture.md) (ADR rationale lives inside the architecture doc — no separate ADR files) |
+| File-tab worked example | [`refactoring-examples/sub-team-6/file-tab/`](../../../../refactoring-examples/sub-team-6/file-tab/) |
+| Debug-tab worked example | [`refactoring-examples/sub-team-6/debug-tab/`](../../../../refactoring-examples/sub-team-6/debug-tab/) |
+| ViewModel unit-test detail spec | [`viewmodel-unit-tests.md`](viewmodel-unit-tests.md) |
+| UI Toolkit page-object detail spec | [`ui-toolkit.md`](ui-toolkit.md) |
+| Mocking-difficulty baseline | [`BNCH-6.md`](../BNCH-6.md) |
+| CK metric baseline + projection | [`D4-worked-examples/metrics.md`](../D4-worked-examples/metrics.md) |
+| Testability NFRs | [`D1-requirements/requirements.md` §3 — NFR-TST-1/2/3](../D1-requirements/requirements.md) |
 | Assignment spec | §6.6 ST · §9.2.4 · §4.2 #4 · §7.1–7.2 · LO6 |

@@ -111,19 +111,9 @@ This is the sequence that repeats for every log call site in the codebase (40+ i
 
 ## CK metrics for DebugLogging (before-state)
 
-| Metric | Value | Threshold | Status |
-|---|---|---|---|
-| WMC | 9 (`Start`, `OnEnable`, `OnDisable`, `DetermineHardware`, `HandleLog`, `saveToFileClick`, `SaveToFile`, `AutoSave` + non-generic Queue iterator) | ≤ 40 | ✅ |
-| DIT | 1 (`MonoBehaviour`) | ≤ 4 | ✅ |
-| NOC | 0 | ≤ 5 | ✅ |
-| CBO | ~10 (`Config`, `TMP_InputField`, `Scrollbar`, `Button`, `StandaloneFileBrowser`, `StreamWriter`, `StringBuilder`, `Application`, `SystemInfo`, `PlayerPrefs`) | ≤ 25 | ✅ |
-| RFC | ~18 | ≤ 50 | ✅ |
-| LCOM | ~0.45 (9 methods, 5 fields; `debugLogQueue` accessed by 3 methods, `autosavePath` by 2, others by 1) | ≤ 0.50 | ✅ (borderline) |
+See [`ck-metrics.md`](ck-metrics.md) for the authoritative BEFORE-state CK table — including both NOM-style and McCabe-CC-weighted WMC, and both LCOM4 and Henderson-Sellers LCOM_HS.
 
-> `DebugLogging` passes CK thresholds individually — the case for refactoring is **structural
-> and testability-driven**, not metric-driven. The critical violation is S1 (static event hook)
-> and S8 (four responsibilities in one class). These prevent unit testing without Unity and
-> prevent reuse of the log model in non-UI contexts.
+> **Headline:** `DebugLogging` passes 5 of 6 CK thresholds individually. **LCOM is the one failure** (LCOM4 ≈ 3 / LCOM_HS = 0.95), reflecting the four disjoint concern clusters identified above as smell S8. The remainder of the refactoring case is **structural and testability-driven**: smell S1 (static event hook, untestable without Unity) and smell S8 (four responsibilities in one class) dominate. These prevent unit testing without Unity and prevent reuse of the log model in non-UI contexts.
 
 ---
 
