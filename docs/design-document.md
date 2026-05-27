@@ -128,9 +128,59 @@ two worked refactoring examples.
 
 *Brief reference: Section 9.2 Deliverable 2 — what's in and out*
 
-- State which classes and files are owned by Sub-team 3 (rendering layer).
-- List what is explicitly out of scope: FITS data ingest (Sub-team 2), VR interaction / gaze SDK (Sub-team 4), application shell.
-- Map this document's sections to the brief's section numbers (Section 6.3 items embedded in §5, §6, §7 below).
+### 3.1 What Sub-team 3 Owns
+
+Sub-team 3 is responsible for the GPU-side volume rendering layer: every class, interface, and shader file that converts a loaded FITS data cube into a visible 3D image inside the VR headset. Concretely, this means the following classes and files are owned by this sub-team.
+
+**Source class under analysis:**
+
+- `VolumeDataSetRenderer.cs` — the existing monolith that this document proposes to refactor. Sub-team 3 authored the analysis but does not modify this file during Sprint 2 (design-only proposal; no production code is changed).
+
+**Domain assembly — `iDaVIE.Rendering`:**
+
+- `VolumeRenderCoordinator.cs` — thin `MonoBehaviour` composition root; the only class in the rendering layer that may import `UnityEngine` types.
+- `VolumeMaterialBinder.cs` — shader keyword management, material property binding, colour-map application, and mask mode dispatch.
+- `VolumeTextureManager.cs` — 3D texture allocation, GPU upload, LRU eviction, and 368 MB budget enforcement.
+- `VolumeCameraDriver.cs` — camera matrix calculation, clip-plane management, and projection mode selection (MIP / AIP).
+- `FoveatedSamplingPolicy.cs` — per-frame sample-rate decision from gaze direction; includes uniform fallback when gaze is unavailable.
+- `IRenderPipeline.cs` — six-member interface that isolates all render-pipeline-specific API calls from domain logic.
+- `IMaskMode.cs` — two-member Strategy interface for per-mode shader keyword management.
+- `ApplyMaskMode.cs`, `InverseMaskMode.cs`, `IsolateMaskMode.cs`, `DisabledMaskMode.cs` — the four concrete `IMaskMode` strategy implementations.
+
+**Adapter assemblies (pipeline-specific, Editor-excluded from domain tests):**
+
+- `UrpRenderPipeline.cs` (`iDaVIE.Rendering.URP`) — the only file permitted to import `UnityEngine.Rendering.Universal`.
+- `HdrpRenderPipeline.cs` (`iDaVIE.Rendering.HDRP`) — the only file permitted to import HDRP namespaces.
+
+**Test assembly — `iDaVIE.Rendering.Tests` (Editor only):**
+
+- `NullRenderPipeline.cs`, `MockGazeProvider.cs`, `StubVolumeDataSource.cs` — test doubles for all cross-team interface boundaries.
+
+**Shader assets:**
+
+- `Shaders/URP/VolumeRender.shader` and `Shaders/HDRP/VolumeRender.shader` — the URP and HDRP shader variants selected at build time by the render-pipeline adapter. Shader organisation policy in full at `docs/shader-asset-policy.md`.
+
+### 3.2 What Is Explicitly Out of Scope
+
+Three areas are explicitly excluded from this document and from Sub-team 3's responsibilities.
+
+**FITS data ingest (Sub-team 2 — Babelaas).** The loading, parsing, format conversion, and delivery of raw voxel data to the rendering layer is Sub-team 2's responsibility. Sub-team 3 consumes volume data only through the `IRawVolumeDataSource` interface and the `RawVolumeData` struct; it never reads a FITS file directly. The `MaskIOService` and `MomentMapRenderer` classes identified in §2.3 (responsibilities 8) sit at the boundary of data I/O and are likewise out of scope for this refactor. The `StubVolumeDataSource` in the test assembly is a wire-compatible stand-in until Sub-team 2's real implementation is delivered; it is not a substitute for that work.
+
+**VR interaction and gaze SDK (Sub-team 4).** The SteamVR / OpenXR integration, hand-tracking, menu interaction, and the concrete `SteamVRGazeProvider` that will implement `IGazeProvider` are Sub-team 4's responsibility. Sub-team 3 owns the `IGazeProvider` interface definition (as the consuming party) and the `MockGazeProvider` stub, but has no dependency on any SteamVR SDK type in its domain or adapter assemblies. The `VolumeCameraDriver` receives camera state via value types (`Matrix4x4`, `float`); it does not depend on `UnityEngine.Transform` or any VR-specific input abstraction beyond what is expressed in the interface.
+
+**Application shell.** Scene lifecycle management, the main menu, session save/restore orchestration (Sub-team 7), and any `MonoBehaviour` outside the rendering layer's composition root are out of scope. The `VolumeRenderCoordinator` is the sole entry point Sub-team 3 contributes to the scene graph. The two responsibilities identified in §2.3 that are present in `VolumeDataSetRenderer` but excluded from this refactor — region selection and crop management (`RegionSelectionController`) and cursor position tracking and painting (`CursorPaintController`) — remain in the source class untouched; they are noted because their presence inflates the WMC and CBO baseline figures, but absorbing them into `VolumeRenderCoordinator` is explicitly prohibited.
+
+### 3.3 Section-to-Brief Mapping
+
+The brief's Section 6.3 identifies three deliverable components for the rendering layer. They are distributed across this document as follows.
+
+| Brief §6.3 component | This document | Content |
+|---|---|---|
+| Rendering Layer Design | §5 Design Decisions | DD-01 (`IRenderPipeline`), DD-02 (`IMaskMode`), DD-03 (class split), DD-04 (`FoveatedSamplingPolicy`), migration path |
+| Shader/Asset Policy | §5.7 | Summary of `docs/shader-asset-policy.md`; shader folder conventions, naming, per-pipeline variant selection |
+| Metrics Worksheet | §6 CK Metrics Worksheet | Day 2 baseline, Day 13 projection, delta summary; full table in `docs/metrics-worksheet.md` |
+
+Brief Section 9.2 (Deliverable 2) additionally requires class and sequence diagrams (§7) and a SOLID/GRASP audit (§8), both of which are included below.
 
 ---
 
