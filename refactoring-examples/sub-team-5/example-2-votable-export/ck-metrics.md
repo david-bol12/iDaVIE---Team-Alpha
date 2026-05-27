@@ -12,6 +12,22 @@ WMC ≤ 20 (domain), CBO ≤ 14 (domain), RFC ≤ 50, LCOM ≤ 0.5
 
 ---
 
+## Namespace Mapping (ADR-008)
+
+| Class | Before namespace | After namespace | Dependency direction |
+|---|---|---|---|
+| `VoTableSaver` (static) | `VoTableReader` | _removed_ | — |
+| `IVoTableExporter` | _new_ | `iDaVIE.Domain.Feature` | inward (domain boundary) |
+| `IAstFrame` | _new_ | `iDaVIE.Domain.Feature` | inward (domain boundary) |
+| `ICoordinateTransformer` | _new_ | `iDaVIE.Domain.Feature` | inward (domain boundary) |
+| `IFeaturePersistenceService` | `DataFeatures` | `iDaVIE.Domain.Feature` | inward (domain boundary) |
+| `FeatureCatalog` | `DataFeatures` | `iDaVIE.Domain.Feature` | domain aggregate |
+| `VoTableExportService` | `DataFeatures` | `iDaVIE.Infrastructure.Persistence` | depends inward on Domain ✓ |
+| `AstFrameHandle` | _new_ | `iDaVIE.Infrastructure.NativePlugins` | wraps IntPtr, implements IAstFrame |
+| `FeatureSetService` | `DataFeatures` | `iDaVIE.Application.Feature` | orchestrates domain |
+
+---
+
 ## Before State
 
 | Class | Role | WMC | CBO | RFC | LCOM | Threshold met? |
@@ -19,23 +35,27 @@ WMC ≤ 20 (domain), CBO ≤ 14 (domain), RFC ≤ 50, LCOM ≤ 0.5
 | `VoTableSaver` (static) | Export — before | est. 8 | est. 12 | est. 18 | n/a | CBO ⚠ high |
 
 **Problems driving the high CBO:**
-- Depends on `FeatureSetRenderer` (Unity `MonoBehaviour`)
-- Depends on `VolumeDataSetRenderer` (via `featureSet.VolumeRenderer`)
-- Depends on `AstTool` (P/Invoke DLL wrapper)
+- Depends on `FeatureSetRenderer` (Unity `MonoBehaviour`) — ADR-002 violation
+- Depends on `VolumeDataSetRenderer` (via `featureSet.VolumeRenderer`) — LoD violation
+- Depends on `AstTool` (P/Invoke DLL wrapper) — ADR-002 violation
 - Depends on `DataAnalysis.SourceStats` (DLL value type)
-- Depends on `XDocument`, `XElement` (serialisation)
-- No interface — callers directly couple to the static type
+- Passes bare `IntPtr` at call sites — ADR-002 / ADR-004 violation
+- No interface — callers depend directly on the static type — ADR-003 violation
 
 ---
 
 ## After State
 
-| Class | Role | WMC target | CBO target | RFC target | LCOM target | Threshold met? |
-|---|---|:---:|:---:|:---:|:---:|:---:|
-| `IVoTableExporter` | Export plug-in seam | 1 | 0 | 1 | 0 | ✓ |
-| `ICoordinateTransformer` | WCS abstraction | 2 | 0 | 2 | 0 | ✓ |
-| `VoTableExportService` | Concrete serialiser | ≤ 6 | ≤ 3 | ≤ 8 | 0 | ✓ |
-| `FeatureCatalog` (excerpt) | Domain registry | ≤ 15 | ≤ 8 | ≤ 22 | ≤ 0.30 | ✓ |
+| Class | Namespace | Role | WMC target | CBO target | RFC target | LCOM target | Threshold met? |
+|---|---|---|:---:|:---:|:---:|:---:|:---:|
+| `IAstFrame` | `iDaVIE.Domain.Feature` | Opaque handle (replaces IntPtr) | 0 | 0 | 0 | 0 | ✓ |
+| `IVoTableExporter` | `iDaVIE.Domain.Feature` | Export plug-in seam | 1 | 0 | 1 | 0 | ✓ |
+| `ICoordinateTransformer` | `iDaVIE.Domain.Feature` | WCS abstraction | 2 | 1 | 2 | 0 | ✓ |
+| `VoTableExportService` | `iDaVIE.Infrastructure.Persistence` | Concrete serialiser | ≤ 6 | ≤ 3 | ≤ 8 | 0 | ✓ |
+| `FeatureCatalog` (excerpt) | `iDaVIE.Domain.Feature` | Domain registry | ≤ 15 | ≤ 8 | ≤ 22 | ≤ 0.30 | ✓ |
+
+**Day 2 baseline (Understand / SonarQube):** _to be filled_  
+**Day 13 final (post full-team refactor):** _to be filled_
 
 ---
 
@@ -48,10 +68,10 @@ WMC ≤ 20 (domain), CBO ≤ 14 (domain), RFC ≤ 50, LCOM ≤ 0.5
 | RFC | est. 18 | ≤ 8 | ↓ ↓ |
 | LCOM | n/a (static) | 0 | — |
 
-The largest gain is in **CBO**. By removing the `FeatureSetRenderer`,
-`VolumeDataSetRenderer`, and `AstTool` dependencies and replacing them with
-the `FeatureSet` domain object and `ICoordinateTransformer`, the exporter's
-coupling drops from ~12 to ≤ 3.
+The largest gain is in **CBO**. By removing `FeatureSetRenderer`,
+`VolumeDataSetRenderer`, and the direct `AstTool` + `IntPtr` dependencies,
+and replacing them with `FeatureSet` (domain object) and `ICoordinateTransformer`
+(injected interface), the exporter's coupling drops from ~12 to ≤ 3.
 
 ---
 
@@ -65,7 +85,20 @@ loses its former direct coupling to `VoTableSaver`. Net effect:
 | `IFeaturePersistenceService` (interface) | `VoTableSaver` (static class) |
 | | `VolumeDataSetRenderer` |
 | | `AstTool` |
+| | `IntPtr` at domain call sites |
 
 `FeatureCatalog` CBO target ≤ 8 is achievable because its only dependencies
-are now: `FeatureSet`, `Feature`, `IFeaturePersistenceService`, `FeatureColor`,
+are: `FeatureSet`, `Feature`, `IFeaturePersistenceService`, `FeatureColor`,
 `FeatureSetType`, `ReadOnlyCollection<T>` (BCL), and `Action<T>` (BCL).
+
+---
+
+## ADR-002 IntPtr violation — resolution
+
+| Location | Before | After |
+|---|---|---|
+| `ICoordinateTransformer.Transform()` first param | `IntPtr astFrame` | `IAstFrame frame` |
+| `ICoordinateTransformer.Normalise()` first param | `IntPtr astFrame` | `IAstFrame frame` |
+| `FeatureSet.AstFrame` property type | `IntPtr` | `IAstFrame` |
+| `VoTableExportService` call sites | pass raw `IntPtr` | pass `IAstFrame` |
+| `AstFrameHandle` (new, Infrastructure) | _absent_ | wraps `IntPtr`, implements `IAstFrame` |

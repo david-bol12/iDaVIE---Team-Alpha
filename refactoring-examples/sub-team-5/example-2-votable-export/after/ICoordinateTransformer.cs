@@ -21,31 +21,46 @@
  * wraps the real DLL calls. In tests, a StubCoordinateTransformer returns
  * fixed values so assertions are predictable.
  *
+ * INTPTR REMOVED (ADR-002 Anti-Corruption Layer)
+ * ───────────────────────────────────────────────
+ * The previous design passed IntPtr astFrame to both Transform() and
+ * Normalise(). IntPtr is a native-boundary type — it belongs in
+ * iDaVIE.Infrastructure.NativePlugins, not in a domain interface.
+ *
+ * The fix: both methods now accept IAstFrame (see IAstFrame.cs), an opaque
+ * domain marker. The Infrastructure implementation (AstFrameHandle) holds
+ * the real IntPtr invisibly. Domain code never touches unmanaged memory.
+ *
  * CROSS-TEAM BOUNDARY NOTE
  * ────────────────────────
- * This interface is defined here (Sub-team 5) as a stub.
+ * This interface is defined here (Sub-team 5) in iDaVIE.Domain.Feature.
  * The concrete implementation (AstToolCoordinateTransformer) is owned by
- * Sub-team 2 as part of the WCS transform plug-in boundary.
+ * Sub-team 2 as part of the WCS transform plug-in boundary and will live
+ * in iDaVIE.Infrastructure.NativePlugins.
  * The interface name must be agreed between both sub-teams before Sprint 2.
+ *
+ * NAMESPACE
+ * ─────────
+ * iDaVIE.Domain.Feature  (ADR-008)
+ * Domain interfaces that FeatureCatalog and VoTableExportService depend on
+ * must live in the Domain namespace — the direction of dependency is inward.
  *
  * CK METRICS (target)
  * ───────────────────
  * WMC  = 2   (two methods)
- * CBO  = 0   (no concrete dependencies)
+ * CBO  = 1   (IAstFrame in same namespace — one intra-namespace reference)
  * RFC  = 2
  * LCOM = 0
  */
 
-using System;
-
-namespace DataFeatures
+namespace iDaVIE.Domain.Feature
 {
     /// <summary>
-    /// Abstracts the AstTool.Transform3D and AstTool.Norm DLL entry points.
+    /// Abstracts the <c>AstTool.Transform3D</c> and <c>AstTool.Norm</c> DLL entry points.
     /// <para>
     /// Implement this interface to wrap the concrete WCS coordinate library.
     /// Inject a stub in unit tests to produce deterministic RA / Dec / Z values
-    /// without requiring the DataAnalysis native DLL.
+    /// without requiring the <c>DataAnalysis</c> native DLL.
     /// </para>
     /// <para>
     /// The production implementation (<c>AstToolCoordinateTransformer</c>) is
@@ -59,11 +74,10 @@ namespace DataFeatures
         /// Converts pixel-space coordinates (x, y, z) to world coordinates
         /// (RA, Dec, spectral value) using the supplied AST frame.
         /// </summary>
-        /// <param name="astFrame">
-        ///   Opaque handle to the AST World Coordinate System frame.
-        ///   In production this is <c>IntPtr</c> obtained from
-        ///   <c>VolumeDataSetRenderer.AstFrame</c>.
-        ///   Pass <c>IntPtr.Zero</c> with a stub implementation in tests.
+        /// <param name="frame">
+        ///   Opaque domain handle to the AST World Coordinate System frame
+        ///   (see <see cref="IAstFrame"/>). Pass a <c>NullAstFrame</c> stub
+        ///   in unit tests — no unsafe or unmanaged code required.
         /// </param>
         /// <param name="x">Pixel X coordinate.</param>
         /// <param name="y">Pixel Y coordinate.</param>
@@ -72,7 +86,7 @@ namespace DataFeatures
         /// <param name="dec">Output: Declination in radians.</param>
         /// <param name="zPhys">Output: Physical spectral value (velocity, frequency, or redshift).</param>
         void Transform(
-            IntPtr astFrame,
+            IAstFrame frame,
             double x, double y, double z,
             out double ra, out double dec, out double zPhys);
 
@@ -80,7 +94,7 @@ namespace DataFeatures
         /// Normalises world coordinates within the AST frame to a canonical range.
         /// Wraps <c>AstTool.Norm</c> in the production implementation.
         /// </summary>
-        /// <param name="astFrame">Opaque AST frame handle (see <see cref="Transform"/>).</param>
+        /// <param name="frame">Opaque AST frame handle (see <see cref="IAstFrame"/>).</param>
         /// <param name="ra">Right Ascension in radians (from <see cref="Transform"/>).</param>
         /// <param name="dec">Declination in radians (from <see cref="Transform"/>).</param>
         /// <param name="zPhys">Physical spectral value (from <see cref="Transform"/>).</param>
@@ -88,7 +102,7 @@ namespace DataFeatures
         /// <param name="normDec">Output: normalised Dec in radians.</param>
         /// <param name="normZ">Output: normalised spectral value.</param>
         void Normalise(
-            IntPtr astFrame,
+            IAstFrame frame,
             double ra, double dec, double zPhys,
             out double normRa, out double normDec, out double normZ);
     }

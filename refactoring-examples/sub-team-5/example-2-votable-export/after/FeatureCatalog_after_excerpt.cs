@@ -12,39 +12,52 @@
  * The full production class is at:
  *   Assets/Scripts/FeatureData/FeatureCatalog.cs
  *
+ * NAMESPACE
+ * ─────────
+ * iDaVIE.Domain.Feature  (ADR-008)
+ * FeatureCatalog is a first-class domain aggregate (ADR-011).
+ * It must live in the Domain namespace, not in DataFeatures (the old,
+ * non-conformant name that predated the ADR-008 namespace decision).
+ *
  * DELEGATION CHAIN (Example 2)
  * ────────────────────────────
  *
- *   [Unity layer]          FeatureMenuController
- *                                  │ calls
- *   [Application layer]    FeatureSetService.ExportToVoTable(set)
- *                                  │ delegates to
- *   [Domain layer]         FeatureCatalog.ExportToVoTable(set)    ← this file
- *                                  │ delegates to
- *   [Persistence boundary] IFeaturePersistenceService.ExportToVoTable(set)
- *                                  │ delegates to
- *   [Format plug-in]       IVoTableExporter.Export(set, transformer)
- *                                  │ implemented by
- *                          VoTableExportService  (pure C#, no Unity)
+ *   [Unity/Client layer]       FeatureMenuController
+ *                                      │ calls
+ *   [Application layer]        FeatureSetService.ExportToVoTable(set)
+ *          iDaVIE.Application.Feature  │ delegates to
+ *   [Domain layer]             FeatureCatalog.ExportToVoTable(set)    ← this file
+ *          iDaVIE.Domain.Feature       │ delegates to
+ *   [Persistence boundary]     IFeaturePersistenceService.ExportToVoTable(set)
+ *          iDaVIE.Domain.Feature       │ (interface — no concrete ref)
+ *   [Infrastructure]           FeaturePersistenceService
+ *          iDaVIE.Infrastructure.      │ calls
+ *          Persistence                 │
+ *   [Format plug-in]           IVoTableExporter.Export(set, transformer)
+ *          iDaVIE.Domain.Feature       │ implemented by
+ *                              VoTableExportService (iDaVIE.Infrastructure.Persistence)
  *
  * Each arrow crosses exactly one layer boundary.
  * Dependencies point inward only — FeatureCatalog does not reference
- * IVoTableExporter directly; it only knows IFeaturePersistenceService.
- * This satisfies the §4.1 layered architecture constraint.
+ * IVoTableExporter or VoTableExportService; it only knows
+ * IFeaturePersistenceService. This satisfies the ADR-001 layered
+ * architecture constraint and the ADR-008 namespace rules.
  *
  * KEY CHANGES FROM BEFORE STATE
  * ──────────────────────────────
  * Before: FeatureSetManager called VoTableSaver.SaveFeatureSetAsVoTable(renderer, path)
  *         directly — a static call with a Unity MonoBehaviour argument.
+ *         Namespace: DataFeatures (ADR-008 non-compliant).
  *
  * After:  FeatureCatalog.ExportToVoTable(set) takes a plain FeatureSet domain
  *         object and delegates to IFeaturePersistenceService. FeatureCatalog
- *         has no knowledge of XML, AstTool, or file paths.
+ *         has no knowledge of XML, AstTool, file paths, or IntPtr.
+ *         Namespace: iDaVIE.Domain.Feature (ADR-008 compliant).
  */
 
 using System;
 
-namespace DataFeatures
+namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Excerpt: FeatureCatalog showing constructor injection and
@@ -55,26 +68,23 @@ namespace DataFeatures
     {
         // ── Persistence boundary ─────────────────────────────────────────────
         //
-        // IFeaturePersistenceService is injected at construction.
+        // IFeaturePersistenceService is injected at construction (ADR-003).
         // FeatureCatalog never creates the concrete persistence object itself —
         // that would violate the Dependency Inversion Principle.
         //
-        // In production: FeaturePersistenceService (WP7 implementation) is
-        //   passed in, which in turn holds an injected IVoTableExporter.
+        // In production: FeaturePersistenceService (iDaVIE.Infrastructure.Persistence)
+        //   is passed in, which in turn holds an injected IVoTableExporter.
         //
-        // In unit tests: NullFeaturePersistenceService (or a mock) is passed in,
+        // In unit tests: a mock or NullFeaturePersistenceService is passed in,
         //   keeping FeatureCatalog tests free of file I/O and DLL calls.
         private readonly IFeaturePersistenceService _persistence;
 
         /// <param name="persistence">
         ///   Persistence service implementation.
-        ///   Pass <c>NullFeaturePersistenceService</c> in unit tests.
+        ///   Pass a <c>NullFeaturePersistenceService</c> or mock in unit tests.
         /// </param>
         public FeatureCatalog(IFeaturePersistenceService persistence)
         {
-            // Guard clause — a null persistence service would produce a
-            // NullReferenceException deep inside a VOTable export, which is
-            // harder to diagnose than an early ArgumentNullException here.
             _persistence = persistence
                 ?? throw new ArgumentNullException(nameof(persistence));
         }
@@ -84,9 +94,9 @@ namespace DataFeatures
         /// <summary>
         /// Exports <paramref name="set"/> to a VOTable XML file.
         /// <para>
-        /// FeatureCatalog owns the decision of *when* to export.
-        /// <see cref="IFeaturePersistenceService"/> owns *how* to serialise
-        /// and *where* to write the file (path resolution, timestamp naming).
+        /// FeatureCatalog owns the decision of <em>when</em> to export.
+        /// <see cref="IFeaturePersistenceService"/> owns <em>how</em> to
+        /// serialise and <em>where</em> to write the file.
         /// </para>
         /// </summary>
         /// <returns>
@@ -98,27 +108,27 @@ namespace DataFeatures
             if (set == null) throw new ArgumentNullException(nameof(set));
 
             // Single delegation call — FeatureCatalog knows nothing about
-            // XML, AstTool, or IVoTableExporter. Those are persistence-layer
-            // concerns that live behind IFeaturePersistenceService.
+            // XML, AstTool, IAstFrame, IVoTableExporter, or file paths.
+            // Those are Infrastructure concerns behind IFeaturePersistenceService.
             return _persistence.ExportToVoTable(set);
         }
 
         // ── Note on IFeaturePersistenceService.ExportToVoTable ───────────────
         //
-        // The concrete persistence service (WP7 team) will receive an
-        // IVoTableExporter and ICoordinateTransformer at its own construction:
+        // The concrete persistence service (iDaVIE.Infrastructure.Persistence)
+        // receives IVoTableExporter and ICoordinateTransformer at construction:
         //
-        //   public class FeaturePersistenceService : IFeaturePersistenceService
+        //   public sealed class FeaturePersistenceService : IFeaturePersistenceService
         //   {
-        //       private readonly IVoTableExporter      _exporter;
-        //       private readonly ICoordinateTransformer _transformer;
+        //       private readonly IVoTableExporter       _exporter;
+        //       private readonly ICoordinateTransformer  _transformer;
         //
         //       public FeaturePersistenceService(
         //           IVoTableExporter exporter,
         //           ICoordinateTransformer transformer)
         //       {
-        //           _exporter    = exporter;
-        //           _transformer = transformer;
+        //           _exporter    = exporter    ?? throw new ArgumentNullException(...);
+        //           _transformer = transformer ?? throw new ArgumentNullException(...);
         //       }
         //
         //       public string ExportToVoTable(FeatureSet featureSet)
@@ -130,8 +140,8 @@ namespace DataFeatures
         //       }
         //   }
         //
-        // This keeps file I/O out of VoTableExportService and out of the
-        // domain layer, satisfying the single-responsibility principle at
-        // every layer.
+        // File I/O stays out of VoTableExportService and out of the domain layer.
+        // IAstFrame is passed through FeatureSet.AstFrame; the concrete
+        // AstFrameHandle (iDaVIE.Infrastructure.NativePlugins) holds the real IntPtr.
     }
 }

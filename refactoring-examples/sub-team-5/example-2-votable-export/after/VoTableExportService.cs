@@ -6,45 +6,58 @@
  * =======================================================================
  * Design role: concrete implementation of IVoTableExporter.
  *
+ * NAMESPACE
+ * ─────────
+ * iDaVIE.Infrastructure.Persistence  (ADR-008)
+ *
+ * This class does XML serialisation — that is an Infrastructure concern.
+ * It must NOT live in iDaVIE.Domain.Feature; the dependency direction would
+ * be wrong (domain layer referencing a concrete Infrastructure class).
+ * Here in Infrastructure.Persistence it depends *inward* on the domain
+ * interfaces (IVoTableExporter, ICoordinateTransformer, FeatureSet, Feature)
+ * — the correct downward dependency direction per ADR-001.
+ *
  * KEY CONSTRAINT
  * ──────────────
- * This class contains ZERO UnityEngine imports.
- * It operates entirely on the plain DataFeatures domain model (FeatureSet,
- * Feature, ICoordinateTransformer) and System.Xml.Linq.
- * This makes it unit-testable without a running Unity instance.
+ * This class contains ZERO UnityEngine imports (ADR-002).
+ * It operates entirely on the plain iDaVIE.Domain.Feature model and
+ * System.Xml.Linq, making it unit-testable without a running Unity instance.
  *
  * WHAT CHANGED FROM VoTableSaver
  * ────────────────────────────────
  * Before                              After
- * ──────────────────────────────────  ───────────────────────────────────
+ * ──────────────────────────────────  ──────────────────────────────────────
  * static class, not injectable        implements IVoTableExporter
- * takes FeatureSetRenderer (Unity)    takes FeatureSet (plain domain obj)
+ * takes FeatureSetRenderer (Unity)    takes FeatureSet (plain domain object)
  * calls AstTool.* directly (DLL)      calls ICoordinateTransformer (injected)
+ * passes IntPtr into DLL wrapper      passes IAstFrame — no unsafe types
  * reads VolumeRenderer.SourceStats    reads FeatureSet.Features (domain list)
  * writes to file (doc.Save)           returns XML string (caller writes file)
- * lives in VoTableReader namespace    lives in DataFeatures namespace
+ * namespace VoTableReader             namespace iDaVIE.Infrastructure.Persistence
  *
  * CK METRICS (target)
  * ───────────────────
- * WMC  ≤  6   (Export + 3–4 private helpers)
- * CBO  ≤  3   (FeatureSet, Feature, ICoordinateTransformer)
+ * WMC  ≤  6   (Export + 3 private helpers)
+ * CBO  ≤  3   (FeatureSet, Feature, ICoordinateTransformer — domain inward deps)
  * RFC  ≤  8
- * LCOM =  0   (single method drives all helpers)
+ * LCOM =  0   (single public method drives all helpers)
  */
 
 using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
+using iDaVIE.Domain.Feature;
 
-// NOTE: No "using UnityEngine" — this class is intentionally Unity-free.
+// NOTE: No "using UnityEngine" — this class is intentionally Unity-free (ADR-002).
 
-namespace DataFeatures
+namespace iDaVIE.Infrastructure.Persistence
 {
     /// <summary>
     /// Pure-C# VOTable 1.3 XML serialiser.
     /// <para>
     /// Implements <see cref="IVoTableExporter"/> and depends only on
-    /// <see cref="ICoordinateTransformer"/> for WCS conversion.
+    /// <see cref="ICoordinateTransformer"/> for WCS conversion and the
+    /// <see cref="IAstFrame"/> domain handle for the coordinate frame.
     /// No Unity types are referenced — the class is fully unit-testable.
     /// </para>
     /// <para>
@@ -60,8 +73,8 @@ namespace DataFeatures
         /// <inheritdoc/>
         public string Export(FeatureSet featureSet, ICoordinateTransformer transformer)
         {
-            if (featureSet    == null) throw new ArgumentNullException(nameof(featureSet));
-            if (transformer   == null) throw new ArgumentNullException(nameof(transformer));
+            if (featureSet  == null) throw new ArgumentNullException(nameof(featureSet));
+            if (transformer == null) throw new ArgumentNullException(nameof(transformer));
 
             // ── 1. Build column headers ──────────────────────────────────────
             var headers = BuildHeaders(featureSet);
@@ -78,7 +91,9 @@ namespace DataFeatures
 
             foreach (Feature feature in featureSet.Features)
             {
-                // Delegate coordinate conversion — no AstTool call here.
+                // featureSet.AstFrame is IAstFrame — no IntPtr in this layer.
+                // The Infrastructure AstFrameHandle wraps the real IntPtr;
+                // VoTableExportService never sees it.
                 transformer.Transform(
                     featureSet.AstFrame,
                     feature.Center.X, feature.Center.Y, feature.Center.Z,
@@ -124,7 +139,6 @@ namespace DataFeatures
         /// </summary>
         private static XDocument BuildDocument(List<string> headers, FeatureSet featureSet)
         {
-            // Number of positional columns before the RawData extras.
             int fixedColumnCount = headers.Count
                                    - (featureSet.RawDataKeys?.Length ?? 0);
 
@@ -146,7 +160,6 @@ namespace DataFeatures
                 new XAttribute("name", "idavie_cat"),
                 new XElement("DATA", new XElement("TABLEDATA")));
 
-            // FIELD elements precede DATA — insert at front.
             tableElement.AddFirst(fieldElements);
 
             return new XDocument(
@@ -165,10 +178,8 @@ namespace DataFeatures
             Feature feature,
             double normRa, double normDec, double normZ)
         {
-            // Convert radians to degrees for RA and Dec (standard VOTable convention).
-            double raDeg  = 180.0 * normRa  / Math.PI;
+            double raDeg = 180.0 * normRa  / Math.PI;
             double decDeg = 180.0 * normDec / Math.PI;
-            // Convert normalised Z to km/s (multiply by 1000, as in original code).
             double zKms   = 1000.0 * normZ;
 
             var row = new XElement("TR",
