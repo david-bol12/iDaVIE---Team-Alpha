@@ -1,0 +1,148 @@
+@startuml VOTable Export — Before and After
+
+' ── Style ──────────────────────────────────────────────────────────────────
+skinparam classAttributeIconSize 0
+skinparam classFontName Arial
+skinparam classFontSize 11
+skinparam ArrowColor #444444
+skinparam ClassBackgroundColor #FAFAFA
+skinparam ClassBorderColor #AAAAAA
+skinparam PackageBackgroundColor #F0F4FA
+skinparam PackageBorderColor #2E4D87
+skinparam PackageFontStyle bold
+skinparam PackageFontColor #1F3864
+skinparam NoteBackgroundColor #FFFBDB
+skinparam NoteBorderColor #CCAA00
+
+' ═══════════════════════════════════════════════════════════════════════════
+' BEFORE
+' ═══════════════════════════════════════════════════════════════════════════
+package "BEFORE — VoTableReader namespace" {
+
+    class VoTableSaver <<static>> #FFE8E8 {
+        + {static} SaveFeatureSetAsVoTable(\n    featureSet : FeatureSetRenderer,\n    filePath : string) : void
+    }
+
+    class FeatureSetRenderer <<MonoBehaviour>> {
+        + VolumeRenderer : VolumeDataSetRenderer
+        + FeatureList : List<Feature>
+        + RawDataKeys : string[]
+    }
+
+    class VolumeDataSetRenderer <<MonoBehaviour>> {
+        + AstFrame : IntPtr
+        + SourceStatsDict : Dictionary<int, SourceStats>
+        + Data : VolumeDataSet
+    }
+
+    class AstTool <<static, DLL>> #FFDEDE {
+        + {static} Transform3D(frame, x, y, z, ...) : void
+        + {static} Norm(frame, ra, dec, z, ...) : void
+    }
+}
+
+note top of VoTableSaver
+  <b>Smells</b>
+  [1] Static — not injectable or mockable
+  [2] Takes MonoBehaviour — not testable
+  [3] Law of Demeter: renderer.VolumeRenderer.SourceStatsDict
+  [4] Direct DLL calls (AstTool)
+  [5] No interface — no format seam
+  [6] Wrong namespace (VoTableReader)
+end note
+
+VoTableSaver ..> FeatureSetRenderer     : <<parameter>>
+VoTableSaver ..> VolumeDataSetRenderer  : navigates via renderer
+VoTableSaver ..> AstTool                : static calls (DLL)
+
+
+' ═══════════════════════════════════════════════════════════════════════════
+' AFTER
+' ═══════════════════════════════════════════════════════════════════════════
+package "AFTER — DataFeatures namespace" {
+
+    ' ── Interfaces ──────────────────────────────────────────────────────────
+    interface IVoTableExporter #E8F4E8 {
+        + Export(featureSet : FeatureSet,\n        transformer : ICoordinateTransformer) : string
+    }
+
+    interface ICoordinateTransformer #E8F4E8 {
+        + Transform(astFrame, x, y, z,\n    out ra, out dec, out zPhys) : void
+        + Normalise(astFrame, ra, dec, zPhys,\n    out normRa, out normDec, out normZ) : void
+    }
+
+    interface IFeaturePersistenceService #E8F4E8 {
+        + ExportToVoTable(featureSet : FeatureSet) : string
+        + AppendFeatureToAscii(feature, fileName) : void
+        + AsciiOutputExists(fileName) : bool
+    }
+
+    ' ── Domain class ────────────────────────────────────────────────────────
+    class FeatureCatalog #EAF0FB {
+        - _persistence : IFeaturePersistenceService
+        + FeatureCatalog(persistence)
+        + ExportToVoTable(set : FeatureSet) : string
+        + CreateMaskSet() : FeatureSet
+        + CreateImportedSet(name) : FeatureSet
+        + CreateUserSet() : FeatureSet
+        + Remove(set) : bool
+    }
+
+    ' ── Concrete serialiser ─────────────────────────────────────────────────
+    class VoTableExportService #EAF0FB {
+        + Export(featureSet, transformer) : string
+        - BuildHeaders(featureSet) : List<string>
+        - BuildDocument(headers, featureSet) : XDocument
+        - BuildRow(feature, normRa, normDec, normZ) : XElement
+    }
+
+    ' ── Domain model ────────────────────────────────────────────────────────
+    class FeatureSet <<domain>> {
+        + Features : ReadOnlyCollection<Feature>
+        + AstFrame : IntPtr
+        + ZAxisLabel : string
+        + RawDataKeys : string[]
+    }
+
+    class Feature <<domain>> {
+        + Id : int
+        + Center : Vec3
+        + CornerMin : Vec3
+        + CornerMax : Vec3
+        + Flag : string
+        + RawData : string[]
+    }
+}
+
+' ── Application layer (outside domain) ──────────────────────────────────────
+class FeatureSetService <<application>> {
+    + ExportToVoTable(set : FeatureSet) : string
+}
+
+' ── Relationships ────────────────────────────────────────────────────────────
+FeatureSetService        --> FeatureCatalog           : delegates to
+FeatureCatalog           o--> IFeaturePersistenceService : <<inject>>
+IFeaturePersistenceService ..> IVoTableExporter        : <<inject, uses>>
+IFeaturePersistenceService ..> ICoordinateTransformer  : <<inject, uses>>
+VoTableExportService    ..|> IVoTableExporter          : implements
+VoTableExportService    --> FeatureSet                 : reads
+VoTableExportService    --> Feature                    : reads
+VoTableExportService    ..> ICoordinateTransformer     : <<inject>>
+FeatureCatalog          --> FeatureSet                 : owns
+
+note bottom of VoTableExportService
+  <b>Zero UnityEngine imports</b>
+  Uses only System.Xml.Linq
+  Fully unit-testable
+  (inject StubCoordinateTransformer
+   for deterministic RA/Dec/Z)
+end note
+
+note right of ICoordinateTransformer
+  <b>Cross-team boundary</b>
+  Defined here (Sub-team 5)
+  Implemented by Sub-team 2
+  (AstToolCoordinateTransformer)
+end note
+
+@enduml
