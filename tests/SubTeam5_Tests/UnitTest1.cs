@@ -1,57 +1,76 @@
-﻿using NUnit.Framework;
+using DataFeatures;
 
 namespace SubTeam5_Tests;
 
-public class FeatureStatisticsTests 
+public class FeatureStatisticsTests
 {
-    // TEST 1: Centroid inside bounding box
-    [TestCase(0, 10, 0, 10, 0, 10, 5.0, 5.0, 5.0)]
-    [TestCase(0, 100, 0, 100, 0, 100, 0.0, 0.0, 0.0)]
-    [TestCase(0, 100, 0, 100, 0, 100, 100.0, 100.0, 100.0)]
-    [TestCase(10, 50, 10, 50, 10, 50, 30.0, 30.0, 30.0)]
-    [TestCase(0, 1, 0, 1, 0, 1, 0.5, 0.5, 0.5)]
-    public void Centroid_IsInsideBoundingBox(
-        double minX, double maxX,
-        double minY, double maxY,
-        double minZ, double maxZ,
-        double cX, double cY, double cZ)
+    private static readonly FeatureColor DefaultColor = new FeatureColor(1f, 1f, 1f);
+
+    // TEST 1: Feature.Center lies inside the feature's bounding box
+    [TestCase(0f, 10f, 0f, 10f, 0f, 10f)]
+    [TestCase(1f, 99f, 1f, 99f, 1f, 99f)]
+    [TestCase(-5f, 5f, -5f, 5f, -5f, 5f)]
+    [TestCase(10f, 50f, 10f, 50f, 10f, 50f)]
+    [TestCase(0f, 1f, 0f, 1f, 0f, 1f)]
+    public void Feature_Center_IsInsideBoundingBox(
+        float minX, float maxX,
+        float minY, float maxY,
+        float minZ, float maxZ)
     {
-        Assert.That(cX, Is.GreaterThanOrEqualTo(minX));
-        Assert.That(cX, Is.LessThanOrEqualTo(maxX));
-        Assert.That(cY, Is.GreaterThanOrEqualTo(minY));
-        Assert.That(cY, Is.LessThanOrEqualTo(maxY));
-        Assert.That(cZ, Is.GreaterThanOrEqualTo(minZ));
-        Assert.That(cZ, Is.LessThanOrEqualTo(maxZ));
+        var feature = new Feature(
+            new Vec3(minX, minY, minZ), new Vec3(maxX, maxY, maxZ),
+            DefaultColor, "test", "", 0, 1, Array.Empty<string>(), true);
+
+        Assert.That(feature.Center.X, Is.GreaterThanOrEqualTo(feature.CornerMin.X));
+        Assert.That(feature.Center.X, Is.LessThanOrEqualTo(feature.CornerMax.X));
+        Assert.That(feature.Center.Y, Is.GreaterThanOrEqualTo(feature.CornerMin.Y));
+        Assert.That(feature.Center.Y, Is.LessThanOrEqualTo(feature.CornerMax.Y));
+        Assert.That(feature.Center.Z, Is.GreaterThanOrEqualTo(feature.CornerMin.Z));
+        Assert.That(feature.Center.Z, Is.LessThanOrEqualTo(feature.CornerMax.Z));
     }
 
-    // TEST 2: Flux is non-negative
+    // TEST 2: Flux values stored in Feature.RawData are non-negative
     [TestCase(new double[] { 1.0, 2.0, 3.0 })]
     [TestCase(new double[] { 0.0, 0.0, 0.0 })]
     [TestCase(new double[] { 100.0, 50.0, 200.0 })]
     [TestCase(new double[] { 0.001, 0.002, 0.003 })]
     [TestCase(new double[] { 999.9 })]
-    public void Flux_IsNonNegative(double[] voxelValues)
+    public void Feature_Flux_IsNonNegative(double[] fluxValues)
     {
-        double sum  = voxelValues.Sum();
-        double peak = voxelValues.Max();
+        var rawData = fluxValues.Select(v => v.ToString("G")).ToArray();
+        var feature = new Feature(
+            new Vec3(0f, 0f, 0f), new Vec3(10f, 10f, 10f),
+            DefaultColor, "test", "", 0, 1, rawData, true);
 
-        Assert.That(sum,  Is.GreaterThanOrEqualTo(0.0));
+        var parsed = feature.RawData.Select(double.Parse).ToList();
+        double sum = parsed.Sum();
+        double peak = parsed.Max();
+
+        Assert.That(sum, Is.GreaterThanOrEqualTo(0.0));
         Assert.That(peak, Is.GreaterThanOrEqualTo(0.0));
     }
 
-    // TEST 3: W20 width >= W50 width on a Gaussian profile
+    // TEST 3: Feature Z-extent representing W20 is at least as wide as W50
+    // On any Gaussian spectral profile, the line measured at 20% of peak is
+    // always wider than at 50% of peak.
     [TestCase(100.0)]
     [TestCase(500.0)]
     [TestCase(1.0)]
     [TestCase(9999.0)]
     [TestCase(0.5)]
-    public void W20_Width_AtLeast_W50_Width(double peakFlux)
+    public void Feature_W20_Width_AtLeast_W50_Width(double peakFlux)
     {
-        // On any Gaussian spectral profile, the line measured
-        // at 20% of peak is always wider than at 50% of peak
-        double widthAt20 = 2.0 * Math.Sqrt(-2.0 * Math.Log(0.20));
-        double widthAt50 = 2.0 * Math.Sqrt(-2.0 * Math.Log(0.50));
+        float w20 = 2.0f * (float)Math.Sqrt(-2.0 * Math.Log(0.20));
+        float w50 = 2.0f * (float)Math.Sqrt(-2.0 * Math.Log(0.50));
 
-        Assert.That(widthAt20, Is.GreaterThanOrEqualTo(widthAt50));
+        var featureW20 = new Feature(
+            new Vec3(0f, 0f, -w20 / 2f), new Vec3(0f, 0f, w20 / 2f),
+            DefaultColor, "W20", "", 0, 1, new[] { peakFlux.ToString("G") }, true);
+
+        var featureW50 = new Feature(
+            new Vec3(0f, 0f, -w50 / 2f), new Vec3(0f, 0f, w50 / 2f),
+            DefaultColor, "W50", "", 0, 2, new[] { peakFlux.ToString("G") }, true);
+
+        Assert.That(featureW20.Size.Z, Is.GreaterThanOrEqualTo(featureW50.Size.Z));
     }
 }
