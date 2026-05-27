@@ -35,8 +35,7 @@ target threshold, in some cases by a factor of three or more:
 | DIT (Depth of Inheritance Tree) | 1 | ≤ 4 | ✅ |
 | NOC (Number of Children) | 0 | ≤ 5 | ✅ |
 
-No single metric in isolation is disqualifying. All four failing together on the same class
-is the diagnostic signature of a God Class — a class that has accumulated so many
+All four failing together on the same class is the diagnostic signature of a God Class — a class that has accumulated so many
 responsibilities that it resists change, testing, and extension.
 
 ### 2.2 What the Metrics Mean in Practice
@@ -50,15 +49,14 @@ elevated fault rates, and iDaVIE's VR context has zero tolerance for frame-rate-
 bugs.
 
 **CBO = 31** means the class is structurally coupled to 31 other files across 8 packages.
-The target for a domain class is ≤ 14. This coupling is not uniform: the mask data set is
+The target for a domain class is ≤ 14. The mask data set is
 referenced approximately 92 times within the class and the feature manager approximately
 29 times — these are the two largest concrete coupling targets and the highest-priority
 extractions. A CBO of 31 means that 31 other files must be considered when making any
 change to `VolumeDataSetRenderer`, making regression risk disproportionate to the size of
 any given edit.
 
-**RFC = 89** means the set of methods that can be invoked as a result of a message sent to
-the class has 89 members. This is the transitive fan-out of the class's public interface.
+**RFC = 89** means the set of methods that can be invoked as a result of a message sent to the class has 89 members.
 An RFC of 89 makes it practically impossible to reason about the effect of a call without
 reading the class in full, and impossible to write a test that does not implicitly exercise
 dozens of unrelated collaborators.
@@ -89,24 +87,8 @@ Responsibilities 1–5 are in scope for this proposal. Responsibilities 6–8 ar
 their presence contributes to the WMC and CBO figures above; they must not be silently
 absorbed into `VolumeRenderCoordinator` during the split.
 
-### 2.4 The Dependency Cycle Problem
 
-The metrics above describe problems internal to `VolumeDataSetRenderer`. A codebase-level
-analysis reveals a further structural problem: `VolumeDataSetRenderer` sits inside a
-strongly-connected component of 46 files — approximately half the 101-file codebase.
-Cyclic mutual references connect it to `VolumeInputController`, `MomentMapRenderer`,
-`VolumeCommandController`, and `Config`.
-
-The consequence is a propagation cost of approximately 39.8%: a change in a typical file
-in this cycle can logically reach 40% of the codebase. The project's abstractness is 3.9%
-— only 8 of 206 types are interfaces or abstract classes — which means there are almost no
-seams to insert test doubles or swap implementations.
-
-Splitting `VolumeDataSetRenderer` into four classes without simultaneously breaking the
-mutual references would simply distribute the cycle across four smaller nodes. The mutual
-references must be inverted through interfaces or events at the same time as the class split.
-
-### 2.5 Render Pipeline Lock-In
+### 2.4 Render Pipeline Lock-In
 
 `VolumeDataSetRenderer` calls `Graphics.DrawProceduralNow` at lines 1148 and 1154, uses
 the `OnRenderObject` Unity callback (line 1142), and sets global shader keywords via
@@ -123,7 +105,7 @@ contains all URP-specific calls inside adapter classes. Domain logic classes hav
 dependency on `UnityEngine.Rendering.Universal` and can be unit-tested without a Unity
 player context.
 
-### 2.6 What This Document Proposes
+### 2.5 What This Document Proposes
 
 This document specifies a refactoring of the rendering layer that:
 
