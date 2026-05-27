@@ -1,10 +1,10 @@
 # MVVM Strategy — Desktop Client Shell
 
-- **Status:** draft
-- **Date:** 2026-05-26
+- **Status:** final
+- **Date:** 2026-05-27
 - **Authors:** Sub-team 6 (Desktop GUI & Client Shell)
 - **Backlog:** ARCH-1, ARCH-9
-- **Supersedes:** `adrs/0001-mvvm-split.md` (decision rationale folded in), `refactor.md` (informal proposal folded in)
+- **Supersedes:** ADR-009 draft (decision rationale folded in)
 - **Related:** [ADR-0002 — Client–server transport](../D2-Architecture/client-server-transport.md)
 
 ---
@@ -45,9 +45,9 @@ CBO of 47 breaks down as: 23 project types (e.g. `VolumeDataSetRenderer`, `FitsR
 
 Three forces make the status quo unsustainable:
 
-**Testability vs MonoBehaviour lifecycle.** Unity's `MonoBehaviour` requires a running engine to instantiate; any logic embedded in it cannot be unit-tested with NUnit alone. The assignment mandates ≥ 70% branch/line coverage on domain code (NFR-TST-1). With CanvassDesktop scoring a mocking-difficulty index of 205 (163 scene-graph traversals + 36 static P/Invoke calls), this target is unreachable without decomposition.
+**Testability vs MonoBehaviour lifecycle.** `MonoBehaviour` cannot be instantiated without a live engine, so any logic inside it cannot be unit-tested with NUnit. CanvassDesktop's mocking-difficulty index of 205 (163 scene-graph traversals + 36 P/Invoke calls) makes the ≥ 70% branch/line target (NFR-TST-1) unreachable without decomposition.
 
-**Unity 2021.3 → Unity 6 migration.** The legacy `UnityEngine.UI` Canvas system is the current runtime; the target is UI Toolkit. Any UI code that is not isolated behind an interface must be rewritten in full during migration. Mixing view logic and domain logic in a single `MonoBehaviour` doubles the migration surface unnecessarily.
+**Unity 2021.3 → Unity 6 migration.** The legacy Canvas system must migrate to UI Toolkit. Any UI code not isolated behind an interface must be rewritten in full; mixing view logic and domain logic in one `MonoBehaviour` doubles that migration surface.
 
 **Assignment constraints (non-negotiable).**
 - §4.2.3: Domain code must not transitively depend on `UnityEngine` or `SteamVR`.
@@ -170,9 +170,18 @@ ILogStream  ──publishes──►  DebugTabViewModel  ──binds──►  D
 - Commands: `ApplyThreshold`, `ChangeColorMap`
 
 The current `Update()` loop polls `firstActiveRenderer.ThresholdMin` every frame and pushes it to a slider. In the refactored design:
-- `VolumeDataSetRenderer` raises a `ThresholdChanged` event (or ViewModel polls via `IVolumeService`)
+- `IVolumeService` raises a `ThresholdChanged` event
 - `RenderingTabViewModel` subscribes and updates its own properties
 - `RenderingTabView` binds sliders to those properties — no per-frame sync needed
+
+**Split from current code:**
+
+| Current (CanvassDesktop) | Proposed home |
+|---|---|
+| `Update()` polls `firstActiveRenderer.ThresholdMin/Max` every frame | `IVolumeService.ThresholdChanged` event → `RenderingTabViewModel` subscribes |
+| Slider wiring in `Start()` | `RenderingTabView` bound to `MinThreshold` / `MaxThreshold` |
+| `_restFrequency` field (declared, never read) | Removed — dead code confirmed by LCOM field-access analysis |
+| Colormap dropdown wiring in `Start()` | `RenderingTabView.OnColorMapChanged()` → `ChangeColorMapCommand` |
 
 ### 3.4 InformationTabViewModel
 
@@ -182,6 +191,14 @@ The current `Update()` loop polls `firstActiveRenderer.ThresholdMin` every frame
 - `NAxis`, `ImageSize`, `MaskSize`
 
 Populated by `IFitsService.GetHeaderAsync(path)` returning a plain DTO — no Unity types.
+
+**Split from current code:**
+
+| Current (CanvassDesktop) | Proposed home |
+|---|---|
+| `UpdateHeaderFromFits(fptr)` writes raw string directly to scroll view | `InformationTabView` bound to `HeaderText` property |
+| FITS header parsed inline inside `_browseImageFile()` | `IFitsService.GetHeaderAsync(path)` returns `FitsHeaderDto` |
+| Axis dimensions extracted ad-hoc; no structured type | `InformationTabViewModel.AxisInfo` list populated from `FitsHeaderDto` |
 
 ---
 
@@ -262,6 +279,42 @@ Unity 6 UI Toolkit supports `INotifyValueChanged<T>` and data binding natively. 
 1. ViewModel implements `INotifyPropertyChanged` (standard .NET).
 2. A thin `UnityBinder<T>` helper subscribes to `PropertyChanged` and sets the UI element value.
 3. Views register bindings in `Awake` / `OnEnable` and unregister in `OnDisable`.
+
+```csharp
+// View assembly only — never imported by ViewModel
+public sealed class UnityBinder<T> : IDisposable
+{
+    private readonly INotifyPropertyChanged _source;
+    private readonly string   _propertyName;
+    private readonly Func<T>   _getter;
+    private readonly Action<T> _setter;
+
+    public UnityBinder(
+        INotifyPropertyChanged source, string propertyName,
+        Func<T> getter, Action<T> setter)
+    {
+        _source = source; _propertyName = propertyName;
+        _getter = getter; _setter = setter;
+        source.PropertyChanged += OnChanged;
+    }
+
+    private void OnChanged(object _, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == _propertyName) _setter(_getter());
+    }
+
+    public void Dispose() => _source.PropertyChanged -= OnChanged;
+}
+
+// Usage in FileTabView.Awake():
+_binders = new List<IDisposable>
+{
+    new UnityBinder<bool>(_vm, nameof(_vm.IsLoadable),
+        () => _vm.IsLoadable,   v => _loadButton.interactable = v),
+    new UnityBinder<string>(_vm, nameof(_vm.HeaderText),
+        () => _vm.HeaderText,   v => _headerScrollText.text = v),
+};
+```
 
 This eliminates the manual `transform.Find(...)` chains and the per-frame `Update()` sync.
 
@@ -449,16 +502,13 @@ All target values fall within §7.1 thresholds. Full before/after delta tables a
 
 | Pattern | Why forbidden | Replacement |
 |---|---|---|
-| `using UnityEngine;` in ViewModel file | ADR-0001 dependency direction; §4.2.3 | DTO with primitive fields |
-| `Vector3` field on ViewModel | UnityEngine type leak | `(float X, float Y, float Z)` record / tuple |
+| Any `UnityEngine` type in ViewModel (`using UnityEngine`, `Vector3` field, `[SerializeField]`) | Violates §4.2.3; domain code must not depend on Unity | DTO with primitives; plain C# properties; constructor injection |
 | Coroutine in ViewModel | Unity-bound execution model | `async Task` + `IUIDispatcher` |
-| `[SerializeField]` on ViewModel | Unity serialisation dependency | Plain property; configure via constructor |
 | `FindObjectOfType<>` anywhere | Singleton coupling | Constructor injection at composition root |
-| Static event on ViewModel | Lifecycle / test isolation breakage | Instance event or `IObservable<T>` |
+| `static` state on ViewModels (mutable field or event) | Breaks test isolation; shared state leaks between test runs | Instance state or instance event; inject shared state via constructor |
 | `viewModel.Property = x` from View code | Bypasses command layer | `ICommand` binding |
 | `Thread.Sleep` / `WaitForSeconds` in ViewModel | Blocks UI thread or Unity-bound | `Task.Delay` + `CancellationToken` |
 | `event EventHandler` on ViewModel as substitute for `ICommand` | Circumvents binding contract | `ICommand` |
-| `static` mutable state on ViewModels | Breaks test isolation | Instance state; inject shared state via constructor |
 
 ---
 
@@ -510,8 +560,8 @@ select new {
 ## 13. References
 
 - [ADR-0002 — Client–server transport](../D2-Architecture/client-server-transport.md)
-- [D4 — File-tab worked example](../D4-worked-examples/ex1-file-tab/)
-- [D4 — Debug-tab worked example](../D4-worked-examples/ex2-debug-tab/)
+- [D4 — File-tab worked example](../D4-worked-examples/README.md#example-1--file-tab)
+- [D4 — Debug-tab worked example](../D4-worked-examples/README.md#example-2--debug-tab)
 - [D5 — ViewModel unit tests](../D5-testing/viewmodel-unit-tests.md)
 - [D5 — UI Toolkit page-object pattern](../D5-testing/ui-toolkit.md)
 - [Integration risk register](../../../team-alpha/integration-risk-register.md) — R01 (Sub-team 1 gateway contract), R04 (Sub-team 4 VR menus)
