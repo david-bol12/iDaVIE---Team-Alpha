@@ -68,11 +68,11 @@ Format: date, what was completed, what's in progress, any blockers.
 - [ ] Draft `after/VolumeRenderCoordinator.cs` (S2-E1-02) — **blocked on S2-D03**
 - [x] Draft `after/VolumeMaterialBinder.cs` (S2-E1-03) — 2026-05-26
 - [x] Draft `after/VolumeTextureManager.cs` (S2-E1-04) — `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeTextureManager.cs`
-- [ ] Draft `after/VolumeCameraDriver.cs` (S2-E1-05) — **blocked on S2-D03**
+- [x] Draft `after/VolumeCameraDriver.cs` (S2-E1-05) — 2026-05-27
 - [x] Draft `after/FoveatedSamplingPolicy.cs` (S2-E1-06) — 2026-05-26
 - [x] `IRenderPipeline.cs` and `NullRenderPipeline.cs` stubs drafted — needs refinement pass (S2-E1-07)
 - [ ] Draft `UrpRenderPipeline.cs` and `HdrpRenderPipeline.cs` stubs (S2-E1-08) — **blocked on S2-D04**
-- [ ] Compute projected CK metrics for `after/` classes (S2-E1-09) — blocked on S2-E1-02, S2-E1-04 to S2-E1-06
+- [ ] Compute projected CK metrics for `after/` classes (S2-E1-09) — blocked on S2-E1-02 only; all four extracted classes have inline CK projections
 - [ ] Write `example1-VolumeDataSetRenderer/README.md` with CK delta table (S2-E1-10) — blocked on S2-E1-09
 - [ ] SOLID/GRASP annotation pass (S2-E1-11) — blocked on S2-E1-02, S2-E1-04 to S2-E1-06
 
@@ -148,6 +148,20 @@ Format: date, what was completed, what's in progress, any blockers.
 ---
 
 ## Session Log
+
+### 2026-05-27 (session 3)
+
+- [S2-E1-05] `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeCameraDriver.cs` drafted
+  — Scope: narrow (camera matrix, clip planes, projection mode) — matches formal design doc §5.2 targets; cursor tracking / outlines / teleport excluded by design
+  — Includes `VolumeCoordinateService` static helper (pure C#, zero UnityEngine API calls) — fixes V-10 DIP: replaces all `transform.InverseTransformPoint` calls (before/ lines 713, 739, 857) with `WorldToObjectSpace(point, Matrix4x4)`, testable in edit mode without a scene
+  — `CameraFrameState` readonly struct carries: `LocalToWorld`, `WorldToLocal`, `ViewProjection`, `FrustumPlanes` (Gribb–Hartmann, 6 planes), `NearClipPlane`, `FarClipPlane`, `AverageIntensityProjection`
+  — `IVolumeCameraDriver` 2-member interface: `ComputeFrame()` → `CameraFrameState`, `SetProjectionMode(bool)`
+  — `VolumeCameraDriver` sealed class: Camera injected at construction (fixes V-08 DIP — no `FindObjectOfType`/`Camera.main`); `ComputeFrame()` extracts all matrices in one call — no other class touches Transform or Camera API
+  — `StubCameraDriver` test double in `iDaVIE.Rendering.Tests` namespace; `SetProjectionMode` rebuilds struct so round-trips are testable
+  — Violations fixed: V-01 (SRP), V-05 (OCP projection mode), V-08 (DIP FindObjectOfType), V-10 (DIP UnityEngine in domain math), V-14 (GRASP Indirection), V-16 (GRASP Low Coupling), V-17 (GRASP High Cohesion)
+  — Projected CK: WMC=9 combined (VolumeCameraDriver=5, VolumeCoordinateService=4), CBO≤4, LCOM=0.0 — all within targets (WMC target ≤12 for this class)
+  — Per-frame loop usage documented inline (Steps 1–5, on-demand coordinate conversion example)
+  — Design decision: "return value struct" pattern (consistent with FoveatedSamplingPolicy → FoveationParameters); VolumeCameraDriver does NOT hold IRenderPipeline — coordinator forwards FrustumPlanes to pipeline, reducing CBO from target ≤6 to actual ≤4
 
 ### 2026-05-27 (session 2)
 - [S2-E2-02] `refactoring-examples/example2-MaskModes/after/IMaskMode.cs` finalised
