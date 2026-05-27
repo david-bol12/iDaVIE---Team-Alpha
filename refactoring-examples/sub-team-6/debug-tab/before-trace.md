@@ -138,14 +138,12 @@ Convert each Phase C row to a `sequenceDiagram` message:
 - Show `DebugLogging → StreamWriter : new / Write / Close` on **every** C6 call to make the per-message file handle smell visible.
 - The after-state diagram replaces the entire `Application.logMessageReceived` path with `AnySubsystem → ILogStream : Publish(level, source, message)`.
 
-Save the PlantUML diagram as `uml-diagrams/before-debug-sequence-diagram.puml` (parallel to the existing `after-debug-sequence-diagram.puml`).
+The Mermaid rendering of this trace lives in [`before-sequence.md`](before-sequence.md). Pairs with [`after-sequence.md`](after-sequence.md) for side-by-side panel display.
 
 ---
 
 ## What's missing before this trace is complete
 
 1. **GUI walkthrough notes** for C12, D1 — exact tab label, panel location, text format as shown in the running app.
-2. **Before-state class diagram** (`ex2-debug-tab/before-class-diagram.puml`) showing `DebugLogging`, `Application`, `TMP_InputField`, `Scrollbar`, `Button`, `StreamWriter`, and their relationships — draw from the smell table above.
-3. **Before-state sequence diagram** PlantUML file at `uml-diagrams/before-debug-sequence-diagram.puml`.
-4. **Before-state DSM** showing `DebugLogging`'s coupling fan-out (parallel to `ex1-file-tab/before-dsm.md`).
-5. **SOLID/GRASP audit** for the debug tab — the smell table above is the input; the audit format should match the file-tab audit once that is written.
+2. **Before-state DSM** showing `DebugLogging`'s coupling fan-out — see [`dependency-graph.md`](dependency-graph.md) for the current treatment.
+3. **SOLID/GRASP audit** for the debug tab — the smell table above is the input; the audit format should match the file-tab audit once that is written.

@@ -172,7 +172,7 @@ after-state class diagram.
 
 ## How this feeds the before-state class diagram
 
-The class diagram for `ex2-debug-tab/before-class-diagram.puml` should show:
+The class diagram in [`class-diagram.md`](class-diagram.md) should show:
 
 - `CanvassDesktop` → `UnityEngine.Debug` (40 dependency arrows, or one labelled ×40)
 - `DataAnalysis` → `UnityEngine.Debug` (4 arrows, or one labelled ×4)
