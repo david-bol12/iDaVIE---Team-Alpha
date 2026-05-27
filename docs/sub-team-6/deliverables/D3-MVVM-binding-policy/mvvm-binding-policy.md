@@ -5,7 +5,7 @@
 - **Authors:** Sub-team 6 (Desktop GUI & Client Shell)
 - **Backlog:** ARCH-1, ARCH-9
 - **Supersedes:** ADR-009 draft (decision rationale folded in)
-- **Related:** [ADR-0002 — Client–server transport](../D2-Architecture/client-server-transport.md)
+- **Related:** [ADR-0002 — Client–server transport](../D2-Architecture/architecture.md#adr-0002--clientserver-transport-json-rpc-over-named-pipes--grpc)
 
 ---
 
@@ -559,7 +559,7 @@ select new {
 
 ## 13. References
 
-- [ADR-0002 — Client–server transport](../D2-Architecture/client-server-transport.md)
+- [ADR-0002 — Client–server transport](../D2-Architecture/architecture.md#adr-0002--clientserver-transport-json-rpc-over-named-pipes--grpc)
 - [D4 — File-tab worked example](../D4-worked-examples/README.md#example-1--file-tab)
 - [D4 — Debug-tab worked example](../D4-worked-examples/README.md#example-2--debug-tab)
 - [D5 — ViewModel unit tests](../D5-testing/viewmodel-unit-tests.md)

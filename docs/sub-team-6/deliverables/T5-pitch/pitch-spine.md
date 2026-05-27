@@ -210,7 +210,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 - **Versioning via wireVersion (ADR-0002 §A.6).** Semver discipline at the protocol level; consumers refuse incompatible majors.
 
 **Evidence:**
-- `docs/sub-team-6/deliverables/D2-Architecture/client-server-transport.md` — full ADR.
+- `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` — ADR-0002 (§4).
 - Appendix A — wire spec: pipe naming `\\.\pipe\idavie.<session-id>`, length-prefixed framing, method catalogue (`session.hello`, `file.open`, `file.close`, `dataset.getAxes`, `log.subscribe`, `log.emit`, `progress.update`), error model (`-32010`..`-32030`).
 - Cross-link to ADR-0001 — the gateway's *placement* is in ADR-0001; its *wire* is in ADR-0002.
 
@@ -283,7 +283,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 
 **Evidence:**
 - `adrs/0001-mvvm-split.md` — Status proposed, with Alternatives section covering MVP, MVU, MVC, status quo, Reactive MVVM.
-- `D2-Architecture/client-server-transport.md` — ADR-0002, Alternatives covering gRPC-on-Day-1, REST, in-process.
+- `D2-Architecture/architecture.md` — ADR-0002 (§4), Alternatives covering gRPC-on-Day-1, REST, in-process.
 - ADR-0003 owed [EVIDENCE-GAP-2.7a].
 
 **Speaker note:** "we did not write three ADRs because the assignment says three. We wrote three because three reversible decisions exist on our slice. We rejected MVP, MVU, MVC and Reactive MVVM by name with stated reasons in ADR-0001 Alternatives — that section is where the panel will direct most questions."
@@ -829,7 +829,7 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 
 **Evidence:**
 - `adrs/0001-mvvm-split.md` — author named.
-- `D2-Architecture/client-server-transport.md` — author owed [EVIDENCE-GAP-7.3a].
+- `D2-Architecture/architecture.md` — ADR-0002 author owed [EVIDENCE-GAP-7.3a].
 - `mvvm-binding-policy.md` — author owed [EVIDENCE-GAP-7.3b].
 - Pitch speaker assignments per slide owed [EVIDENCE-GAP-7.3c].
 
@@ -1073,7 +1073,7 @@ Phrases to bank-avoid in Q&A. Each has been a known anti-signal in past assessme
 ## Cross Reference
 
 - ADR-0001 — `docs/sub-team-6/adrs/0001-mvvm-split.md`
-- ADR-0002 — `docs/sub-team-6/deliverables/D2-Architecture/client-server-transport.md`
+- ADR-0002 — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` (§4)
 - D1 Requirements — `docs/sub-team-6/requirements.md`
 - D2 Architecture — `docs/sub-team-6/architecture.md`
 - D3 MVVM Binding Policy — `docs/sub-team-6/deliverables/D3-MVVM-binding-policy/mvvm-binding-policy.md`
