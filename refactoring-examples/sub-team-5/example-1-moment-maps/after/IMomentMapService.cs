@@ -1,4 +1,7 @@
-public interface IMomentMapService
+namespace DataFeatures
 {
-    public void GenerateMomentMaps(MomentMapRequest momentMapRequest);
+    public interface IMomentMapService
+    {
+        MomentMapResult GenerateMomentMaps(MomentMapRequest request);
+    }
 }
