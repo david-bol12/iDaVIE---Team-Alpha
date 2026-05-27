@@ -16,7 +16,7 @@ Establish a repeatable, Unity-free unit-test strategy for all ViewModel classes 
 |---|---|
 | All classes under the proposed `ViewModel/` namespace | `View/` layer (Unity Test Framework handles that — [`ui-toolkit.md`](ui-toolkit.md)) |
 | `IFileTabViewModel`, `IDebugTabViewModel`, `ILogStream`, `ILogObserver`, `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IFitsHandle` interface contracts | Unity MonoBehaviours / UI Toolkit wiring |
-| Pure-C# domain logic and Observer wiring | Server-side / JSON-RPC gateway (Sub-team 1) |
+| Pure-C# domain logic and Observer wiring | **Client-side gateway and gateway-proxy adapters** (`IServiceGateway`, `FitsServiceAdapter`, `GatewayLogStreamAdapter`, `LengthPrefixFraming`) — Tier 2 in [`test-strategy.md` §4](test-strategy.md). **Server-side** producers (FITS plug-in, `log.emit` publisher) — owned by Sub-team 1. |
 
 ---
 
@@ -173,11 +173,3 @@ CI (Quality Guild pipeline) will fail the build if either gate is missed on `mai
 | Assignment spec reference | §9.2.4, §6.6 ST, LO6 |
 
 ---
-
-## 10. Definition of Done checklist
-
-- [x] This doc committed to `docs/sub-team-6/deliverables/D5-testing/viewmodel-unit-tests.md`
-- [x] `FileTabSkeleton.csproj` and `DebugTabSkeleton.csproj` exist under `refactoring-examples/sub-team-6/` and build with 0 warnings, 0 errors, zero `UnityEngine` references
-- [x] Worked suites carry 63 passing NUnit tests in total (34 + 29)
-- [ ] Coverage report generated and screenshot committed alongside (or CI badge added) — Quality Guild Day 13 snapshot
-- [ ] Peer-reviewed by at least one other sub-team member

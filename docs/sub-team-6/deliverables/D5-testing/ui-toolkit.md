@@ -16,8 +16,8 @@ Together with `viewmodel-unit-tests.md`, this discharges the two Software Testin
 
 | In scope | Out of scope |
 |---|---|
-| `iDaVIE.Client.View` panels backed by a `UIDocument` | ViewModel internals (covered by `viewmodel-unit-tests.md`) |
-| `FileTabPage`, `DebugTabPage` — one page object per panel with a real AFTER skeleton | Render, Stats, Sources tabs (no AFTER skeleton — out of D4 scope) |
+| `iDaVIE.Desktop.View` panels backed by a `UIDocument` | ViewModel internals (covered by `viewmodel-unit-tests.md`) |
+| `FileTabPage`, `DebugTabPage` — one page object per panel, driving the real `FileTabViewModel` / `DebugTabViewModel` (the concrete classes from each AFTER skeleton) | Render, Stats, Sources tabs (no AFTER skeleton — out of D4 scope) |
 | Bindings between View and ViewModel exercised through page-object methods | Native plug-in I/O; gateway transport |
 | UI Toolkit event-driven interaction via `SendEvent` | Pixel / USS visual-diff testing |
 
@@ -31,12 +31,12 @@ This is a **design-only** specification. We document the pattern and a worked sn
 |---|---|---|
 | **Unity Test Framework** (Play Mode) | bundled with Unity 2021.3 / Unity 6 | Hosts tests that need a live `UIDocument` panel |
 | **NUnit 3** | bundled with UTF | Runner + assertions |
-| **Moq 4** | ≥ 4.20 | Mocks `IFitsService`, `IFileDialogService`, `IVolumeService`, `ILogStream` |
+| **Moq 4** | ≥ 4.20 | Mocks `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `ILogStream` |
 | **Coverlet** | latest | Coverage on the View assembly (tracked, not gated — see §8) |
 
-Tests live in a Play-Mode test assembly `iDaVIE.Client.View.IntegrationTests` that references:
-- `iDaVIE.Client.View` (panels + UXML)
-- `iDaVIE.Client.ViewModel` (real ViewModels — not mocked)
+Tests live in a Play-Mode test assembly `iDaVIE.Desktop.View.IntegrationTests` that references:
+- `iDaVIE.Desktop.View` (panels + UXML)
+- `iDaVIE.Desktop.FileTab` and `iDaVIE.Desktop.DebugTab` (real ViewModels — not mocked)
 - The service interfaces (mocked at the gateway seam)
 
 The composition root is **not** invoked. Each test wires its own ViewModel from mocked services, attaches it to a fresh `UIDocument`, and constructs the page object.
@@ -49,7 +49,7 @@ Five rules, in priority order. Every page object must satisfy all five.
 
 1. **One page object per UXML panel.** Named `{Panel}Page` — `FileTabPage`, `DebugTabPage`. File lives alongside the corresponding View under `…/IntegrationTests/Pages/`.
 2. **Constructed from a root `VisualElement`.** The test owns the `UIDocument` lifecycle and passes the root in; the page does not load UXML itself. This keeps pages reusable across editor and runtime test rigs.
-3. **Public surface is intent-only.** Methods read like user actions (`PickImage("/data/cube.fits")`, `ClickLoad()`); properties read like user-visible state (`ValidationText`, `IsLoadButtonEnabled`). No `VisualElement`, no `Q<T>` result, no UXML node ever leaks out. **ISP target ≤ 7 public members per page** — mirrors §7.1 and the interface-size audit in each worked example's [ck-metrics](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md).
+3. **Public surface is intent-only.** Methods read like user actions (`ClickBrowseImage()`, `ClickLoad()`); properties read like user-visible state (`ValidationText`, `IsLoadButtonEnabled`). No `VisualElement`, no `Q<T>` result, no UXML node ever leaks out. **ISP target ≤ 7 public members per page** — mirrors §7.1 and the interface-size audit in each worked example's [ck-metrics](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md).
 4. **Selector strings exist nowhere else.** Every `root.Q<Button>("load-cube-btn")` is encapsulated in its page. UXML `name` attributes are treated as a stability contract owned by the View team; renaming one is a breaking change visible in exactly one file.
 5. **Event simulation uses UI Toolkit event types.** `NavigationSubmitEvent` for buttons, `ChangeEvent<T>` for text fields and dropdowns, `PointerDownEvent` / `PointerUpEvent` for list selection — dispatched via `element.SendEvent(evt)`. Driving at the `InputSystem` layer is the wrong abstraction for this test layer and is forbidden.
 
@@ -59,7 +59,7 @@ Five rules, in priority order. Every page object must satisfy all five.
 
 The word "required" in §6.6 ST is discharged by the following minimum list. Each test follows the same shape: **construct page → drive page → assert page state**. The ViewModel is real; only services are mocked.
 
-### 5.1 File tab — `FileTabPage` + mocked `IFitsService` / `IFileDialogService` / `IVolumeService`
+### 5.1 File tab — `FileTabPage` + mocked `IFitsService` / `IFileDialogService` / `IVolumeService` / `IMemoryProbe`
 
 | Test | What it proves |
 |---|---|
@@ -82,7 +82,7 @@ The word "required" in §6.6 ST is discharged by the following minimum list. Eac
 
 ## 6. Worked snippet — `FileTabPage` + one test
 
-Illustrative only — pattern, not production code. A copy lives under `refactoring-examples/sub-team-6/file-tab/skeleton/test/`.
+Illustrative only — pattern, not production code. The integration-test rig is intentionally not checked in (design-only per §2); when stood up it will live alongside the existing unit tests at `refactoring-examples/sub-team-6/file-tab/tests/`.
 
 ```csharp
 // Pages/FileTabPage.cs — selector strings live ONLY here.
@@ -91,17 +91,14 @@ public sealed class FileTabPage
     private readonly VisualElement _root;
     public FileTabPage(VisualElement root) => _root = root;
 
-    public string?  ImagePathText      => _root.Q<Label>("image-path-label").text;
-    public string?  ValidationText     => _root.Q<Label>("validation-label").text;
+    public string?  ImagePathText       => _root.Q<Label>("image-path-label").text;
+    public string?  HeaderText          => _root.Q<Label>("header-text-label").text;
+    public string?  ValidationText      => _root.Q<Label>("validation-label").text;
     public bool     IsLoadButtonEnabled => _root.Q<Button>("load-cube-btn").enabledSelf;
 
-    public void PickImage(string path)
-    {
-        // The View binds a TextField named "image-path-input" to the dialog mock's return.
-        var field = _root.Q<TextField>("image-path-input");
-        field.value = path;
-        field.SendEvent(ChangeEvent<string>.GetPooled(string.Empty, path));
-    }
+    public void ClickBrowseImage()
+        => _root.Q<Button>("browse-image-btn")
+                .SendEvent(NavigationSubmitEvent.GetPooled());
 
     public void ClickLoad()
         => _root.Q<Button>("load-cube-btn")
@@ -116,25 +113,31 @@ public IEnumerator BrowseImage_HappyPath_ShowsPathAndHeader()
 {
     var fits = new Mock<IFitsService>();
     fits.Setup(s => s.OpenImageAsync("/data/cube.fits"))
-        .ReturnsAsync(new FitsFileInfo { /* … 3-axis cube … */ });
+        .ReturnsAsync(new FitsFileInfo
+        {
+            /* … 3-axis cube … */
+            HeaderText = "NAXIS  = 3\nNAXIS1 = 256\nNAXIS2 = 256\nNAXIS3 = 128\n",
+        });
 
     var dialog = new Mock<IFileDialogService>();
     dialog.Setup(d => d.PickFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>()))
           .ReturnsAsync("/data/cube.fits");
 
-    var vm   = new FileTabViewModel(fits.Object, dialog.Object, Mock.Of<IVolumeService>());
+    var vm   = new FileTabViewModel(fits.Object, dialog.Object,
+                                    Mock.Of<IVolumeService>(), Mock.Of<IMemoryProbe>());
     var root = BuildPanel(vm);              // helper: loads UXML + binds vm
     var page = new FileTabPage(root);
 
-    page.ClickBrowseImage();
+    page.ClickBrowseImage();                // invokes BrowseImageCommand → dialog mock → fits mock
     yield return null;                      // one frame for the binding to flush
 
-    Assert.That(page.ImagePathText, Is.EqualTo("/data/cube.fits"));
+    Assert.That(page.ImagePathText,       Is.EqualTo("/data/cube.fits"));
+    Assert.That(page.HeaderText,          Does.Contain("NAXIS"));
     Assert.That(page.IsLoadButtonEnabled, Is.True);
 }
 ```
 
-Total surface area of `FileTabPage` here: 3 properties + 2 methods = **5 members**, well inside the ISP ≤ 7 budget.
+Total surface area of `FileTabPage` here: 4 properties + 2 methods = **6 members**, within the ISP ≤ 7 budget.
 
 ---
 
@@ -156,8 +159,8 @@ For VM-driven async paths, prefer awaiting the ViewModel's notification surface 
 
 | Assembly | Branch / line target | Gated in CI? |
 |---|---|---|
-| `iDaVIE.Client.ViewModel` | ≥ 70 % | yes (see `viewmodel-unit-tests.md` §7) |
-| `iDaVIE.Client.View` | tracked | **no** |
+| `iDaVIE.Desktop.ViewModel` (`iDaVIE.Desktop.FileTab` + `iDaVIE.Desktop.DebugTab`) | ≥ 70 % | yes (see `viewmodel-unit-tests.md` §7) |
+| `iDaVIE.Desktop.View` | tracked | **no** |
 
 View-layer coverage is reported but not gated. Justification: UI Toolkit panels are configuration-heavy and their behaviour is exercised by the ViewModel tests in transitive form; a strict branch target on `View` would either inflate to noise (binding boilerplate) or push us into testing UI Toolkit itself.
 
