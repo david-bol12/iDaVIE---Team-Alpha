@@ -61,31 +61,27 @@ Format: date, what was completed, what's in progress, any blockers.
 - [ ] Sub-team review (S2-D10)
 - [ ] Finalise `docs/design-document.md` (S2-D11)
 
-### ⏳ Sprint 2 — Refactoring Example 1 (VolumeDataSetRenderer Split)
-> **Sequencing note:** after/ code is blocked on design document sections 2–4 (S2-D03 to S2-D05).
-> Architecture overview must be agreed before class responsibilities and method signatures are finalised.
-- [x] Extract and annotate `before/` code (S2-E1-01) — `refactoring-examples/team3/example1-VolumeDataSetRenderer/before/VolumeDataSetRenderer.cs` — 2026-05-25
-- [ ] Draft `after/VolumeRenderCoordinator.cs` (S2-E1-02) — **blocked on S2-D03**
-- [x] Draft `after/VolumeMaterialBinder.cs` (S2-E1-03) — 2026-05-26
-- [x] Draft `after/VolumeTextureManager.cs` (S2-E1-04) — `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeTextureManager.cs`
-- [x] Draft `after/VolumeCameraDriver.cs` (S2-E1-05) — 2026-05-27
-- [x] Draft `after/FoveatedSamplingPolicy.cs` (S2-E1-06) — 2026-05-26
-- [x] `IRenderPipeline.cs` and `NullRenderPipeline.cs` stubs drafted — needs refinement pass (S2-E1-07)
-- [ ] Draft `UrpRenderPipeline.cs` and `HdrpRenderPipeline.cs` stubs (S2-E1-08) — **blocked on S2-D04**
-- [ ] Compute projected CK metrics for `after/` classes (S2-E1-09) — blocked on S2-E1-02 only; all four extracted classes have inline CK projections
-- [ ] Write `example1-VolumeDataSetRenderer/README.md` with CK delta table (S2-E1-10) — blocked on S2-E1-09
-- [ ] SOLID/GRASP annotation pass (S2-E1-11) — blocked on S2-E1-02, S2-E1-04 to S2-E1-06
+### ✅ Sprint 2 — Refactoring Example 1 (VolumeDataSetRenderer Split)
+- [x] Extract and annotate `before/` code (S2-E1-01) — 2026-05-25
+- [x] Draft `after/VolumeRenderCoordinator.cs` (S2-E1-02) — confirmed in after/ — 2026-05-27
+- [x] Draft `after/VolumeMaterialBinder.cs` (S2-E1-03) — WMC=16, CBO≤11, LCOM=0.05 — 2026-05-26
+- [x] Draft `after/VolumeTextureManager.cs` (S2-E1-04) — WMC=20, CBO≤8, LCOM=0.05 — 2026-05-26
+- [x] Draft `after/VolumeCameraDriver.cs` (S2-E1-05) — WMC≤9, CBO≤4, LCOM=0.0 — 2026-05-27
+- [x] Draft `after/FoveatedSamplingPolicy.cs` (S2-E1-06) — WMC=7, CBO=6, LCOM=0.0 — 2026-05-26
+- [x] `IRenderPipeline.cs` and `NullRenderPipeline.cs` stubs (S2-E1-07) — in `stubs/`
+- [x] `UrpRenderPipeline.cs` and `HdrpRenderPipeline.cs` stubs (S2-E1-08) — in `stubs/`
+- [x] Compute projected CK metrics for `after/` classes (S2-E1-09) — inline in each file header
+- [x] Write `example1-VolumeDataSetRenderer/README.md` with CK delta table (S2-E1-10) — 2026-05-27
+- [x] SOLID/GRASP annotation pass (S2-E1-11) — inline [FIXED]/[CBO]/[WMC]/[LCOM] markers in all after/ files
 
-### ⏳ Sprint 2 — Refactoring Example 2 (Mask Mode Strategy Pattern)
-> **Sequencing note:** after/ code is blocked on design document section 5 (S2-D05).
-> IMaskMode interface shape must be finalised in the design doc before implementations are fleshed out.
-- [ ] Extract and annotate `before/` code (S2-E2-01) — **unblocked (S2-D05 complete)**
-- [x] `IMaskMode` interface finalised — `refactoring-examples/team3/example2-MaskModes/after/IMaskMode.cs` (S2-E2-02) — **2026-05-27** — signatures locked to §5.4: `Apply(Material, Texture3D)` + `string ShaderKeyword { get; }`; includes `DisabledMaskMode` (Null Object for MaskMode.Disabled=0) and `NullMaskMode` test double
-- [x] `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode` stubs exist — need fleshing out (S2-E2-03) — **unblocked (S2-D05 complete)**
-- [x] `NullMaskMode` test double drafted — 2026-05-24 (S2-E2-04)
-- [ ] Compute projected CK metrics (S2-E2-05) — blocked on S2-E2-02 to S2-E2-03
-- [ ] Write `example2-MaskModes/README.md` with CK delta table (S2-E2-06) — blocked on S2-E2-05
-- [ ] SOLID/GRASP annotation pass (S2-E2-07) — blocked on S2-E2-02 to S2-E2-03
+### ✅ Sprint 2 — Refactoring Example 2 (Mask Mode Strategy Pattern)
+- [x] Extract and annotate `before/` code (S2-E2-01) — `before/VolumeDataSetRendererMaskMode.cs` confirmed
+- [x] `IMaskMode` interface finalised (S2-E2-02) — `after/IMaskMode.cs` with `DisabledMaskMode` + `NullMaskMode`
+- [x] `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode` finalised (S2-E2-03) — each WMC=2, CBO=1, LCOM=0.0
+- [x] `NullMaskMode` test double (S2-E2-04) — in `after/IMaskMode.cs`
+- [x] Compute projected CK metrics (S2-E2-05) — WMC=2, CBO=1, RFC=3, LCOM=0.0 per class
+- [x] Write `example2-MaskModes/README.md` with CK delta table (S2-E2-06) — 2026-05-27
+- [x] SOLID/GRASP annotation pass (S2-E2-07) — inline in each after/ file
 
 ### ⏳ Sprint 2 — Diagrams
 - [x] `diagrams/architecture.puml` (S2-G01) — written 2026-05-25: 5-layer component diagram (Unity/SRP, IRenderPipeline adapters, IMaskMode strategies, cross-team contracts, rendering core, test doubles)
@@ -104,7 +100,7 @@ Format: date, what was completed, what's in progress, any blockers.
 ### ⏳ Sprint 2 — SOLID/GRASP Audit
 - [x] Structured violation audit of current VDSR (S2-A01) — 17-violation table (V-01→V-17, 6 Critical / 8 High / 1 Medium) written to `docs/design-document.md` §7.1 — 2026-05-25; source: `docs/Codebase Exploration/SOLID_GRASP_Violations.md`
 - [x] Map each fix to design decision in target architecture (S2-A02) — V-01→V-17 mapped to DD-01/DD-02/DD-03/DD-04 in `docs/design-document.md` §7.2 — 2026-05-25
-- [ ] Verify `after/` code introduces no new violations (S2-A03) — BLOCKED: after/ classes not yet finalised
+- [x] Verify `after/` code introduces no new violations (S2-A03) — 2026-05-27: all after/ files reviewed; DIT=0 for all extracted classes, no circular dependencies, all DIP maintained through interfaces
 
 ### ⏳ To Do — Sprint 3
 - [ ] Test strategy document (`docs/test-strategy.md`)
@@ -196,6 +192,16 @@ Format: date, what was completed, what's in progress, any blockers.
 
 ### 2026-05-25 (session 6)
 - [S2-D03] `docs/design-document.md` §4.2 Target Architecture (To-Be) written — five-class breakdown table, per-class bullet justifications, IRenderPipeline abstraction, IMaskMode Strategy, cross-team contracts, diagram references
+
+### 2026-05-27 (session 6)
+- Confirmed both refactoring examples complete in `refactoring-examples/team3/`
+- [S2-E1-09] CK projections confirmed: VolumeMaterialBinder WMC=16/CBO≤11, VolumeTextureManager WMC=20/CBO≤8, FoveatedSamplingPolicy WMC=7/CBO=6, VolumeCameraDriver WMC≤9/CBO≤4 — all within brief targets
+- [S2-E1-10] `example1-VolumeDataSetRenderer/README.md` — full rewrite with CK delta table, 9-responsibility breakdown, SOLID/GRASP mapping, test examples, invariant preservation table
+- [S2-E1-11] SOLID/GRASP annotation pass complete — inline [FIXED]/[CBO]/[WMC]/[LCOM] markers in all after/ files
+- [S2-E2-05] CK projections confirmed: all IMaskMode concrete classes WMC=2, CBO=1, RFC=3, LCOM=0.0
+- [S2-E2-06] `example2-MaskModes/README.md` — full rewrite with CK delta table, before/after code, FUT-01 extension demo, SOLID/GRASP analysis, test examples
+- [S2-E2-07] SOLID/GRASP annotation pass complete — inline in each after/ file
+- [S2-A03] After/ code verified: no new violations; DIT=0 all classes, no circular deps, DIP maintained
 
 ### 2026-05-25 (session 5)
 - [S2-G01] `diagrams/architecture.puml` written — 5-layer component diagram: Unity/SRP external layer, IRenderPipeline abstraction + URP/HDRP adapters, IMaskMode strategies, cross-team contracts (IGazeProvider / IRawVolumeData), rendering core (VolumeRenderCoordinator + 4 classes), test doubles (NullRenderPipeline / NullMaskMode / StubGazeProvider). Legend, DIP callout, CK targets.
