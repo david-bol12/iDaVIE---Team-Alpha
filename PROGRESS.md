@@ -65,7 +65,7 @@ Format: date, what was completed, what's in progress, any blockers.
 > **Sequencing note:** after/ code is blocked on design document sections 2–4 (S2-D03 to S2-D05).
 > Architecture overview must be agreed before class responsibilities and method signatures are finalised.
 - [x] Extract and annotate `before/` code (S2-E1-01) — `refactoring-examples/team3/example1-VolumeDataSetRenderer/before/VolumeDataSetRenderer.cs` — 2026-05-25
-- [ ] Draft `after/VolumeRenderCoordinator.cs` (S2-E1-02) — **blocked on S2-D03**
+- [x] Draft `after/VolumeRenderCoordinator.cs` (S2-E1-02) — 2026-05-27
 - [x] Draft `after/VolumeMaterialBinder.cs` (S2-E1-03) — 2026-05-26
 - [x] Draft `after/VolumeTextureManager.cs` (S2-E1-04) — `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeTextureManager.cs`
 - [x] Draft `after/VolumeCameraDriver.cs` (S2-E1-05) — 2026-05-27
