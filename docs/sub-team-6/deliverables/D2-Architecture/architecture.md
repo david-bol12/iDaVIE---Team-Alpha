@@ -378,6 +378,21 @@ classDiagram
 | `IPanel` contract for all view panels | **OCP / ISP** | New panels added without modifying `CanvassDesktopShell`; callers depend only on the lifecycle interface. |
 | `SubsetBoundsViewModel` extracted from `FileTabViewModel` | **SRP** | Validation logic is a separate, independently testable concern. |
 
+### 5.4 GRASP principles applied
+
+Required by §4.2 constraint 1 ("No SOLID/GRASP violations without a documented trade-off").
+
+| Assignment decision | GRASP principle | Justification |
+|---|---|---|
+| `SubsetBoundsViewModel` owns subset validation | **Information Expert** | The class holds the bound data, so it is the natural home for the validation rule. Placing validation in `FileTabViewModel` or the view would spread knowledge of the invariant across layers. |
+| `CanvassDesktopShell` creates all adapters, ViewModels, and views | **Creator** | The shell has the initialising data for every component and is responsible for their lifetime. No other class has sufficient context to act as creator. |
+| `FileTabViewModel` / `DebugTabViewModel` handle tab commands | **Controller** | Commands enter through the ViewModel, not the view. The view raises an event; the ViewModel decides what to do. This keeps business logic out of UI Toolkit code. |
+| ViewModel assembly carries no `UnityEngine` reference | **Low Coupling** | Adapters absorb all Unity coupling. The ViewModel layer can be instantiated, tested, and reasoned about without a Unity process. CBO of each ViewModel class is projected at ≤ 9. |
+| Each ViewModel scoped to one tab | **High Cohesion** | A class responsible for one tab has one axis of change. The current `CanvassDesktopShell` scores LCOM = 0.955 because it conflates eight concerns; the split targets LCOM ≤ 0.20 per class. |
+| `IPanel`, `IServiceGateway`, `IFitsService` etc. decouple layers | **Indirection** | Interfaces inserted between layers mean no component has a direct compile-time dependency on another component's implementation. Enables independent deployment of test doubles. |
+| ACL shields domain from Unity/SteamVR API surface | **Protected Variations** | Unity 6 changed its UI API; future versions will change more. The ACL is the single variation point — only adapter classes change when Unity changes, not ViewModels. |
+| `IPanel` enables Canvas → UI Toolkit substitution | **Polymorphism** | During migration, a Canvas-based panel and a UI Toolkit panel are interchangeable from `CanvassDesktopShell`'s perspective. No conditional logic in the shell selects the concrete type. |
+
 ---
 
 ## 6. Interface Contracts
