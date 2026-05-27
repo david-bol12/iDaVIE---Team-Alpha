@@ -64,24 +64,7 @@ This diagram zooms into the **Unity Client** container (defined at C4 L2 by Sub-
 C4Component
     title C4 Level 3 — Desktop Client Shell (Unity Client container)
 
-    Container_Boundary(acl, "Anti-Corruption Layer (ACL)") {
-        Component(fileAdapter, "FitsServiceAdapter", "C# Adapter", "Wraps CFITSIO P/Invoke calls; exposes IFitsService")
-        Component(volumeAdapter, "VolumeServiceAdapter", "C# Adapter", "Wraps VolumeCommandController; exposes IVolumeService")
-        Component(logAdapter, "UnityLogStreamAdapter", "C# Adapter", "Only class importing UnityEngine.Debug; exposes ILogStream")
-        Component(dialogAdapter, "FileDialogAdapter", "C# Adapter", "Wraps StandaloneFileBrowser; exposes IFileDialogService")
-        Component(configAdapter, "ConfigServiceAdapter", "C# Adapter", "Wraps PlayerPrefs / Config; exposes IConfigService")
-    }
-
-    Container_Boundary(vm, "ViewModel Layer (pure C#, no UnityEngine ref)") {
-        Component(fileVM, "FileTabViewModel", "C# class", "File loading commands; subset bounds validation")
-        Component(debugVM, "DebugTabViewModel", "C# class", "Subscribes to ILogStream; filters and exposes log entries")
-        Component(renderVM, "RenderingTabViewModel", "C# class", "Colormap, thresholds, render mode state")
-        Component(statsVM, "StatsTabViewModel", "C# class", "Statistics display binding")
-        Component(sourcesVM, "SourcesTabViewModel", "C# class", "Source catalogue display binding")
-        Component(gateway, "JsonRpcServiceGateway", "C# Adapter", "Implements IServiceGateway; sends JSON-RPC over named pipe")
-    }
-
-    Container_Boundary(view, "View Layer (Unity 6 UI Toolkit, MonoBehaviour allowed)") {
+    Container_Boundary(view, "View Layer — iDaVIE.Client.View (Unity 6 UI Toolkit)") {
         Component(fileView, "FileTabView", "UI Toolkit Document", "Binds to IFileTabViewModel")
         Component(debugView, "DebugTabView", "UI Toolkit Document", "Binds to IDebugTabViewModel")
         Component(renderView, "RenderingTabView", "UI Toolkit Document", "Binds to IRenderingTabViewModel")
@@ -89,10 +72,27 @@ C4Component
         Component(sourcesView, "SourcesTabView", "UI Toolkit Document", "Binds to ISourcesTabViewModel")
     }
 
-    Component(root, "CanvassDesktopShell", "C# MonoBehaviour", "Composition root. Instantiates and wires all adapters, VMs, and views. No business logic.")
+    Container_Boundary(vm, "ViewModel Layer — iDaVIE.Client.ViewModel (pure C#, no UnityEngine)") {
+        Component(fileVM, "FileTabViewModel", "C# class", "File loading commands; subset bounds validation")
+        Component(debugVM, "DebugTabViewModel", "C# class", "Subscribes to ILogStream; filters and exposes log entries")
+        Component(renderVM, "RenderingTabViewModel", "C# class", "Colormap, thresholds, render mode state")
+        Component(statsVM, "StatsTabViewModel", "C# class", "Statistics display binding")
+        Component(sourcesVM, "SourcesTabViewModel", "C# class", "Source catalogue display binding")
+    }
 
-    System_Ext(server, "iDaVIE Server", "Hosts data, domain logic, plug-in execution (Sub-team 1)")
-    System_Ext(native, "Native Plugins", "CFITSIO, Starlink AST, data_analysis_tool.dll")
+    Container_Boundary(gw, "Gateway Layer — iDaVIE.Client.Gateway (Anti-Corruption Layer)") {
+        Component(gateway, "JsonRpcServiceGateway", "C# transport", "Implements IServiceGateway; JSON-RPC 2.0 over named pipe per ADR-0002")
+        Component(fileAdapter, "FitsServiceAdapter", "Gateway proxy", "Adapts IServiceGateway to IFitsService; dispatches file.open / dataset.getAxes / dataset.getHeader / file.close")
+        Component(logAdapter, "GatewayLogStreamAdapter", "Gateway proxy", "Subscribes to IServiceGateway.OnNotification; republishes log.emit as ILogStream")
+        Component(volumeAdapter, "VolumeServiceAdapter", "Unity adapter", "Wraps VolumeCommandController; exposes IVolumeService")
+        Component(dialogAdapter, "FileDialogAdapter", "Unity adapter", "Wraps StandaloneFileBrowser; exposes IFileDialogService")
+        Component(configAdapter, "ConfigServiceAdapter", "Unity adapter", "Wraps PlayerPrefs / Config; exposes IConfigService")
+    }
+
+    Component(root, "CanvassDesktopShell", "C# MonoBehaviour", "Composition root. Instantiates and wires the gateway, adapters, VMs, and views. No business logic.")
+
+    System_Ext(server, "iDaVIE Server", "Hosts domain logic, plug-in execution, native data I/O (Sub-team 1 kernel)")
+    System_Ext(native, "Native Plugins", "CFITSIO, Starlink AST, data_analysis_tool.dll — loaded server-side, not client-side")
     System_Ext(unity, "Unity / SteamVR", "UnityEngine, Valve.VR APIs")
 
     Rel(root, fileVM, "creates + injects")
@@ -102,6 +102,7 @@ C4Component
     Rel(root, sourcesVM, "creates + injects")
     Rel(root, fileView, "creates + binds VM")
     Rel(root, debugView, "creates + binds VM")
+    Rel(root, gateway, "creates + connects")
     Rel(fileView, fileVM, "one-way data + commands", "UI Toolkit binding")
     Rel(debugView, debugVM, "one-way data + commands", "UI Toolkit binding")
     Rel(renderView, renderVM, "one-way data + commands", "UI Toolkit binding")
@@ -110,14 +111,16 @@ C4Component
     Rel(fileVM, dialogAdapter, "calls IFileDialogService")
     Rel(debugVM, logAdapter, "observes ILogStream")
     Rel(renderVM, configAdapter, "reads IConfigService")
-    Rel(fileVM, gateway, "calls IServiceGateway")
-    Rel(fileAdapter, native, "P/Invoke")
+    Rel(fileAdapter, gateway, "dispatches file.* / dataset.* (ADR-0002)")
+    Rel(logAdapter, gateway, "subscribes to log.emit notifications")
     Rel(volumeAdapter, unity, "Unity API calls")
-    Rel(logAdapter, unity, "UnityEngine.Debug")
+    Rel(dialogAdapter, unity, "StandaloneFileBrowser")
+    Rel(configAdapter, unity, "PlayerPrefs")
     Rel(gateway, server, "JSON-RPC over named pipe (ADR-0002)")
+    Rel(server, native, "loads server-side plug-ins")
 ```
 
-**Layer rule (enforced):** arrows flow in one direction only — View → ViewModel → ACL adapters → external systems. No ViewModel imports `UnityEngine` or `Valve.VR`. No adapter is imported by another adapter.
+**Layer rule (enforced):** arrows flow in one direction only — View → ViewModel → Gateway Layer → external systems (server via `IServiceGateway`, or the Unity SDK directly for the Unity adapters). The Gateway container houses two kinds of class: the **transport** (`JsonRpcServiceGateway`) is the only thing that speaks to the server; **service adapters** implement domain interfaces and split into **gateway proxies** (no `UnityEngine` reference) and **Unity adapters** (the only classes permitted to touch the Unity SDK). No ViewModel imports `UnityEngine` or `Valve.VR`. No adapter holds a direct reference to a sibling adapter — interfaces only.
 
 ---
 
@@ -129,11 +132,15 @@ C4Component
 
 **Context.** `CanvassDesktop` is a 1,899-line `MonoBehaviour` with eight distinct concerns and zero testable methods. The ≥ 70% branch/line coverage target (NFR-TST-1) is unreachable without removing Unity lifecycle coupling from business logic. The Unity 2021.3 → Unity 6 migration further requires separating view code (which moves from uGUI Canvas to UI Toolkit) from ViewModel code (which must not move at all).
 
-**Decision.** Adopt a three-tier MVVM split:
+**Decision.** Adopt a three-tier MVVM split, one C# assembly per tier (matches D3 §2.1):
 
-1. **View** — Unity 6 UI Toolkit `VisualElement` documents. Holds zero business logic. Communicates with the ViewModel exclusively via data binding and `ICommand`. May reference `UnityEngine`.
-2. **ViewModel** — Pure C# class. No `UnityEngine` reference. Exposes observable properties and `ICommand` implementations. Calls domain services only through interfaces.
-3. **Service Gateway / Adapters** — Implements the service interfaces (`IFitsService`, `IVolumeService`, etc.). Each adapter is the only class that may touch the corresponding external API (native plugin, Unity scene, log, file dialog).
+1. **View** (`iDaVIE.Client.View`) — Unity 6 UI Toolkit `VisualElement` documents. Holds zero business logic. Communicates with the ViewModel exclusively via data binding and `ICommand`. May reference `UnityEngine`.
+2. **ViewModel** (`iDaVIE.Client.ViewModel`) — Pure C# classes. No `UnityEngine` reference. Expose observable properties and `ICommand` implementations. Call domain services only through interfaces.
+3. **Gateway Layer** (`iDaVIE.Client.Gateway`) — The Anti-Corruption Layer. Houses two kinds of class:
+    - **Gateway transport** (`JsonRpcServiceGateway`): the single transport-agnostic seam between the client and the server kernel. Speaks JSON-RPC 2.0 over named pipes per ADR-0002. Pure C#.
+    - **Service adapters**: implement domain interfaces (`IFitsService`, `IVolumeService`, etc.) and split by where they route to:
+        - **Gateway proxies** (`FitsServiceAdapter`, `GatewayLogStreamAdapter`) — adapt `IServiceGateway` to a domain interface. Pure C#, own the wire shape, compile and unit-test without Unity.
+        - **Unity adapters** (`VolumeServiceAdapter`, `FileDialogAdapter`, `ConfigServiceAdapter`) — cross into the Unity SDK / `PlayerPrefs` / native UI. They quarantine Unity coupling at the bottom of the dependency graph.
 
 **Consequences.** All ViewModel and domain code is testable with plain NUnit. The Unity 5 → 6 view migration is contained to the View layer. Full binding policy documented in [D3 MVVM Binding Policy](../D3-MVVM-binding-policy/mvvm-binding-policy.md).
 
@@ -215,6 +222,7 @@ Rationale: identical to LSP-style framing minus the `Content-Length:` header —
 | `file.close` | C→S | Release a dataset. | EX1-File-Tab |
 | `file.listRecent` | C→S | Recent-files list. | EX1-File-Tab |
 | `dataset.getAxes` | C→S | FITS axis metadata for the parameter panel. | EX1-File-Tab |
+| `dataset.getHeader` | C→S | FITS header text for a given HDU index. Replaces `CanvassDesktop.ChangeHduSelection`'s file-reopen-per-switch defect. | EX1-File-Tab |
 | `log.subscribe` | C→S | Begin receiving `log.emit` notifications. | EX2-Debug-Tab |
 | `log.unsubscribe` | C→S | Stop the log stream. | EX2-Debug-Tab |
 | `log.emit` | S→C (notif) | Structured log record. | EX2-Debug-Tab |
@@ -238,6 +246,14 @@ Method names are namespaced with `.`; namespaces map 1:1 to ViewModel slices.
 
 **Versioning.** `session.hello` returns `{ "serverVersion": "1.0.0", "wireVersion": 1 }`. `wireVersion` is bumped on any breaking change to framing, error codes, or method semantics. Client refuses to proceed if `wireVersion` is higher than it understands. Adding new methods or new optional `params` fields is not breaking.
 
+**Real consumers (audit close, F9 / F10).** Both worked examples exercise this contract end-to-end under CI:
+
+- **File tab** dispatches `file.open` → `dataset.getAxes` → `dataset.getHeader` → `file.close` via `FitsServiceAdapter` (request/response). Wire-shape assertions live in `refactoring-examples/sub-team-6/file-tab/adapters/tests/FitsServiceAdapterTests.cs`.
+- **Debug tab** consumes `log.emit` notifications via `GatewayLogStreamAdapter` (server-pushed stream). Wire-shape assertions live in `refactoring-examples/sub-team-6/debug-tab/adapters/tests/GatewayLogStreamAdapterTests.cs`.
+- Pure framing and gateway-double behaviour are pinned in `refactoring-examples/sub-team-6/contracts/tests/` against ADR-0002 §"Framing" and §"Message shape".
+
+All three test projects build and run without Unity (`dotnet test`); current count is 82 / 82 green in &lt; 200 ms total.
+
 ---
 
 ### ADR-0003 — Anti-Corruption Layer around Unity 6 and SteamVR APIs
@@ -248,20 +264,20 @@ Method names are namespaced with `.`; namespaces map 1:1 to ViewModel slices.
 
 **Decision.** Introduce an **Anti-Corruption Layer (ACL)** between the ViewModel layer and all Unity/SteamVR APIs. Concretely:
 
-- Every interaction with `UnityEngine` (scene graph, coroutines, `Debug.Log`, `PlayerPrefs`, asset loading) is encapsulated in a dedicated adapter class that implements a domain interface.
+- Every interaction with `UnityEngine` (scene graph, coroutines, `PlayerPrefs`, asset loading, native UI) is encapsulated in a dedicated adapter class that implements a domain interface.
 - The ViewModel layer depends only on those interfaces. It holds no `using UnityEngine` directive.
-- The ACL is enforced structurally: ViewModels live in a separate C# assembly (`iDaVIE.Client.ViewModels`) that has no Unity assembly reference. Adapters live in `iDaVIE.Client.Adapters` which may reference Unity.
+- The ACL is enforced structurally per D3 §2.1: ViewModels live in `iDaVIE.Client.ViewModel` which has no Unity assembly reference; adapters and the transport live in `iDaVIE.Client.Gateway` which references Unity only where individual adapters need it.
 - NDepend / DV8 layer-violation rules are added to CI to reject any PR that imports `UnityEngine` from the ViewModel assembly.
 
-**ACL boundary summary:**
+**ACL boundary summary:** the original FITS and log adapters wrapped `UnityEngine` / native code directly. After the gateway rewire (audit close F9 / F10) they are gateway proxies — they own a JSON-RPC wire shape, not a native API surface. The Volume / Dialog / Config adapters remain Unity-side because those resources are genuinely client-local.
 
-| Interface | Adapter | Quarantined API |
-|---|---|---|
-| `IFitsService` | `FitsServiceAdapter` | CFITSIO P/Invoke (9 calls) |
-| `IVolumeService` | `VolumeServiceAdapter` | `VolumeCommandController`, `VolumeDataSetRenderer` |
-| `ILogStream` | `UnityLogStreamAdapter` | `UnityEngine.Debug` |
-| `IFileDialogService` | `FileDialogAdapter` | `StandaloneFileBrowser` |
-| `IConfigService` | `ConfigServiceAdapter` | `PlayerPrefs` / static `Config` |
+| Interface | Adapter | Quarantined API | Kind |
+|---|---|---|---|
+| `IFitsService` | `FitsServiceAdapter` | `IServiceGateway` (dispatches `file.open`, `dataset.getAxes`, `dataset.getHeader`, `file.close`) | Gateway proxy — no Unity |
+| `ILogStream` | `GatewayLogStreamAdapter` | `IServiceGateway.OnNotification` (filters `log.emit`) | Gateway proxy — no Unity |
+| `IVolumeService` | `VolumeServiceAdapter` | `VolumeCommandController`, `VolumeDataSetRenderer` | Unity adapter |
+| `IFileDialogService` | `FileDialogAdapter` | `StandaloneFileBrowser` | Unity adapter |
+| `IConfigService` | `ConfigServiceAdapter` | `PlayerPrefs` / static `Config` | Unity adapter |
 
 **Consequences.** Every class in the ViewModel assembly is instantiable and testable without a Unity process. DIT of adapter classes rises to 4 (inheriting from `MonoBehaviour` where coroutines are required); this is documented and acceptable under the adapter threshold (WMC ≤ 40, CBO ≤ 25). Circular dependencies between the VM and adapter assemblies are forbidden by the layer rule.
 
@@ -404,7 +420,7 @@ The following interfaces define every public boundary within the client shell. F
 | `IServiceGateway` | ViewModel → Server | Sends typed JSON-RPC requests to the server kernel; returns strongly-typed results. Transport-agnostic. |
 | `IFileTabViewModel` | View → ViewModel | Exposes file-loading commands and observable properties to `FileTabView`. |
 | `IDebugTabViewModel` | View → ViewModel | Exposes log-entry list and filter state to `DebugTabView`. |
-| `ILogStream` | Adapter → ViewModel | Observable log event stream; `Subscribe`/`Unsubscribe`/`Publish(LogEntry)`. |
+| `ILogStream` | Adapter → ViewModel | Observable log event stream; `Subscribe(ILogObserver)` / `Unsubscribe(ILogObserver)` / `Publish(level, message)` / `Publish(level, message, timestamp)`. |
 | `ILogObserver` | ViewModel → ViewModel | Implemented by `DebugTabViewModel`; called by `ILogStream` on each event. |
 | `IPanel` | Composition root → View | Composable panel lifecycle: `Activate`, `Deactivate`, `BindViewModel`. |
 | `IFitsService` | ViewModel → Adapter | `OpenImageAsync`, `OpenMaskAsync`, `GetHeaderTextAsync`, returning immutable DTOs. |
@@ -448,6 +464,6 @@ Sub-team 7 (Persistence) must save and restore the desktop shell state across se
 |---|---|
 | 1 — No SOLID/GRASP violations without documented trade-off | SOLID audit in §5.3 above; GRASP Indirection and Protected Variations applied via `IPanel` and service interfaces. One accepted trade-off: `VolumeServiceAdapter` has DIT = 4 (needs `MonoBehaviour` for coroutines); documented in ADR-0003. |
 | 2 — Zero circular dependencies between top-level components | ViewModel assembly has no reference to Adapter assembly; Adapter assembly has no reference to ViewModel assembly; both reference a shared `Contracts` assembly containing only interfaces and DTOs. Verified by NDepend cycle rule (see CI). |
-| 3 — Domain code has no transitive UnityEngine / SteamVR dep | Enforced by assembly structure (ADR-0003) + CI layer-violation check. `iDaVIE.Client.ViewModels.csproj` lists no Unity assembly reference. |
+| 3 — Domain code has no transitive UnityEngine / SteamVR dep | Enforced by assembly structure (ADR-0003) + CI layer-violation check. `iDaVIE.Client.ViewModel` assembly lists no Unity assembly reference. |
 | 4 — Every public API boundary expressed as interface + test double | Ten interfaces listed in §6; corresponding mock/stub committed alongside each worked example in [D4](../D4-worked-examples/README.md). |
 | 5 — Plug-in C ABI semver, ABI-stable within a major | Out of scope for this sub-team — owned by Sub-team 1. Client references the server gateway, not the plug-in ABI directly. |
