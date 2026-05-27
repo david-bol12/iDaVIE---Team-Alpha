@@ -80,7 +80,7 @@ Format: date, what was completed, what's in progress, any blockers.
 > **Sequencing note:** after/ code is blocked on design document section 5 (S2-D05).
 > IMaskMode interface shape must be finalised in the design doc before implementations are fleshed out.
 - [ ] Extract and annotate `before/` code (S2-E2-01) — **unblocked (S2-D05 complete)**
-- [x] `IMaskMode` interface stub exists — needs finalisation pass (S2-E2-02) — **unblocked (S2-D05 complete)**
+- [x] `IMaskMode` interface finalised — `refactoring-examples/example2-MaskModes/after/IMaskMode.cs` (S2-E2-02) — **2026-05-27** — signatures locked to §5.4: `Apply(Material, Texture3D)` + `string ShaderKeyword { get; }`; includes `DisabledMaskMode` (Null Object for MaskMode.Disabled=0) and `NullMaskMode` test double
 - [x] `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode` stubs exist — need fleshing out (S2-E2-03) — **unblocked (S2-D05 complete)**
 - [x] `NullMaskMode` test double drafted — 2026-05-24 (S2-E2-04)
 - [ ] Compute projected CK metrics (S2-E2-05) — blocked on S2-E2-02 to S2-E2-03
@@ -148,6 +148,13 @@ Format: date, what was completed, what's in progress, any blockers.
 ---
 
 ## Session Log
+
+### 2026-05-27 (session 2)
+- [S2-E2-02] `refactoring-examples/example2-MaskModes/after/IMaskMode.cs` finalised
+  — Signatures locked to design doc §5.4: `void Apply(Material material, Texture3D maskTexture)` + `string ShaderKeyword { get; }`
+  — `DisabledMaskMode` added as Null Object for MaskMode.Disabled=0 (confirmed by §5.8 Phase 1); removes null-check from VolumeMaterialBinder hot path
+  — `NullMaskMode` test double retained in `iDaVIE.Rendering.Tests` namespace
+  — Full inline commentary: why 2 members (ISP rationale), null-handling contract for maskTexture, HLSL keyword-match requirement, CK projections (WMC=2, CBO=1, LCOM=0 per concrete class), SOLID/GRASP checklist
 
 ### 2026-05-27
 - [S2-D07] `docs/team3/design-document.md` §5.8 Migration Path written — Strangler Fig strategy, 7 phases with per-phase entry/exit conditions, performance gates, allocation checks, shadow-mode step in Phase 6 (coordinator runs alongside monolith for frame-by-frame comparison before `VolumeDataSetRenderer` is retired), rollback cost per phase (all single-file restores except Phase 6 prefab swap and Phase 7 Graphics Settings swap). Phase summary table added.
