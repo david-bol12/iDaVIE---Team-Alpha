@@ -37,13 +37,15 @@ namespace DataFeatures
         private bool _active;
         private Vec3[] _corners = new Vec3[2];
         public string[] RawData { get; set; }
-        public IFeatureDirtyNotifier FeatureSetParent { get; set; }
+        public FeatureSet FeatureSetParent { get; private set; }
+
+        public void SetParent(FeatureSet parent) => FeatureSetParent = parent;
+        public void ClearParent() => FeatureSetParent = null;
 
         public bool StatusChanged;
 
         public Feature(Vec3 cubeMin, Vec3 cubeMax, FeatureColor cubeColor, string name, string flag, int index, int id, string[] rawData, bool startVisible)
         {
-            FeatureSetParent = null;
             Index = index;
             Id = id;
             _color = cubeColor;
@@ -112,7 +114,7 @@ namespace DataFeatures
             set
             {
                 if (_color != value)
-                    FeatureSetParent?.SetFeatureAsDirty(Index);
+                    FeatureSetParent?.NotifyDirty(Index);
                 _color = value;
             }
         }
@@ -123,7 +125,7 @@ namespace DataFeatures
             set
             {
                 if (_active != value)
-                    FeatureSetParent?.SetFeatureAsDirty(Index);
+                    FeatureSetParent?.NotifyDirty(Index);
                 _active = value;
             }
         }
@@ -134,7 +136,7 @@ namespace DataFeatures
             set
             {
                 if (_selected != value)
-                    FeatureSetParent?.SetFeatureAsDirty(Index);
+                    FeatureSetParent?.NotifyDirty(Index);
                 _selected = value;
             }
         }
@@ -152,7 +154,7 @@ namespace DataFeatures
 
         private void NotifyDirty()
         {
-            FeatureSetParent?.SetFeatureAsDirty(Index);
+            FeatureSetParent?.NotifyDirty(Index);
         }
     }
 }

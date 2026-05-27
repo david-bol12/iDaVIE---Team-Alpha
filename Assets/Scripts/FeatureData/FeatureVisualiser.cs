@@ -31,6 +31,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using VolumeData;
@@ -59,6 +60,11 @@ namespace DataFeatures
         // ── Anchor handles ────────────────────────────────────────────────────
         // 8 corner handles for the selected feature's bounding box.
         private readonly GameObject[] _anchorHandles = new GameObject[8];
+
+        // Maps each domain FeatureSet to its GPU renderer so anchors can be
+        // parented to the correct coordinate-space transform.
+        private readonly Dictionary<FeatureSet, FeatureSetRenderer> _setRenderers
+            = new Dictionary<FeatureSet, FeatureSetRenderer>();
 
         // ── Unity event forwarding ────────────────────────────────────────────
         /// <summary>
@@ -201,6 +207,7 @@ namespace DataFeatures
             IFeatureRenderer iRenderer = renderer;
             iRenderer.FeatureColor = set.Color;
             set.FeatureDirty += iRenderer.SetFeatureAsDirty;
+            _setRenderers[set] = renderer;
 
             foreach (var feature in set.Features)
                 iRenderer.AddFeature(feature);
@@ -253,9 +260,10 @@ namespace DataFeatures
 
         private void RepositionAnchors(Feature feature)
         {
-            var parentTransform = feature.FeatureSetParent != null
-                ? feature.FeatureSetParent.transform
-                : transform;
+            Transform parentTransform = transform;
+            if (feature.FeatureSetParent != null &&
+                _setRenderers.TryGetValue(feature.FeatureSetParent, out var setRenderer))
+                parentTransform = setRenderer.transform;
 
             int idx = 0;
             for (int i = 0; i < 2; i++)
