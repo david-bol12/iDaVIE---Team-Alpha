@@ -360,14 +360,16 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 - **Asynchrony (Async/await).** Gateway calls are `Task`-returning; ViewModel exposes `IsBusy` so the View disables controls during the round-trip (`mvvm-binding-policy.md` §2.2).
 
 **Evidence:**
-- After-state sequence diagram [EVIDENCE-GAP-3.3a] (no `ex1-file-tab/after-sequence-diagram.puml` exists yet; the debug-tab equivalent does at `uml-diagrams/after-debug-sequence-diagram.puml`).
+- After-state sequence diagram at [`refactoring-examples/sub-team-6/file-tab/after-sequence.md`](../../../../refactoring-examples/sub-team-6/file-tab/after-sequence.md) — rewritten 2026-05-27 to show gateway routing (`file.open` → `dataset.getAxes`) for Phase A; Phase B (volume load) stays client-side via `VolumeServiceAdapter`.
+- Before-state sequence at [`refactoring-examples/sub-team-6/file-tab/before-sequence.md`](../../../../refactoring-examples/sub-team-6/file-tab/before-sequence.md).
+- Debug-tab equivalent at [`refactoring-examples/sub-team-6/debug-tab/after-sequence.md`](../../../../refactoring-examples/sub-team-6/debug-tab/after-sequence.md).
 - `mvvm-binding-policy.md` §2 — command semantics.
 
-**Speaker note:** "every arrow in the sequence is labelled with the rule it satisfies — DIP at the ViewModel → IFileService boundary, ACL at the IFileService → native boundary, INPC at the ViewModel → View notification. The diagram is the architecture, viewed in time."
+**Speaker note:** "every arrow in the sequence is labelled with the rule it satisfies — DIP at the ViewModel → IFitsService boundary, ACL at the gateway-proxy → IServiceGateway boundary, the wire spec (ADR-0002) at the IServiceGateway → server boundary, INPC at the ViewModel → View notification. The diagram is the architecture, viewed in time."
 
-**Risk if challenged — "why async if this is local?":** because the underlying call is filesystem + native parse, which can take seconds for a large FITS cube. Blocking the UI thread breaks NFR-TST-2 (no `Thread.Sleep` / synchronous wait in ViewModel) and also breaks user experience.
+**Risk if challenged — "why async if this is local?":** because the underlying call is server-side FITS parse + filesystem read, which can take seconds for a large cube. Even in local-mode (named pipe in-process) the gateway round-trip is async by contract. Blocking the UI thread breaks NFR-TST-2 (no `Thread.Sleep` / synchronous wait in ViewModel) and also breaks user experience.
 
-**[EVIDENCE-GAP-3.3a]** Before- and after-sequence diagrams for `ex1-file-tab/`. Owner: TL. Due: Day 8.
+**EVIDENCE-GAP-3.3a — CLOSED 2026-05-27.** Before- and after-sequence diagrams for `file-tab/` are committed and reflect the gateway rewire.
 
 ---
 
