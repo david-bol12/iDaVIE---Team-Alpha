@@ -67,9 +67,51 @@ The AFTER design wins on LCOM4 (every class is 1), on testability (29 NUnit test
 | RFC | **~25** | ≤ 50 | ✅ | 8 own methods + ~17 distinct external calls (`Enqueue`, `Write/Close`, `Append/ToString`, `text=`, `value=`, `AddListener`, `Log/LogError`, `GetString/SetString`, `Exists/Delete/Move`, …) |
 | LCOM4 | **~3** | = 1 | ❌ | Four disjoint concern clusters: (a) `Start` + log-rotation (uses `directoryPath`, `autosavePath`, `maxLogs`); (b) `HandleLog` + `AutoSave` (use `debugLogQueue`, `autosavePath`, `logOutput`, `debugScrollbar`); (c) `saveToFileClick` + `SaveToFile` (use `debugLogQueue` only, plus `PlayerPrefs`); (d) `DetermineHardware` (uses no fields — pure side-effect on `Debug.Log`). At least three connected components remain after merging shared fields. |
 
+### Per-method McCabe CC (alternative WMC weighting)
+
+The table above uses NOM-style WMC (method count, unit weight = 1) → **WMC = 8**. Re-weighting by McCabe cyclomatic complexity gives **WMC = 21** — still ✅ under the ≤ 40 adapter threshold, but a sharper view of where the complexity sits. The Quality Guild tools may report either depending on configuration; both are shown for transparency.
+
+| Method | Line range | LOC | Branch points | CC |
+|---|---|---:|---|---:|
+| `Start()` | 52–145 | 93 | `catch` (+1), `if (!Directory.Exists)` (+1), `for` loop (+1), `if (existingLog != null)` ×2 (+2), `if (i == maxLogs-1)` ×2 (+2), `if (newConfig != 0)` (+1) | **9** ¹ |
+| `OnEnable()` | 147–150 | 3 | — | **1** |
+| `OnDisable()` | 152–155 | 3 | — | **1** |
+| `DetermineHardware()` | 160–169 | 9 | — | **1** |
+| `HandleLog(string, string, LogType)` | 177–197 | 20 | `if (type == LogType.Exception)` (+1), `foreach` (+1) | **3** |
+| `saveToFileClick()` | 203–226 | 23 | `if (!Directory.Exists(lastPath))` (+1), lambda `if (dest.Equals(""))` (+1) | **3** |
+| `SaveToFile(string)` | 232–243 | 11 | `foreach` (+1) | **2** |
+| `AutoSave(string)` | 249–254 | 5 | — | **1** |
+| **Total** | | **167** | | **WMC = 21** |
+
+¹ CC for `Start()` is 8 if your tool does not count `catch` as a branch (some do not). Range: 8–9.
+
+The log-rotation block inside `Start()` is the single complexity hotspot (CC = 9 alone — more than the rest of the class combined). In the AFTER design that block extracts to a dedicated rotator (planned for the architecture doc); no AFTER class carries a method with CC > 3.
+
+### LCOM_HS computation (alternative LCOM formula)
+
+The convention table at the top of this file lists two LCOM variants: LCOM4 (= 1 ideal) and LCOM_HS (≤ 0.5). LCOM4 ≈ 3 is shown in the main table; the Henderson-Sellers value is included here as cross-evidence — both formulae point at the same S8 (four-concerns-in-one-class) signal.
+
+**Formula:** LCOM_HS = (M − avg_mA) / (M − 1), where M = method count, avg_mA = average methods accessing each instance field.
+
+Method-field access matrix:
+
+| Field | Type | Accessed by | mA |
+|---|---|---|---:|
+| `logOutput` | `TMP_InputField` | `Start` (Rebuild), `HandleLog` (`.text =`) | 2 |
+| `debugScrollbar` | `Scrollbar` | `HandleLog` (`.value =`) | 1 |
+| `saveButton` | `Button` | `Start` (`onClick.AddListener`) | 1 |
+| `autosavePath` | `string` | `Start` (writes), `AutoSave` (reads) | 2 |
+| `pluginSavePath` | `string` | *declared but never accessed* | 0 |
+| `debugLogQueue` | `Queue` | `HandleLog` (`Enqueue` ×2, foreach), `SaveToFile` (foreach) | 2 |
+
+With all 6 fields: Σ mA = 8, avg_mA = 1.33 → **LCOM_HS = (8 − 1.33) / (8 − 1) = 0.95** ❌.
+Excluding the unused `pluginSavePath` (5 fields): avg_mA = 1.60 → **LCOM_HS = 0.91** ❌.
+
+Both variants decisively exceed the ≤ 0.50 threshold. `OnEnable`, `OnDisable`, and `DetermineHardware` share zero fields with any other method — this is the structural quantification of smell S8.
+
 ### Verdict (BEFORE)
 
-`DebugLogging` **fails 1 of 6 metrics** (LCOM4). All other CK numbers are within thresholds. The qualitative smells (S1–S9 in [`before-trace.md`](before-trace.md)) dominate the case for refactoring.
+`DebugLogging` **fails 1 of 6 metrics** (LCOM4 / LCOM_HS — both formulae agree). All other CK numbers are within thresholds. The qualitative smells (S1–S9 in [`before-trace.md`](before-trace.md)) dominate the case for refactoring.
 
 ---
 
