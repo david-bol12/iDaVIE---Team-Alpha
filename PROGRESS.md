@@ -81,7 +81,7 @@ Format: date, what was completed, what's in progress, any blockers.
 > IMaskMode interface shape must be finalised in the design doc before implementations are fleshed out.
 - [ ] Extract and annotate `before/` code (S2-E2-01) — **unblocked (S2-D05 complete)**
 - [x] `IMaskMode` interface finalised — `refactoring-examples/team3/example2-MaskModes/after/IMaskMode.cs` (S2-E2-02) — **2026-05-27** — signatures locked to §5.4: `Apply(Material, Texture3D)` + `string ShaderKeyword { get; }`; includes `DisabledMaskMode` (Null Object for MaskMode.Disabled=0) and `NullMaskMode` test double
-- [x] `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode` stubs exist — need fleshing out (S2-E2-03) — **unblocked (S2-D05 complete)**
+- [x] `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode` finalised — `refactoring-examples/team3/example2-MaskModes/after/` (S2-E2-03) — **2026-05-27** — null-guard (DEBUG assert / RELEASE no-op), `ShaderKeyword` self-reference in `Enable` call, `_MASK_DISABLED` added to mutual-exclusion disable list, full XML docs, CK metric table, SOLID/GRASP callouts, design doc §5.4 cross-refs inline
 - [x] `NullMaskMode` test double drafted — 2026-05-24 (S2-E2-04)
 - [ ] Compute projected CK metrics (S2-E2-05) — blocked on S2-E2-02 to S2-E2-03
 - [ ] Write `example2-MaskModes/README.md` with CK delta table (S2-E2-06) — blocked on S2-E2-05
@@ -150,7 +150,6 @@ Format: date, what was completed, what's in progress, any blockers.
 ## Session Log
 
 ### 2026-05-27 (session 3)
-
 - [S2-E1-05] `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeCameraDriver.cs` drafted
   — Scope: narrow (camera matrix, clip planes, projection mode) — matches formal design doc §5.2 targets; cursor tracking / outlines / teleport excluded by design
   — Includes `VolumeCoordinateService` static helper (pure C#, zero UnityEngine API calls) — fixes V-10 DIP: replaces all `transform.InverseTransformPoint` calls (before/ lines 713, 739, 857) with `WorldToObjectSpace(point, Matrix4x4)`, testable in edit mode without a scene
@@ -162,6 +161,12 @@ Format: date, what was completed, what's in progress, any blockers.
   — Projected CK: WMC=9 combined (VolumeCameraDriver=5, VolumeCoordinateService=4), CBO≤4, LCOM=0.0 — all within targets (WMC target ≤12 for this class)
   — Per-frame loop usage documented inline (Steps 1–5, on-demand coordinate conversion example)
   — Design decision: "return value struct" pattern (consistent with FoveatedSamplingPolicy → FoveationParameters); VolumeCameraDriver does NOT hold IRenderPipeline — coordinator forwards FrustumPlanes to pipeline, reducing CBO from target ≤6 to actual ≤4
+- [S2-E2-03] `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode` finalised in `refactoring-examples/team3/example2-MaskModes/after/`
+  — All three promoted from stubs to fully annotated implementations aligned with locked IMaskMode signatures (S2-E2-02)
+  — Key changes from stubs: `ShaderKeyword` property used in `EnableKeyword()` call (no hardcoded string duplication); `_MASK_DISABLED` added to the mutual-exclusion disable block (DisabledMaskMode is now an explicit mode per S2-E2-02); null-guard for `maskTexture` — `Debug.Assert` under `#if UNITY_ASSERTIONS`, silent early return in RELEASE to avoid `SetTexture(null)` Unity warning
+  — Full inline commentary: CONTEXT (source switch-case origin), BEHAVIOUR, SHADER SIDE, NULL-SAFETY CONTRACT, CK METRICS table (WMC=2, DIT=1, NOC=0, CBO=1, RFC=4, LCOM=0.0 per class), SOLID/GRASP alignment (SRP/OCP/LSP/ISP/DIP + Protected Variations + Indirection)
+  — `IsolateMaskMode`: `OutsideAlpha = 0.15f` named constant documented with extraction rationale and OCP extension note (add constructor param to this class only if value needs to be configurable)
+  — XML `<summary>` + `<remarks>` on all public members; `<inheritdoc/>` on interface members
 
 ### 2026-05-27 (session 2)
 - [S2-E2-02] `refactoring-examples/example2-MaskModes/after/IMaskMode.cs` finalised

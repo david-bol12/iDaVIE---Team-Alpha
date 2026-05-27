@@ -33,9 +33,11 @@ Assets/
     ├── Materials/
     │   └── Volume/
     │       └── VolumeMaterial.mat            ← runtime material instance
-    └── RenderPipeline/
-        ├── VolumeRenderFeature.cs            ← URP ScriptableRenderFeature
-        └── VolumeRenderPass.cs               ← URP ScriptableRenderPass
+    ├── RenderPipeline/
+    │   ├── VolumeRenderFeature.cs            ← URP ScriptableRenderFeature
+    │   └── VolumeRenderPass.cs               ← URP ScriptableRenderPass
+    └── ShaderVariants/
+        └── VolumeVariants.shadervariants     ← variant collection for stripping
 ```
 
 ---
@@ -70,7 +72,7 @@ We strip unused variants using a `ShaderVariantCollection`:
 |-------|------------------------------------------------------|
 | `Texture3D` volumes | Runtime — created by `VolumeTextureManager`, never saved as .asset |
 | `RenderTexture` targets | Runtime — created by `VolumeRenderPass` each frame |
-| Colour map LUT textures | Baked — 256×1 RGBA .asset files |
+| Colour map LUT textures | Baked — 256×1 RGBA PNG files, imported as Texture2D |
 | Materials | Baked — one base material, properties set at runtime |
 
 Rationale: 3D textures can be hundreds of MB and change with each dataset load.
@@ -84,7 +86,7 @@ The rendering layer integrates with URP via:
 - `VolumeRenderFeature` — registered in the URP Renderer asset, adds the volume pass
 - `VolumeRenderPass` — a `ScriptableRenderPass` that executes the ray-march draw call
 
-This replaces the Unity 5 pattern of calling `Graphics.Blit` from `Camera.onPostRender`.
+This replaces the legacy built-in pipeline pattern of calling `Graphics.Blit` from `Camera.onPostRender`.
 
 The `VolumeRenderFeature` and `VolumeRenderPass` live in the `RenderPipeline/` folder
 and are the **only** files allowed to import `UnityEngine.Rendering.Universal`.
@@ -95,6 +97,6 @@ All other rendering code imports only our `IRenderPipeline` interface.
 ## 7. Version Control Rules
 
 - All shader source files are text-based and committed to Git
-- No binary `.asset` files for materials generated from script
-- Colour map LUT textures committed as PNG + their `.meta` files
+- No binary `.asset` files for materials generated from script — the hand-authored `VolumeMaterial.mat` is the exception and should be committed normally
+- Colour map LUT textures committed as PNG + their `.meta` files (imported by Unity as Texture2D)
 - ShaderVariantCollection committed and reviewed on any shader keyword change
