@@ -221,7 +221,8 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
     public void GoTo()
     {
-        Teleport(Feature.CornerMin, Feature.CornerMax);
+        Teleport(new Vector3(Feature.CornerMin.X, Feature.CornerMin.Y, Feature.CornerMin.Z),
+                 new Vector3(Feature.CornerMax.X, Feature.CornerMax.Y, Feature.CornerMax.Z));
     }
 
     public void Select()

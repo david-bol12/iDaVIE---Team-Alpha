@@ -19,8 +19,6 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using UnityEngine;
-
 namespace DataFeatures
 {
     // Feature is the basic unit of marking up the volume
@@ -37,13 +35,13 @@ namespace DataFeatures
         private bool _selected;
         private FeatureColor _color;
         private bool _active;
-        private Vector3[] _corners = new Vector3[2];
+        private Vec3[] _corners = new Vec3[2];
         public string[] RawData { get; set; }
         public IFeatureDirtyNotifier FeatureSetParent { get; set; }
 
         public bool StatusChanged;
 
-        public Feature(Vector3 cubeMin, Vector3 cubeMax, FeatureColor cubeColor, string name, string flag, int index, int id, string[] rawData, bool startVisible)
+        public Feature(Vec3 cubeMin, Vec3 cubeMax, FeatureColor cubeColor, string name, string flag, int index, int id, string[] rawData, bool startVisible)
         {
             FeatureSetParent = null;
             Index = index;
@@ -61,26 +59,26 @@ namespace DataFeatures
             // TODO: Handle this
         }
 
-        public Vector3 CornerMin => Vector3.Min(_corners[0], _corners[1]);
+        public Vec3 CornerMin => Vec3.Min(_corners[0], _corners[1]);
 
-        public Vector3 CornerMax => Vector3.Max(_corners[0], _corners[1]);
+        public Vec3 CornerMax => Vec3.Max(_corners[0], _corners[1]);
 
-        public Vector3 Center
+        public Vec3 Center
         {
             get => (_corners[0] + _corners[1]) / 2.0f;
             set
             {
                 var diff = value - Center;
-                _corners[0] += diff;
-                _corners[1] += diff;
+                _corners[0] = _corners[0] + diff;
+                _corners[1] = _corners[1] + diff;
                 NotifyDirty();
             }
         }
 
-        public Vector3 Size
+        public Vec3 Size
         {
             //  Size is padded by one, because the bounding box includes both the min and max voxels
-            get => (Vector3.Max(_corners[0], _corners[1]) - Vector3.Min(_corners[0], _corners[1]) + Vector3.one);
+            get => (Vec3.Max(_corners[0], _corners[1]) - Vec3.Min(_corners[0], _corners[1]) + Vec3.One);
             set
             {
                 var currentCenter = Center;
@@ -95,17 +93,17 @@ namespace DataFeatures
             get
             {
                 var s = Size;
-                return s.x * s.y * s.z;
+                return s.X * s.Y * s.Z;
             }
         }
 
-        public bool ContainsPoint(Vector3 point)
+        public bool ContainsPoint(Vec3 point)
         {
             var min = CornerMin;
             var max = CornerMax;
-            return point.x >= min.x && point.x <= max.x
-                && point.y >= min.y && point.y <= max.y
-                && point.z >= min.z && point.z <= max.z;
+            return point.X >= min.X && point.X <= max.X
+                && point.Y >= min.Y && point.Y <= max.Y
+                && point.Z >= min.Z && point.Z <= max.Z;
         }
 
         public FeatureColor CubeColor
@@ -141,16 +139,16 @@ namespace DataFeatures
             }
         }
 
-        public void SetBounds(Vector3 cornerMin, Vector3 cornerMax)
+        public void SetBounds(Vec3 cornerMin, Vec3 cornerMax)
         {
             _corners[0] = cornerMin;
             _corners[1] = cornerMax;
             NotifyDirty();
         }
 
-        public Vector3 GetMinBounds() => _corners[0];
+        public Vec3 GetMinBounds() => _corners[0];
 
-        public Vector3 GetMaxBounds() => _corners[1];
+        public Vec3 GetMaxBounds() => _corners[1];
 
         private void NotifyDirty()
         {

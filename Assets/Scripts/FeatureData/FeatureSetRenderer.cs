@@ -129,7 +129,7 @@ namespace DataFeatures
                     {
                         var feature = FeatureList[i];
                         FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
-                        MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                        MakeAxisAlignedCube(ToVector3(feature.Center), ToVector3(feature.Size), feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
                     }
                 }
                 else
@@ -140,7 +140,7 @@ namespace DataFeatures
                         {
                             var feature = FeatureList[i];
                             FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
-                            MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                            MakeAxisAlignedCube(ToVector3(feature.Center), ToVector3(feature.Size), feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
                         }
                     }
                 }
@@ -566,6 +566,8 @@ namespace DataFeatures
         {
             _computeBufferVertices.Release();
         }
+
+        static Vector3 ToVector3(Vec3 v) => new Vector3(v.X, v.Y, v.Z);
 
         static void MakeAxisAlignedCube(Vector3 position, Vector3 size, Color color, FeatureVisibility visibility, int offset, FeatureVertex[] list)
         {

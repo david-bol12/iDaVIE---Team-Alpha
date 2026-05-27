@@ -352,18 +352,4 @@ namespace DataFeatures
         }
     }
 
-    // ── Placeholder for Vec3 (Unity-free position type) ───────────────────────
-
-    /// <summary>
-    /// Minimal Unity-free 3D vector used within the domain layer.
-    /// FeatureVisualiser converts between Vec3 and UnityEngine.Vector3.
-    /// </summary>
-    public readonly struct Vec3
-    {
-        public float X { get; }
-        public float Y { get; }
-        public float Z { get; }
-
-        public Vec3(float x, float y, float z) { X = x; Y = y; Z = z; }
-    }
 }

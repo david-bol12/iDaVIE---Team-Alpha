@@ -266,9 +266,11 @@ namespace DataFeatures
                 var weighting = new Vector3(i, j, k);
 
                 handle.transform.SetParent(parentTransform, false);
+                var cornerMax = new Vector3(feature.CornerMax.X, feature.CornerMax.Y, feature.CornerMax.Z);
+                var cornerMin = new Vector3(feature.CornerMin.X, feature.CornerMin.Y, feature.CornerMin.Z);
                 handle.transform.localPosition =
-                    Vector3.Scale(feature.CornerMax + Vector3.one * 0.5f, weighting)
-                    + Vector3.Scale(feature.CornerMin - Vector3.one * 0.5f, Vector3.one - weighting);
+                    Vector3.Scale(cornerMax + Vector3.one * 0.5f, weighting)
+                    + Vector3.Scale(cornerMin - Vector3.one * 0.5f, Vector3.one - weighting);
 
                 SetGlobalScale(handle.transform, Vector3.one * 0.01f);
                 idx++;
