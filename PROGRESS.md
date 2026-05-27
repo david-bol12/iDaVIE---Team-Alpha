@@ -24,19 +24,19 @@ Format: date, what was completed, what's in progress, any blockers.
 - [x] Colour map shader files read (`ColourMap*.shader`)
 - [x] Hardcoded constants catalogued (90 fps, 4 GB, 368 MB, foveated radii)
 - [x] Unity 5 render API catalogue written — 5 touchpoints requiring SRP migration
-- [x] Render-frame call sequence documented (9 steps) — `docs/Codebase Exploration/RenderFrame_CallSequence.md`
-- [x] Rendering-adjacent classes identified — `docs/Codebase Exploration/RenderingAdjacentClasses.md`
-- [x] SOLID/GRASP violations identified — `docs/Codebase Exploration/SOLID_GRASP_Violations.md`
+- [x] Render-frame call sequence documented (9 steps) — `docs/team3/Codebase Exploration/RenderFrame_CallSequence.md`
+- [x] Rendering-adjacent classes identified — `docs/team3/Codebase Exploration/RenderingAdjacentClasses.md`
+- [x] SOLID/GRASP violations identified — `docs/team3/Codebase Exploration/SOLID_GRASP_Violations.md`
 - [x] Day 2 CK metrics baseline run (SonarQube + CodeScene + NDepend) — WMC ~74, CBO ~31, RFC ~89, LCOM ~0.81
-- [x] Sub-team requirements document (`docs/requirements.md`) — completed 2026-05-20
-- [x] `IRenderPipeline` interface stub — `refactoring-examples/stubs/IRenderPipeline.cs` — 2026-05-24
-- [x] `NullRenderPipeline` test double — `refactoring-examples/stubs/NullRenderPipeline.cs` — 2026-05-24
+- [x] Sub-team requirements document (`docs/team3/requirements.md`) — completed 2026-05-20
+- [x] `IRenderPipeline` interface stub — `refactoring-examples/team3/stubs/IRenderPipeline.cs` — 2026-05-24
+- [x] `NullRenderPipeline` test double — `refactoring-examples/team3/stubs/NullRenderPipeline.cs` — 2026-05-24
 - [x] `IMaskMode` interface + `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode` drafted — 2026-05-24
 - [x] `NullMaskMode` test double drafted — 2026-05-24
 - [x] Sprint 1 Kanban snapshot — `kanban/sprint1-snapshot.md`
 
 ### 🔄 In Progress — Sprint 2 (carry-overs, clear Mon 25 May)
-- [ ] Team review of `docs/requirements.md` (S2-CO01)
+- [ ] Team review of `docs/team3/requirements.md` (S2-CO01)
 - [x] Finalise class-level dependency map of VDSR — confirm CBO count (S2-CO03) — Ce=17, Ca=28, CBO=45 confirmed; full graph in `diagrams/vdsr-dependencies.puml`
 
 ### ⏳ Sprint 2 — Carry-overs (target: Mon 25 May EOD)
@@ -49,22 +49,22 @@ Format: date, what was completed, what's in progress, any blockers.
 - [ ] Chase Sub-team 2 for `RawVolumeData` (S2-CO09)
 
 ### ⏳ Sprint 2 — Design Document
-- [x] Outline agreed (S2-D01) — brief-aligned 10-section outline with bullet notes written to `docs/design-document.md` — 2026-05-25
+- [x] Outline agreed (S2-D01) — brief-aligned 10-section outline with bullet notes written to `docs/team3/design-document.md` — 2026-05-25
 - [ ] Section 1 — Problem Statement (S2-D02)
-- [x] Section 2 — Target Architecture Overview (S2-D03) — §4.2 written to `docs/design-document.md` — 2026-05-25
+- [x] Section 2 — Target Architecture Overview (S2-D03) — §4.2 written to `docs/team3/design-document.md` — 2026-05-25
 - [ ] Section 3 — IRenderPipeline Abstraction (S2-D04)
-- [x] Section 4 — Mask Mode Strategy Pattern (S2-D05) — §5.4 written to `docs/design-document.md` — 2026-05-27
+- [x] Section 4 — Mask Mode Strategy Pattern (S2-D05) — §5.4 written to `docs/team3/design-document.md` — 2026-05-27
 - [ ] Section 5 — SOLID/GRASP Principle Mapping (S2-D06)
-- [x] Section 6 — Migration Path (S2-D07) — §5.8 written to `docs/design-document.md`: Strangler Fig strategy, 7 phases (seam introduction → IMaskMode → FoveatedSamplingPolicy → VolumeMaterialBinder → VolumeCameraDriver → VolumeTextureManager → coordinator handoff → URP migration), per-phase entry/exit conditions, performance gates, shadow-mode step, rollback cost per phase, summary table — 2026-05-27
+- [x] Section 6 — Migration Path (S2-D07) — §5.8 written to `docs/team3/design-document.md`: Strangler Fig strategy, 7 phases (seam introduction → IMaskMode → FoveatedSamplingPolicy → VolumeMaterialBinder → VolumeCameraDriver → VolumeTextureManager → coordinator handoff → URP migration), per-phase entry/exit conditions, performance gates, shadow-mode step, rollback cost per phase, summary table — 2026-05-27
 - [x] Section 7 — Risks and Trade-offs (S2-D08) — §10 expanded to full 3-subsection treatment (performance overhead, coordinator complexity, interface versioning) + 8-row risk register — 2026-05-27
 - [ ] Section 8 — Day 13 Projected CK Metrics (S2-D09)
 - [ ] Sub-team review (S2-D10)
-- [ ] Finalise `docs/design-document.md` (S2-D11)
+- [ ] Finalise `docs/team3/design-document.md` (S2-D11)
 
 ### ⏳ Sprint 2 — Refactoring Example 1 (VolumeDataSetRenderer Split)
 > **Sequencing note:** after/ code is blocked on design document sections 2–4 (S2-D03 to S2-D05).
 > Architecture overview must be agreed before class responsibilities and method signatures are finalised.
-- [x] Extract and annotate `before/` code (S2-E1-01) — `refactoring-examples/example1-VolumeDataSetRenderer/before/VolumeDataSetRenderer.cs` — 2026-05-25
+- [x] Extract and annotate `before/` code (S2-E1-01) — `refactoring-examples/team3/example1-VolumeDataSetRenderer/before/VolumeDataSetRenderer.cs` — 2026-05-25
 - [ ] Draft `after/VolumeRenderCoordinator.cs` (S2-E1-02) — **blocked on S2-D03**
 - [x] Draft `after/VolumeMaterialBinder.cs` (S2-E1-03) — 2026-05-26
 - [ ] Draft `after/VolumeTextureManager.cs` (S2-E1-04) — **blocked on S2-D03**
@@ -97,17 +97,17 @@ Format: date, what was completed, what's in progress, any blockers.
 - [x] `diagrams/vdsr-dependencies.md` — Mermaid version + quick-reference dependency table — 2026-05-25
 
 ### ⏳ Sprint 2 — Section 6.3 Deliverables
-- [ ] `docs/rendering-layer-design.md` (S2-S01 to S2-S03)
-- [ ] `docs/shader-asset-policy.md` (S2-S04 to S2-S05)
-- [ ] `docs/metrics-worksheet.md` Day 13 projected column (S2-S06 to S2-S07)
+- [ ] `docs/team3/rendering-layer-design.md` (S2-S01 to S2-S03)
+- [ ] `docs/team3/shader-asset-policy.md` (S2-S04 to S2-S05)
+- [ ] `docs/team3/metrics-worksheet.md` Day 13 projected column (S2-S06 to S2-S07)
 
 ### ⏳ Sprint 2 — SOLID/GRASP Audit
-- [x] Structured violation audit of current VDSR (S2-A01) — 17-violation table (V-01→V-17, 6 Critical / 8 High / 1 Medium) written to `docs/design-document.md` §7.1 — 2026-05-25; source: `docs/Codebase Exploration/SOLID_GRASP_Violations.md`
-- [x] Map each fix to design decision in target architecture (S2-A02) — V-01→V-17 mapped to DD-01/DD-02/DD-03/DD-04 in `docs/design-document.md` §7.2 — 2026-05-25
+- [x] Structured violation audit of current VDSR (S2-A01) — 17-violation table (V-01→V-17, 6 Critical / 8 High / 1 Medium) written to `docs/team3/design-document.md` §7.1 — 2026-05-25; source: `docs/team3/Codebase Exploration/SOLID_GRASP_Violations.md`
+- [x] Map each fix to design decision in target architecture (S2-A02) — V-01→V-17 mapped to DD-01/DD-02/DD-03/DD-04 in `docs/team3/design-document.md` §7.2 — 2026-05-25
 - [ ] Verify `after/` code introduces no new violations (S2-A03) — BLOCKED: after/ classes not yet finalised
 
 ### ⏳ To Do — Sprint 3
-- [ ] Test strategy document (`docs/test-strategy.md`)
+- [ ] Test strategy document (`docs/team3/test-strategy.md`)
 - [ ] Address mid-assessment feedback
 - [ ] Day 13 projected CK metrics finalised (evidence-backed, not speculative)
 - [ ] Final metrics worksheet before/after comparison
@@ -124,7 +124,7 @@ Format: date, what was completed, what's in progress, any blockers.
 |---------|-----------|--------|
 | `IGazeProvider` interface definition | Sub-team 4 (Interaction) | ⏳ Pending — chased 20 May; stub in place |
 | `RawVolumeData` texture format contract | Sub-team 2 (Data I/O) | ⏳ Pending — chased 20 May; stub in place |
-| `ISessionPersistenceService` interface agreement | Sub-team 7 (Persistence) | ⏳ Pending — contract designed 26 May; needs sign-off. See `docs/integration/team7-persistence-contract.md` |
+| `ISessionPersistenceService` interface agreement | Sub-team 7 (Persistence) | ⏳ Pending — contract designed 26 May; needs sign-off. See `docs/team3/integration/team7-persistence-contract.md` |
 | Shared assembly location for `VolumeSessionState` | Sub-team 7 (Persistence) | ⏳ Pending — must agree which assembly owns the contract struct before either side codes to it |
 
 ### Integration Note — Sub-team 7 (Persistence)
@@ -132,7 +132,7 @@ Format: date, what was completed, what's in progress, any blockers.
 - `VolumeRenderCoordinator` assembles slices into `VolumeSessionState` and passes to `ISessionPersistenceService.Save(state, path)`
 - Restore is symmetric: coordinator calls `Load(path)` then distributes slices back to each class
 - **Integration is deferred to Sprint 3** — do not block current Sprint 2 deliverables on this
-- Full contract design: `docs/integration/team7-persistence-contract.md`
+- Full contract design: `docs/team3/integration/team7-persistence-contract.md`
 
 ---
 
@@ -150,13 +150,13 @@ Format: date, what was completed, what's in progress, any blockers.
 ## Session Log
 
 ### 2026-05-27
-- [S2-D07] `docs/design-document.md` §5.8 Migration Path written — Strangler Fig strategy, 7 phases with per-phase entry/exit conditions, performance gates, allocation checks, shadow-mode step in Phase 6 (coordinator runs alongside monolith for frame-by-frame comparison before `VolumeDataSetRenderer` is retired), rollback cost per phase (all single-file restores except Phase 6 prefab swap and Phase 7 Graphics Settings swap). Phase summary table added.
-- [S2-D08] `docs/design-document.md` §10 Risks and Trade-offs fully written — replaced stub table with three detailed subsections: (1) §10.1 Performance Overhead of Abstraction Layer — virtual dispatch analysis on hot path, `VolumeRenderState` struct size constraint (≤ 64 bytes, NFR-08), IL2CPP de-virtualisation rationale, CI performance gate at 90 fps; (2) §10.2 Coordinator Complexity — God Class recurrence risk, WMC ≤ 10 gate, CC > 2 SonarQube failure, `CoordinatorWiringTest` integration test spec, CBO ≤ 6 design constraint; (3) §10.3 Interface Versioning Risk — near-term cross-team signature mismatch, semantic drift, `[InterfaceVersion]` attribute + reflection guard, contract test suite spec. Risk register expanded from 5 to 8 rows (R-04 struct size, R-05 coordinator bloat, R-06 semantic drift added).
-- [S2-D05] `docs/design-document.md` §5.4 DD-02 (Mask Mode Strategy Pattern) written — full section ~1.5 pages covering: switch-on-enum anti-pattern and OCP violation (V-04), Strategy pattern decision, `IMaskMode` 2-member interface (Apply + ShaderKeyword), four implementations table (`ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode`, `DisabledMaskMode`) with inline code for `IsolateMaskMode`, runtime switching via `SetMaskMode()`, OCP/SRP justification, and pattern-choice rationale (Strategy vs. Decorator vs. State)
+- [S2-D07] `docs/team3/design-document.md` §5.8 Migration Path written — Strangler Fig strategy, 7 phases with per-phase entry/exit conditions, performance gates, allocation checks, shadow-mode step in Phase 6 (coordinator runs alongside monolith for frame-by-frame comparison before `VolumeDataSetRenderer` is retired), rollback cost per phase (all single-file restores except Phase 6 prefab swap and Phase 7 Graphics Settings swap). Phase summary table added.
+- [S2-D08] `docs/team3/design-document.md` §10 Risks and Trade-offs fully written — replaced stub table with three detailed subsections: (1) §10.1 Performance Overhead of Abstraction Layer — virtual dispatch analysis on hot path, `VolumeRenderState` struct size constraint (≤ 64 bytes, NFR-08), IL2CPP de-virtualisation rationale, CI performance gate at 90 fps; (2) §10.2 Coordinator Complexity — God Class recurrence risk, WMC ≤ 10 gate, CC > 2 SonarQube failure, `CoordinatorWiringTest` integration test spec, CBO ≤ 6 design constraint; (3) §10.3 Interface Versioning Risk — near-term cross-team signature mismatch, semantic drift, `[InterfaceVersion]` attribute + reflection guard, contract test suite spec. Risk register expanded from 5 to 8 rows (R-04 struct size, R-05 coordinator bloat, R-06 semantic drift added).
+- [S2-D05] `docs/team3/design-document.md` §5.4 DD-02 (Mask Mode Strategy Pattern) written — full section ~1.5 pages covering: switch-on-enum anti-pattern and OCP violation (V-04), Strategy pattern decision, `IMaskMode` 2-member interface (Apply + ShaderKeyword), four implementations table (`ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode`, `DisabledMaskMode`) with inline code for `IsolateMaskMode`, runtime switching via `SetMaskMode()`, OCP/SRP justification, and pattern-choice rationale (Strategy vs. Decorator vs. State)
 - E2 tasks S2-E2-01, S2-E2-02, S2-E2-03 unblocked
 
 ### 2026-05-26 (session 7)
-- [S2-E1-03] `refactoring-examples/example1-VolumeDataSetRenderer/after/VolumeMaterialBinder.cs` drafted
+- [S2-E1-03] `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeMaterialBinder.cs` drafted
   — Includes: `VolumeRenderState` readonly struct, `IVolumeMaterialBinder` 7-member interface,
     `VolumeMaterialBinder` sealed class with full inline annotations
   — Violations fixed: V-01 (SRP), V-04 (OCP mask), V-05 (OCP projection), V-06 (ISP),
@@ -165,22 +165,22 @@ Format: date, what was completed, what's in progress, any blockers.
   — All 20+ shader property IDs moved into private `ShaderID` nested class (no public exposure)
   — IMaskMode.Apply() replaces the MaskMode.GetHashCode() integer dispatch (OCP fix)
   — IRenderPipeline.SetPipelineKeyword replaces global Shader.EnableKeyword (URP-safe)
-- `refactoring-examples/example1-VolumeDataSetRenderer/after/VolumeMaterialBinder-decisions.md` created
+- `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeMaterialBinder-decisions.md` created
   — 7 design decisions documented: VolumeRenderState struct rationale, 7-member ISP fix,
     private ShaderID class, IMaskMode Strategy, IRenderPipeline keyword routing,
     SubmitMaskGeometry replacing OnRenderObject, and file structure choice
 
 ### 2026-05-26 (session 1)
-- [S2-E1-06] `refactoring-examples/example1-VolumeDataSetRenderer/after/FoveatedSamplingPolicy.cs` drafted — design skeleton with: `IGazeProvider` placeholder interface (Sub-team 4 dependency, clearly flagged for reconciliation); `FoveationZone` enum (Foveal / Parafoveal / Peripheral); `FoveatedSamplingConfig` readonly struct (real default values from before/ lines 140–145); `FoveationParameters` return struct (zero allocation per frame); `FoveatedSamplingPolicy` sealed class covering all four owned behaviours (sample rate per region, LOD/mip bias, reprojection mask, HMD-absent fallback); `StubGazeProvider` test double in `iDaVIE.Rendering.Tests` namespace. Projected CK: WMC=7, CBO=6, LCOM=0.0 — all within targets.
+- [S2-E1-06] `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/FoveatedSamplingPolicy.cs` drafted — design skeleton with: `IGazeProvider` placeholder interface (Sub-team 4 dependency, clearly flagged for reconciliation); `FoveationZone` enum (Foveal / Parafoveal / Peripheral); `FoveatedSamplingConfig` readonly struct (real default values from before/ lines 140–145); `FoveationParameters` return struct (zero allocation per frame); `FoveatedSamplingPolicy` sealed class covering all four owned behaviours (sample rate per region, LOD/mip bias, reprojection mask, HMD-absent fallback); `StubGazeProvider` test double in `iDaVIE.Rendering.Tests` namespace. Projected CK: WMC=7, CBO=6, LCOM=0.0 — all within targets.
 
 ### 2026-05-25 (session 6)
-- [S2-D03] `docs/design-document.md` §4.2 Target Architecture (To-Be) written — five-class breakdown table, per-class bullet justifications, IRenderPipeline abstraction, IMaskMode Strategy, cross-team contracts, diagram references
+- [S2-D03] `docs/team3/design-document.md` §4.2 Target Architecture (To-Be) written — five-class breakdown table, per-class bullet justifications, IRenderPipeline abstraction, IMaskMode Strategy, cross-team contracts, diagram references
 
 ### 2026-05-25 (session 5)
 - [S2-G01] `diagrams/architecture.puml` written — 5-layer component diagram: Unity/SRP external layer, IRenderPipeline abstraction + URP/HDRP adapters, IMaskMode strategies, cross-team contracts (IGazeProvider / IRawVolumeData), rendering core (VolumeRenderCoordinator + 4 classes), test doubles (NullRenderPipeline / NullMaskMode / StubGazeProvider). Legend, DIP callout, CK targets.
 - [S2-G03] `diagrams/class-after.puml` expanded — full field/method detail for all 5 target classes, projected CK metric notes per class, SRP adapters (Urp/HdrpRenderPipeline), test doubles, skinparam styling matching class-before.puml, legend with companion diagram cross-refs.
 - [S2-G04] `diagrams/sequence-render-frame.puml` expanded — 7-step one-frame sequence with alt blocks (foveated on/off, stale texture path), ScheduleVolumeRenderPass step, performance-contract note, inline cross-refs to VDSR.Update() line numbers.
-- [S2-A01] Structured SOLID/GRASP violation audit complete — 17-violation table in design-document.md §7.1. Sourced from teammate's `docs/Codebase Exploration/SOLID_GRASP_Violations.md`.
+- [S2-A01] Structured SOLID/GRASP violation audit complete — 17-violation table in design-document.md §7.1. Sourced from teammate's `docs/team3/Codebase Exploration/SOLID_GRASP_Violations.md`.
 - [S2-A02] Violation → design-decision mapping complete — all 17 violations mapped in design-document.md §7.2.
 
 ### 2026-05-25 (session 4)
@@ -192,7 +192,7 @@ Format: date, what was completed, what's in progress, any blockers.
 - Decision: `diagrams/class-after.puml` skeleton retained; full rewrite deferred until S2-E1-02 to S2-E1-06 (after/ target classes drafted)
 
 ### 2026-05-25 (session 3)
-- [S2-E1-01] `refactoring-examples/example1-VolumeDataSetRenderer/before/VolumeDataSetRenderer.cs` created — full original source annotated with 20+ inline markers covering all SRP/OCP/ISP/DIP/GRASP violations, CBO drivers, WMC/LCOM evidence, and target class mappings. Annotation legend defined at file header.
+- [S2-E1-01] `refactoring-examples/team3/example1-VolumeDataSetRenderer/before/VolumeDataSetRenderer.cs` created — full original source annotated with 20+ inline markers covering all SRP/OCP/ISP/DIP/GRASP violations, CBO drivers, WMC/LCOM evidence, and target class mappings. Annotation legend defined at file header.
 
 ### 2026-05-25 (session 2)
 - [S2-CO05] Smoke-test of all 5 tools closed: `tests/CodeScene_Report.md` created (was the only missing report). All 5 reports now exist in `tests/`. Real Git data used: 123 commits to VDSR, 9 authors, 2019–2026. Hotspot score critical; Code Health estimated ~3.5/10.
@@ -205,13 +205,13 @@ Format: date, what was completed, what's in progress, any blockers.
 - ClickUp CSV generated (`kanban/sprint2-clickup.csv`) — 57 tasks ready for import
 - PROGRESS.md updated for Sprint 2
 - CLAUDE.md updated — current sprint and roles refreshed
-- Design document outline agreed and written to `docs/design-document.md` — brief-aligned 10-section structure (§9.2 + §6.3), headings + bullet notes (S2-D01 ✅)
+- Design document outline agreed and written to `docs/team3/design-document.md` — brief-aligned 10-section structure (§9.2 + §6.3), headings + bullet notes (S2-D01 ✅)
 
 ### 2026-05-24
 - Read `VolumeDataSetRenderer.cs` in full — confirmed it handles file loading, texture upload, shader property pushing, cursor tracking, crop/region management, mask data, colour maps, foveated rendering, and moment map rendering (8+ distinct responsibilities in one class)
 - Drafted `IRenderPipeline` interface stub with full inline comments covering: command buffer injection, shader keyword control, depth texture availability, and lifecycle (init/dispose)
 - Drafted `NullRenderPipeline` test double — enables edit-mode unit tests without GPU or Unity player loop
-- Both stubs saved to `refactoring-examples/stubs/`
+- Both stubs saved to `refactoring-examples/team3/stubs/`
 - Key design rationale documented: Dependency Inversion Principle — core classes depend on `IRenderPipeline`, not on `UnityEngine.Rendering.Universal` or HDRP namespaces directly
 - Drafted `IMaskMode` interface stub + `NullMaskMode` test double
 - Drafted three concrete strategy implementations: `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode`

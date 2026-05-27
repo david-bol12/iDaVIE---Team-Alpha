@@ -36,17 +36,17 @@ We own the **volume rendering layer**:
 ## Deliverables We Must Produce
 
 ### Sub-team Deliverables (Section 9.2 of brief)
-1. `docs/requirements.md` — Sub-team requirements document (1–2 pages)
-2. `docs/design-document.md` — Sub-team design document (5–10 pages)
-3. `refactoring-examples/` — Two worked refactoring examples with before/after CK metrics
-4. `docs/test-strategy.md` — Sub-team test strategy (2–4 pages)
+1. `docs/team3/requirements.md` — Sub-team requirements document (1–2 pages)
+2. `docs/team3/design-document.md` — Sub-team design document (5–10 pages)
+3. `refactoring-examples/team3/` — Two worked refactoring examples with before/after CK metrics
+4. `docs/team3/test-strategy.md` — Sub-team test strategy (2–4 pages)
 5. `kanban/` — Kanban snapshots at end of each sprint (Sprint 1, 2, 3)
 6. `standup/standup-log.md` — Daily stand-up notes (single running file)
 
 ### Section 6.3 Specific Deliverables
-- `docs/rendering-layer-design.md` — Rendering layer design document
-- `docs/shader-asset-policy.md` — Shader/asset organisation policy for Unity 6
-- `docs/metrics-worksheet.md` — Before/after CK metrics worksheet for the renderer
+- `docs/team3/rendering-layer-design.md` — Rendering layer design document
+- `docs/team3/shader-asset-policy.md` — Shader/asset organisation policy for Unity 6
+- `docs/team3/metrics-worksheet.md` — Before/after CK metrics worksheet for the renderer
 
 ---
 
@@ -171,14 +171,14 @@ idavie-subteam3/
 ├── CLAUDE.md                    ← YOU ARE HERE — read this first every session
 ├── CONTEXT.md                   ← Detailed technical context about iDaVIE rendering
 ├── PROGRESS.md                  ← Running log of what's done / in progress / blocked
-├── docs/
+├── docs/team3/
 │   ├── requirements.md          ← Deliverable 1: requirements doc
 │   ├── design-document.md       ← Deliverable 2: design doc (5–10 pages)
 │   ├── test-strategy.md         ← Deliverable 4: test strategy
 │   ├── rendering-layer-design.md
 │   ├── shader-asset-policy.md
 │   └── metrics-worksheet.md
-├── refactoring-examples/
+├── refactoring-examples/team3/
 │   ├── example1-VolumeDataSetRenderer/
 │   │   ├── README.md
 │   │   ├── before/
@@ -210,7 +210,7 @@ Full task breakdown: `kanban/sprint2-greenfield.md` (57 tasks, ~55 person-hours)
 ClickUp import file: `kanban/sprint2-clickup.csv` (import with DD/MM/YYYY date format; time estimates in minutes)
 
 **Sprint 2 carry-overs (close Mon 25 May EOD):**
-- Team review + finalise `docs/requirements.md`
+- Team review + finalise `docs/team3/requirements.md`
 - Confirm CBO count in VDSR dependency map
 - Agree two refactoring examples (document in `PROGRESS.md`)
 - Tool smoke-test + version docs
