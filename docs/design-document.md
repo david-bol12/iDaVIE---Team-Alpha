@@ -243,7 +243,7 @@ All four failing metrics together on the same class is the diagnostic signature 
 
 ### 5.2 Target Architecture (To-Be)
 
-`VolumeDataSetRenderer` is replaced by five collaborating classes. Every dependency crosses an interface boundary; no class is coupled to a concrete collaborator it doesn't need to change alongside. This structure also breaks the renderer out of the 46-file circular dependency cycle identified in Sprint 1 — full analysis in §8.
+`VolumeDataSetRenderer` is replaced by four collaborating classes. Every dependency crosses an interface boundary; no class is coupled to a concrete collaborator it doesn't need to change alongside. This structure also breaks the renderer out of the 46-file circular dependency cycle identified in Sprint 1 — full analysis in §8.
 
 **Table 5.2 — Proposed class responsibilities and CK targets**
 
