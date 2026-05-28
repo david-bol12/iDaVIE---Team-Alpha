@@ -271,7 +271,7 @@ Slide 2.6 (concern map redistribution). It supports Slide 2.2; if compressed, 2.
 Run the File tab refactor on production code, measure real CK numbers against projections, and write up the delta as the empirical wing of the proposal. Currently the numbers are skeleton-derived; an end-to-end pass would convert projection to measurement.
 
 ### QH.8 — "What is your single weakest argument?"
-The cycle-detection evidence. We claim cycles are forbidden and enforceable, but the DV8/NDepend report on our 8-class slice is owed for Day 10. Until it lands, §4.2 #2 is "suspected fail" on the before-state and "claimed pass" on the after-state — both unverified.
+The cycle-detection evidence — though it is now partly closed. As of 2026-05-28 the after-state *assembly-level* acyclicity is tool-backed: a clean `dotnet build` of all 10 pure-C# skeleton/adapter/test projects passes, and MSBuild refuses to build a cyclic `<ProjectReference>` graph, so the build itself is the proof, backed by the documented reference graph ([`../other/cycles-report.md`](../other/cycles-report.md)). What is still owed for Day 10 is (a) *class-level* DV8/NDepend confirmation on the after-state, and (b) tool confirmation of the 2 before-state cycles currently documented only by a manual DSM (BNCH-4). So §4.2 #2 is now "2 cycles identified manually, tool confirmation owed" on the before-state and "assembly-level pass (tool-backed), class-level pass projected" on the after-state — not the blanket "both unverified" it was before.
 
 ---
 

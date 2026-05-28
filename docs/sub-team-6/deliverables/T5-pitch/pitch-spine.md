@@ -91,7 +91,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 
 **Risk if challenged — "you don't have the cycle report":** acknowledge openly; commit to Day 10. The other three non-negotiables already justify the change.
 
-**[EVIDENCE-GAP-1.3a]** DV8 / NDepend cycle report for our 8-class slice. Owner: Quality Champion. Due: Day 10 sprint review.
+**[EVIDENCE-GAP-1.3a]** DV8 / NDepend cycle report for our 8-class slice → [`../other/cycles-report.md`](../other/cycles-report.md). **Partially closed 2026-05-28:** after-state *assembly-level* acyclicity is now tool-backed (clean `dotnet build` of all 10 pure-C# projects — MSBuild rejects cyclic `<ProjectReference>` graphs) plus the documented reference graph. Still owed: class-level DV8/NDepend confirmation on the after-state and tool confirmation of the 2 manually-documented before-state cycles (BNCH-4). Owner: Quality Champion. Due: Day 10 sprint review.
 
 ---
 
@@ -848,7 +848,7 @@ Ranked by pitch-day visibility. Each gap names an artefact, an owner, and a due 
 
 | # | Gap | Artefact | Owner | Due | Slide(s) |
 |---|---|---|---|---|---|
-| 1 | DV8 / NDepend cycle report on 8-class slice | `docs/sub-team-6/metrics/cycles-day10.md` | Quality Champion | Day 10 | 1.3, 7.1 |
+| 1 | DV8 / NDepend cycle report on 8-class slice — after-state assembly-level acyclicity now tool-backed (MSBuild); class-level + before-state tool confirmation still owed | [`../other/cycles-report.md`](../other/cycles-report.md) | Quality Champion | Day 10 | 1.3, 7.1 |
 | 2 | PlantUML C4 Level 1 diagram for our slice | `docs/sub-team-6/diagrams/c4-context.puml` | TL | Day 8 (ARCH-3) | 2.1 |
 | 3 | C4 Level 2 + Level 3 PlantUML | `docs/sub-team-6/diagrams/c4-container.puml`, `c4-component.puml` | TL | Day 8 | 2.2, 2.3 |
 | 4 | NDepend rules wired into CI (cycles, no-Unity-in-VM, no-static-singleton) | `tools/ndepend/rules.cqlinq` | Quality Guild | Day 10 | 2.5, 6.2 |
