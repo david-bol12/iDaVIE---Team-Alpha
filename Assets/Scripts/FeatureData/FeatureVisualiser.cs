@@ -32,11 +32,14 @@
 
 using System;
 using System.Collections.Generic;
+using DataFeatures;
+using iDaVIE.Application.Feature;
+using iDaVIE.Domain.Feature;
 using UnityEngine;
 using UnityEngine.Serialization;
 using VolumeData;
 
-namespace DataFeatures
+namespace iDaVIE.Infrastructure.Unity
 {
     /// <summary>
     /// Unity-side adapter for the feature domain.

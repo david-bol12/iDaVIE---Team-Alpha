@@ -35,8 +35,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using DataFeatures;
+using iDaVIE.Domain.Feature;
 
-namespace DataFeatures
+namespace iDaVIE.Application.Feature
 {
     // ── Boundary interfaces (defined here; implemented by other WPs) ──────────
 
@@ -339,9 +342,123 @@ namespace DataFeatures
             bool[]                                   columnsMask,
             bool                                     excludeExternal)
         {
-            // Stub — row-by-row feature construction will be wired once a
-            // FeatureFactory is available. See FeatureSetRenderer.SpawnFeaturesFromTable
-            // for the existing Unity-coupled equivalent to port from.
+            if (table.Rows.Count == 0 || table.Column.Count == 0)
+                return;
+
+            // Build column name index and raw-data key list from the mask.
+            var colNames         = new string[table.Column.Count];
+            var rawDataKeysList  = new List<string>();
+            for (int i = 0; i < table.Column.Count; i++)
+            {
+                colNames[i] = table.Column[i].Name;
+                if (columnsMask[i])
+                    rawDataKeysList.Add(colNames[i]);
+            }
+            set.RawDataKeys  = rawDataKeysList.ToArray();
+            set.RawDataTypes = new string[rawDataKeysList.Count];
+            for (int i = 0; i < set.RawDataTypes.Length; i++)
+                set.RawDataTypes[i] = "string";
+
+            var keys           = mapping.Keys;
+            bool containsBoxes = keys.Contains(SourceMappingOptions.Xmin);
+            bool containsXYZ   = keys.Contains(SourceMappingOptions.X);
+
+            // Sky-coordinate transforms (Ra/Dec + Velo/Freq/Redshift) require AstTool,
+            // which is a Unity/native dependency outside the domain layer. The IFeatureTableLoader
+            // implementation (WP2) is responsible for converting sky coords to pixel coords
+            // before returning the FeatureTable, so by the time we get here the mapping
+            // should contain X/Y/Z or Xmin/Xmax columns.
+            if (!containsBoxes && !containsXYZ)
+                return;
+
+            int nameIndex = keys.Contains(SourceMappingOptions.ID)
+                ? Array.IndexOf(colNames, mapping[SourceMappingOptions.ID])
+                : -1;
+            int flagIndex = keys.Contains(SourceMappingOptions.Flag)
+                ? Array.IndexOf(colNames, mapping[SourceMappingOptions.Flag])
+                : -1;
+
+            int[] posIndices = { -1, -1, -1 };
+            if (containsXYZ)
+            {
+                posIndices[0] = Array.IndexOf(colNames, mapping[SourceMappingOptions.X]);
+                posIndices[1] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Y]);
+                posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Z]);
+            }
+
+            int[] boxIndices = { -1, -1, -1, -1, -1, -1 };
+            if (containsBoxes)
+            {
+                boxIndices[0] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Xmin]);
+                boxIndices[1] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Xmax]);
+                boxIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Ymin]);
+                boxIndices[3] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Ymax]);
+                boxIndices[4] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Zmin]);
+                boxIndices[5] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Zmax]);
+            }
+
+            for (int row = 0; row < table.Rows.Count; row++)
+            {
+                var rawData = new List<string>();
+                for (int i = 0; i < table.Column.Count; i++)
+                {
+                    if (columnsMask[i])
+                        rawData.Add(table.Rows[row].ColumnData[i]?.ToString() ?? string.Empty);
+                }
+
+                string name = nameIndex >= 0
+                    ? (string)table.Rows[row].ColumnData[nameIndex]
+                    : $"Source #{row + 1}";
+
+                string flag = flagIndex >= 0
+                    ? (string)table.Rows[row].ColumnData[flagIndex]
+                    : string.Empty;
+
+                Vec3 cornerMin, cornerMax;
+                if (containsBoxes)
+                {
+                    float xMin = ParseColFloat(table.Rows[row].ColumnData[boxIndices[0]]);
+                    float xMax = ParseColFloat(table.Rows[row].ColumnData[boxIndices[1]]);
+                    float yMin = ParseColFloat(table.Rows[row].ColumnData[boxIndices[2]]);
+                    float yMax = ParseColFloat(table.Rows[row].ColumnData[boxIndices[3]]);
+                    float zMin = ParseColFloat(table.Rows[row].ColumnData[boxIndices[4]]);
+                    float zMax = ParseColFloat(table.Rows[row].ColumnData[boxIndices[5]]);
+                    cornerMin = new Vec3(xMin, yMin, zMin);
+                    cornerMax = new Vec3(xMax, yMax, zMax);
+                }
+                else
+                {
+                    // Point coordinate — expand to a 1-voxel box (mirrors SpawnFeaturesFromTable).
+                    float x = ParseColFloat(table.Rows[row].ColumnData[posIndices[0]]);
+                    float y = ParseColFloat(table.Rows[row].ColumnData[posIndices[1]]);
+                    float z = ParseColFloat(table.Rows[row].ColumnData[posIndices[2]]);
+                    cornerMin = new Vec3(x - 1f, y - 1f, z - 1f);
+                    cornerMax = new Vec3(x + 1f, y + 1f, z + 1f);
+                }
+
+                var feature = new Feature(
+                    cornerMin: cornerMin,
+                    cornerMax: cornerMax,
+                    color:     set.Color,
+                    name:      name,
+                    flag:      flag,
+                    index:     set.Features.Count,
+                    id:        row,
+                    rawData:   rawData.ToArray(),
+                    visible:   false);
+
+                if (excludeExternal && feature.IsOutsideVolume())
+                    continue;
+
+                set.Add(feature);
+            }
+        }
+
+        private static float ParseColFloat(object value)
+        {
+            if (value == null) return 0f;
+            return float.TryParse(value.ToString(), NumberStyles.Any,
+                CultureInfo.InvariantCulture, out float result) ? result : 0f;
         }
     }
 

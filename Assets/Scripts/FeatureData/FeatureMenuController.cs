@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DataFeatures;
+using iDaVIE.Domain.Feature;
+using iDaVIE.Infrastructure.Unity;
 using PolyAndCode.UI;
 using TMPro;
 using UnityEngine;
@@ -237,7 +239,7 @@ public class FeatureMenuController : MonoBehaviour
     /// </summary>
     public void ChangeColor()
     {
-        var allColors = FeatureCatalog.FeatureColors.Select(c => c.ToUnityColor()).ToArray();
+        var allColors = FeatureCatalog.FeatureColors.Select(c => new Color(c.R, c.G, c.B, c.A)).ToArray();
         Color currentColor = _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor;
 
         if (!allColors.Contains(currentColor))

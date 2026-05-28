@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
+using DataFeatures;
+using iDaVIE.Domain.Feature;
 
-namespace DataFeatures
+namespace iDaVIE.Infrastructure.Persistence
 {
     /// <summary>
     /// Pure-C# VOTable 1.3 XML serialiser. No Unity dependencies; fully unit-testable.

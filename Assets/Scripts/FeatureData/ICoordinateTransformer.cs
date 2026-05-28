@@ -1,4 +1,4 @@
-namespace DataFeatures
+namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Abstracts AstTool.Transform3D and AstTool.Norm so callers (e.g. VoTableExportService)

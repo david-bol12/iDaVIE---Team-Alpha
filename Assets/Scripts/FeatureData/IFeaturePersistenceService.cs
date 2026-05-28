@@ -13,8 +13,9 @@
  */
 
 using System.Collections.Generic;
+using DataFeatures;
 
-namespace DataFeatures
+namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Persistence boundary for the feature domain.

@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using iDaVIE.Domain.Feature;
+using iDaVIE.Infrastructure.Unity;
 using UnityEngine;
 using VolumeData;
 using VoTableReader;
@@ -160,7 +162,6 @@ namespace DataFeatures
             obj.IdTextField = (FeatureList.Count).ToString();
             obj.SourceName = featureToAdd.Name;
             obj.Feature = featureToAdd;
-            featureToAdd.FeatureSetParent = this;
             SetFeatureAsDirty(featureToAdd.Index);
         }
 
@@ -497,7 +498,6 @@ namespace DataFeatures
                     var flag = (importFlags) ? flags[i] : "";
                     var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, featureNames[i], flag, i, i,
                         featureRawData[i].ToArray(), false);
-                    featureToAdd.FeatureSetParent = this;
                     if (!(excludeExternal && FeatureIsWithinVolume(featureToAdd, VolumeRenderer)))
                     {
                         FeatureList.Add(featureToAdd);

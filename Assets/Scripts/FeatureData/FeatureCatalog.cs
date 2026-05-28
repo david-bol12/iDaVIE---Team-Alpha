@@ -31,8 +31,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using DataFeatures;
 
-namespace DataFeatures
+namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Registry and persistence gateway for all <see cref="FeatureSet"/> instances

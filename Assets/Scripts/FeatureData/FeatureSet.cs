@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using iDaVIE.Domain.Feature;
 
 namespace DataFeatures
 {

@@ -1,4 +1,6 @@
-namespace DataFeatures
+using DataFeatures;
+
+namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Plug-in seam for VOTable serialisation.

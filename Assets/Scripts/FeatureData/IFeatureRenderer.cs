@@ -18,7 +18,9 @@
  * the implementing sub-team owns the body.
  */
 
-namespace DataFeatures
+using DataFeatures;
+
+namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Rendering boundary for a single FeatureSet.

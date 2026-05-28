@@ -19,6 +19,7 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
+using iDaVIE.Infrastructure.Unity;
 using UnityEngine;
 
 namespace DataFeatures

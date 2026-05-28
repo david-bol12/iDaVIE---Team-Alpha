@@ -1,4 +1,4 @@
-namespace DataFeatures
+namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Opaque domain handle for an AST World Coordinate System frame.
