@@ -1,6 +1,6 @@
 # D5 — Branch and Line Coverage Report
 
-**Generated:** 2026-05-27 (Day 8) · **Tool:** Coverlet 6.0.2 + ReportGenerator 5.5.10 · **Source:** merged Cobertura from all 5 test projects (82 / 82 tests green)
+**Generated:** 2026-05-27 (Day 8) · **Tool:** Coverlet 6.0.2 + ReportGenerator 5.5.10 · **Source:** merged Cobertura from all 5 test projects (95 / 95 tests green)
 
 **Reproduce locally:**
 
