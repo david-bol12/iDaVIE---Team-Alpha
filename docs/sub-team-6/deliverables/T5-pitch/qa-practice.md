@@ -113,7 +113,7 @@ Because bounds validation has its own *actor* (the data scientist tweaking subse
 ## Section 4 — Worked example: Debug tab
 
 ### Q4.1 — "What is wrong with the current Debug tab specifically?"
-It is an `OnGUI` IMGUI popup inside `CanvassDesktop`, polling static logger state every frame. There is no log *event* — only a log *snapshot* re-read at frame rate. Three independent problems: deprecated UI API, untestable, polling instead of pushing.
+`DebugLogging.cs` already subscribes to a Unity event (`Application.logMessageReceived` in `OnEnable`) — it is event-driven, not polled. The problems are structural: the hook is a *static* Unity API (untestable — no fake can replace a global engine event); entries are *unstructured* strings in a non-generic `Queue` (no level, no source, no timestamp — just `[type] : message`); and one handler also does per-message disk I/O and rebuilds the whole output `StringBuilder` (O(N)) on every line. Three real defects: static/Unity-coupled, unstructured, untestable. The fix is a typed `ILogStream`/`ILogObserver` + `LogEntry` DTO fed from the server via `log.emit`.
 
 ### Q4.2 — "Why Observer pattern here?"
 Log entries are produced by background threads at unpredictable rates and consumed by an arbitrary number of sinks (UI, file, network). Observer decouples producer rate from consumer count. GoF textbook fit.

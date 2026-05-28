@@ -442,23 +442,25 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 
 ---
 
-### Slide 4.1 — Debug tab today: IMGUI popup + static logger access (~60 sec)
+### Slide 4.1 — Debug tab today: a static, unstructured, untestable log hook (~60 sec)
 
-**Claim:** Debug output today is legacy `OnGUI` IMGUI inside the same god class, reading from static logger access. There is no log *stream* — there is a log *snapshot* re-read every frame.
+**Claim:** The Debug tab (`DebugLogging.cs`, a 255-line `MonoBehaviour`) *already* observes a Unity event — it subscribes to `Application.logMessageReceived` in `OnEnable` (push, event-driven). But it observes through a **static, Unity-coupled hook**, stores entries as **unstructured strings in a non-generic `Queue`**, does **per-message disk I/O**, and **rebuilds the entire output `StringBuilder` from the full queue on every message** (O(N)). There is no `LogEntry` type, no level, no source, no structured timestamp — only `"[" + type + "] : " + logString`.
 
-**Why this matters:** the architectural failure here is *the absence of an event surface*. Observer is impossible because there is nothing to observe.
+**Why this matters:** the architectural failure is not the *absence* of an observer — it is that the observer is bolted to a **static global Unity API** (untestable), carries **no structured data** (cannot filter by level or source), and **couples observation, formatting, file I/O and UI-text rebuild in one method** (`HandleLog`). The refactor replaces the static hook with a typed `ILogStream` / `ILogObserver` + a `LogEntry` DTO, fed from the server via `log.emit`.
 
 **Theory anchor:**
-- **Push vs pull (Hohpe & Woolf, Enterprise Integration Patterns).** Pull semantics force the consumer to poll; push allows the producer to fan out at its own rate.
-- **Temporal coupling (anti-pattern).** Frame-driven polling couples the consumer to the rendering tick — wrong granularity for a log.
+- **DIP + testability (Beck — "if it's hard to test, the design is wrong").** Subscribing to the *static* `Application.logMessageReceived` is an untestable seam: no fake can stand in for a global engine event. An `ILogStream` interface restores the seam.
+- **Primitive obsession (Fowler).** A `Queue` of `"[type] : message"` lines is structured data flattened to text. Levels, source tags and filtering are impossible without a `LogEntry` DTO.
+- **SRP.** `HandleLog` observes, formats, enqueues, writes to disk (`AutoSave`), rebuilds the whole `StringBuilder`, and force-sets the scrollbar — several reasons to change in one method.
 
 **Evidence:**
-- `requirements.md` §2 table — Debug tab row: "tool-state read-out, OnGUI popup toggles, internal-state log".
+- `Assets/Scripts/Debuggers/DebugLogging.cs` — `OnEnable` line 149 (`Application.logMessageReceived += HandleLog`); `HandleLog` lines 177–197 (non-generic `Queue`, O(N) `StringBuilder` rebuild, `debugScrollbar.value = 1.0f`); `AutoSave` lines 249–254 (per-message `StreamWriter` open/write/close).
+- `requirements.md` §2 table — Debug row: behaviour "Scrollable Unity log readout, save log to `.txt`"; coupling "Subscribes to `Application.logMessageReceived` on the main thread with no thread guard"; defect **B-02 (CRITICAL)** tab-switch-during-load crash.
 - [EVIDENCE-GAP-4.1] — `ex2-debug-tab/before-class-diagram.puml` and `before-dependency-graph.puml` are owed (the equivalents for File tab exist). Owner: TL. Due: Day 8.
 
-**Speaker note:** "the Debug tab is the worst panel in the slice because nothing about it is event-driven. The fix is not a button rewrite — it is *creating an event in the first place*."
+**Speaker note:** "the Debug tab is not missing an observer — it *is* one, subscribed to `Application.logMessageReceived`. The problem is three-fold: the hook is a static Unity API, so nothing can be unit-tested; the data is an unstructured string queue, so you cannot filter by level or source; and one method does observation, disk I/O and an O(N) UI rebuild on every single log line. The refactor swaps the static hook for a typed `ILogStream` the ViewModel can subscribe to and a fake can replace."
 
-**Risk if challenged — "what's wrong with OnGUI?":** it is deprecated in Unity 6's UI Toolkit world; it is not testable; it polls every frame regardless of whether log content changed. Three independent problems, all solved by Observer.
+**Risk if challenged — "it already subscribes to an event, so what is the win?":** the win is the *seam* and the *structure*. A static engine event cannot be faked in a unit test; `ILogStream` can. A `LogEntry` DTO turns flattened text back into filterable, structured data. Same Observer shape — testable and structured instead of static and stringly-typed.
 
 ---
 
