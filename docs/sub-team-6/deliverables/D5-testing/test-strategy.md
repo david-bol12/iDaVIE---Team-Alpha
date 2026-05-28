@@ -128,15 +128,15 @@ public class DebugTabViewModelTests
 }
 ```
 
-### 3.4 Delivered test count (Day 8 snapshot)
+### 3.4 Delivered test count (Day 8 snapshot, post-F14 follow-up)
 
 | Class | Required | **Delivered** | Evidence |
 |---|---:|---:|---|
-| `FileTabViewModel` | ≥ 5 | **34** | [`file-tab/tests/FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) |
+| `FileTabViewModel` + `SubsetBoundsViewModel` | ≥ 5 | **47** (34 happy/error path + 13 branch-coverage gate-close) | [`file-tab/tests/FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) |
 | `DebugTabViewModel` + `LogStream` | ≥ 3 | **29** | [`debug-tab/tests/DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) |
-| **Tier 1 total** | — | **63** | `dotnet test` runtime ~29 + ~17 ms — zero Unity dependency |
+| **Tier 1 total** | — | **76** | `dotnet test` runtime ~37 + ~17 ms — zero Unity dependency |
 
-Tier-2 counts (19 tests across framing, gateway double, and the two gateway-proxy adapters) are in §4.4. **Combined Tier 1 + Tier 2: 82 / 82 green, ~185 ms total.**
+Tier-2 counts (19 tests across framing, gateway double, and the two gateway-proxy adapters) are in §4.4. **Combined Tier 1 + Tier 2: 95 / 95 green, ~200 ms total.**
 
 ---
 
@@ -184,7 +184,7 @@ refactoring-examples/sub-team-6/
 | `DebugTabAdaptersTests` | — | **4** | ~29 ms |
 | **Tier 2 total** | — | **19** | ~140 ms |
 
-Combined with the 63 tier-1 tests this brings the no-Unity suite to **82 / 82 green** in under 200 ms total — a credible PR-time gate.
+Combined with the 76 tier-1 tests this brings the no-Unity suite to **95 / 95 green** in under 200 ms total — a credible PR-time gate, and the gate currently passes on every gated assembly.
 
 ---
 
@@ -257,20 +257,18 @@ SM-1 through SM-7 map directly to the five rows in the [requirements behaviour c
 
 The View layer and the Gateway transport (`JsonRpcPipeGateway`) are tracked but not gated. View justification: UI Toolkit binding boilerplate and UXML configuration are framework-heavy; a strict gate would force testing of the framework itself. Gateway-transport justification: `JsonRpcPipeGateway` requires a real named pipe with a Sub-team 1 server handler — see §4.3.
 
-### 7.2 Measured coverage (audit F14 close, 2026-05-27)
+### 7.2 Measured coverage (audit F14 close, 2026-05-27 Day 8)
 
-Full per-class numbers, the reproduction command, and the remediation plan live in [`coverage-report.md`](coverage-report.md). Headline:
+Full per-class numbers, the reproduction command, and the test-list that closed the branch gap live in [`coverage-report.md`](coverage-report.md). Headline:
 
 | Assembly | Line | Branch | Gate status |
 |---|---:|---:|---|
 | **DebugTabSkeleton** | **100 %** | **100 %** | ✅ both met |
-| **FileTabSkeleton** | **82.8 %** | **67.4 %** | 🔴 **branch below ≥ 70 % gate by 2.6 pp** |
+| **FileTabSkeleton** | **89.4 %** | **77.2 %** | ✅ both met (Day 8 follow-up added 13 targeted tests; branch was 67.4 % on Day 6) |
 | **iDaVIE.Client.Gateway** | 41.2 % | 41.6 % | tracked (not gated) |
-| **Aggregate** | **67.7 %** (404/596) | **61 %** (144/236) | — |
+| **Aggregate** | **71.3 %** | **66.5 %** | — |
 
-**The branch gate currently fails on `FileTabSkeleton`.** The miss is concentrated in error-path branches of `FileTabViewModel`'s four async commands and in `*RelayCommand` edge cases. Four candidate test cases (listed in `coverage-report.md` §2.2) are estimated to lift branch coverage to ~76 % on `FileTabViewModel`, clearing the gate.
-
-This is the correct outcome of a real CI gate: it exposes the gap rather than waving through an aspirational number. The gate is **not yet wired into CI** — the Quality Guild's Day-10 task per ADR-0005. Wiring it before the missing tests land would block the next PR.
+**Both gated assemblies now clear the ≥ 70 % gate.** The Day-6 measurement showed FileTabSkeleton at 67.4 % branch — below the gate by 2.6 pp. The Day-8 follow-up added 13 NUnit cases against the specific uncovered branches (constructor null-guards, no-op setters, empty-VM `Dispose`, setters-before-image-load, `IsLoadable` axis-count rule, BrowseMask cancel/replace paths, NAXIS1 and NAXIS2 mismatch branches in `MaskAxesMatchImage`), lifting the assembly to 89.4 / 77.2. **Wiring the gate into CI as the Quality Guild's Day-10 task per ADR-0005 will not block any current PR.**
 
 ### 7.3 Reproduce locally
 
@@ -350,7 +348,7 @@ Every row below points at an artefact a panel reviewer can open in this repo.
 
 | Artefact | What it shows |
 |---|---|
-| [BNCH-6 — Mocking-difficulty count](../BNCH-6.md) | Before: 205 call sites in `CanvassDesktop` that require a live Unity scene or native DLL to test. After: 0 in the ViewModel layer (205 → 0 static/Unity; 6 → 0 `FindObjectOfType`; 36 → 0 P/Invoke / `StandaloneFileBrowser`). |
+| [BNCH-6 — Mocking-difficulty count](../other/T2-baseline-benchmark/BNCH-6.md) | Before: 205 call sites in `CanvassDesktop` that require a live Unity scene or native DLL to test. After: 0 in the ViewModel layer (205 → 0 static/Unity; 6 → 0 `FindObjectOfType`; 36 → 0 P/Invoke / `StandaloneFileBrowser`). |
 | [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) | **34 NUnit tests** on `FileTabViewModel` — zero `using UnityEngine`, mocks four split service interfaces. |
 | [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) | **29 NUnit tests** on `DebugTabViewModel` + `LogStream` — zero `using UnityEngine`, `dotnet test` runtime **~17 ms**. |
 | [`contracts/tests/LengthPrefixFramingTests.cs`](../../../../refactoring-examples/sub-team-6/contracts/tests/LengthPrefixFramingTests.cs) + [`FakeGatewayTests.cs`](../../../../refactoring-examples/sub-team-6/contracts/tests/FakeGatewayTests.cs) | **11 NUnit tests** pinning the wire framing (ADR-0002 §"Framing") and the gateway double's contract. Zero Unity dependency. |
@@ -374,7 +372,7 @@ Every row below points at an artefact a panel reviewer can open in this repo.
 | ViewModel unit-test detail spec (Tier 1) | [`viewmodel-unit-tests.md`](viewmodel-unit-tests.md) |
 | Gateway and adapter test detail (Tier 2) | §4 of this document |
 | UI Toolkit page-object detail spec (Tier 3) | [`ui-toolkit.md`](ui-toolkit.md) |
-| Mocking-difficulty baseline | [`BNCH-6.md`](../BNCH-6.md) |
+| Mocking-difficulty baseline | [`BNCH-6.md`](../other/T2-baseline-benchmark/BNCH-6.md) |
 | CK metric baseline + projection | [`D4-worked-examples/metrics.md`](../D4-worked-examples/metrics.md) |
 | Testability NFRs | [`D1-requirements/requirements.md` §3 — NFR-TST-1/2/3](../D1-requirements/requirements.md) |
 | Audit close (F9 / F10 — transport has real consumer) | [`docs/sub-team-6/deliverables/adr-009-audit.md`](../adr-009-audit.md) |
