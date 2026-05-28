@@ -43,18 +43,15 @@
  
 **Damien (Tech Lead)**
 - ✅ Completed: Reviewed PR from Cathal (database schema)
-- 🔄 In Progress: User authentication module development
 - 📅 Today: Complete auth module and pair with Chris on testing
   
 **Cathal (Scrum Master)**
-- ✅ Completed: Database schema finalized and merged
-- 🔄 In Progress: API integration layer
+- ✅ Completed: Finalised Kanban
 - 📅 Today: Set up integration endpoints
   
 **Chris (Quality Champion)**
 - ✅ Completed: Automated test framework skeleton
-- 🔄 In Progress: Writing unit tests for auth module
-- 📅 Today: Begin integration test suite
+- 📅 Today: Begin planning integration test suite
   
 **Ciallian (PO Liaison)**
 - ✅ Completed: API credentials obtained from vendor
@@ -68,7 +65,6 @@
 **Present:** Cathal, Damien, Chris, Ciallian
  
 **Damien (Tech Lead)**
-- ✅ Completed: User authentication module (85% complete)
 - 🔄 In Progress: Fixing edge case with token refresh logic
 - 📅 Today: Complete auth module, code review with team
   
