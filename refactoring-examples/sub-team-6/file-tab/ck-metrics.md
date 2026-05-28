@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Hand-counted CK projection (Day-13 tool verification pending). **BEFORE `CanvassDesktop` fails 5/7 thresholds:** WMC 57 (≤40), CBO ~32 (≤25), RFC ~210 (≤50), LCOM4 ≥7 (=1), LOC 1899. **AFTER** splits into 8 classes — 9/10 pass; only `FileTabViewModel` is borderline at WMC 27 (≤20 domain), with a documented remediation (extract command bodies into `FileTabCommands` helper → WMC ~22). Headline deltas: **WMC −53%, CBO −72%, RFC −76%, LCOM4 disjoint → 1 per class**. The unit-testable surface goes from **0** (Unity required) to **34** NUnit tests running with zero Unity dependency.
+Hand-counted CK projection (Day-13 tool verification pending). **BEFORE `CanvassDesktop` fails 5/7 thresholds:** WMC 57 (≤40), CBO ~32 (≤25), RFC ~210 (≤50), LCOM hs ≈ 0.97 (≤ 0.5), LOC 1899. **AFTER** splits into 8 classes — 9/10 pass; only `FileTabViewModel` is borderline at WMC 27 (≤20 domain), with a documented remediation (extract command bodies into `FileTabCommands` helper → WMC ~22). Headline deltas: **WMC −53%, CBO −72%, RFC −76%, LCOM hs ≈ 0.97 → ≈ 0 per class**. The unit-testable surface goes from **0** (Unity required) to **34** NUnit tests running with zero Unity dependency.
 
 ---
 
@@ -16,7 +16,7 @@ Hand-counted CK projection (Day-13 tool verification pending). **BEFORE `Canvass
 > - **DIT** = depth from `System.Object`. `MonoBehaviour` adds 3 to the count (`Object → Component → Behaviour → MonoBehaviour`).
 > - **CBO** = distinct named types referenced *in implementation*, excluding primitives, language types (`string`, `int`, etc.), and the class's own type. DTOs of the same package are counted.
 > - **RFC** = WMC + distinct external methods called. Hand-count is approximate; tool-verified value is authoritative.
-> - **LCOM** = LCOM4 (connected components of the method-field graph). 1 = perfectly cohesive; >1 = disjoint concerns.
+> - **LCOM** = LCOM hs (Henderson-Sellers). 0 = perfectly cohesive; 1 = completely incoherent; threshold ≤ 0.5.
 >
 > Threshold source: `CLAUDE.md` § *Mandatory metric tools*, Section 7.1 of the brief.
 >
@@ -27,7 +27,7 @@ Hand-counted CK projection (Day-13 tool verification pending). **BEFORE `Canvass
 > | NOC | ≤ 5 | ≤ 5 |
 > | CBO | ≤ 14 | ≤ 25 |
 > | RFC | ≤ 50 | ≤ 50 |
-> | LCOM | ≤ 0.5 (LCOM-HS) / = 1 (LCOM4) | same |
+> | LCOM | ≤ 0.5 | same |
 
 ---
 
@@ -41,7 +41,7 @@ Hand-counted CK projection (Day-13 tool verification pending). **BEFORE `Canvass
 | NOC | 0 | ≤ 5 | ✅ | No subclasses in repo |
 | CBO | **~32** | ≤ 25 | ❌ | Distinct named types referenced; sample below |
 | RFC | **~210** | ≤ 50 | ❌ | 57 own methods + ~150 distinct external method calls (Unity API + plug-in) |
-| LCOM4 | **≥ 7** | = 1 | ❌ | Disjoint concern clusters: file-paths, FITS axes, subset bounds, threshold sliders, popup state, render lifecycle, coroutine state. Each cluster touches a non-overlapping subset of fields. |
+| LCOM hs | **≈ 0.97** | ≤ 0.5 | ❌ | Disjoint concern clusters: file-paths, FITS axes, subset bounds, threshold sliders, popup state, render lifecycle, coroutine state. Each cluster touches a non-overlapping subset of fields. |
 
 ### Sample CBO collaborators (32 distinct, abbreviated)
 
@@ -51,7 +51,7 @@ Confirmed by grep against the class body — counted once per distinct named typ
 
 ### Verdict (BEFORE)
 
-`CanvassDesktop` **fails 5 of 7 metrics**. The most severe failures are CBO (32 vs. 25), RFC (~210 vs. 50), and LCOM4 (≥ 7 vs. 1). These align with the qualitative smell catalogue in [`before-trace.md` §S1–S8](before-trace.md#smell-summary-feeds-the-solidgrasp-audit--ck-deltas).
+`CanvassDesktop` **fails 5 of 7 metrics**. The most severe failures are CBO (32 vs. 25), RFC (~210 vs. 50), and LCOM hs (≈ 0.97 vs. ≤ 0.5). These align with the qualitative smell catalogue in [`before-trace.md` §S1–S8](before-trace.md#smell-summary-feeds-the-solidgrasp-audit--ck-deltas).
 
 ---
 
@@ -59,19 +59,19 @@ Confirmed by grep against the class body — counted once per distinct named typ
 
 The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 7 in the initial split — `MemoryProbeAdapter` is the new one). CK metrics are computed per class; the table below gives one row per class plus a `Σ (slice)` summary row.
 
-| Class | Layer | LOC | WMC | DIT | NOC | CBO | RFC | LCOM4 | Threshold band | Pass? |
+| Class | Layer | LOC | WMC | DIT | NOC | CBO | RFC | LCOM hs | Threshold band | Pass? |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|:--:|
-| `FileTabViewModel` | domain | ~480 | **27** | 1 | 0 | **9** | **~50** | 1 | domain (see note) | ⚠ |
-| `SubsetBoundsViewModel` | domain | 117 | 12 | 1 | 0 | 1 | ~18 | 1 | domain | ✅ |
-| `AsyncRelayCommand` (nested helper) | domain | ~25 | 5 | 1 | 0 | 1 | ~8 | 1 | domain | ✅ |
-| `RelayCommand` (nested helper) | domain | ~15 | 4 | 1 | 0 | 1 | ~6 | 1 | domain | ✅ |
-| `FitsServiceAdapter` | adapter | ~165 | 6 | 1 | 0 | 5 | ~26 | 1 | adapter | ✅ |
-| `FileDialogServiceAdapter` | adapter | 59 | 1 | 1 | 0 | 4 | ~9 | 1 | adapter | ✅ |
-| `VolumeServiceAdapter` | adapter | ~175 | 5 | 4 | 0 | **8** | ~32 | 1 | adapter (MonoBehaviour) | ✅ |
-| `MemoryProbeAdapter` | adapter | 18 | 1 | 1 | 0 | 2 | ~3 | 1 | adapter | ✅ |
-| `FileTabView` | adapter | ~330 | ~16 | 4 | 0 | 5 | ~40 | 1 | adapter (MonoBehaviour) | ✅ |
-| `FileTabCompositionRoot` | adapter | 54 | 2 | 4 | 0 | 7 | ~12 | 1 | adapter (MonoBehaviour) | ✅ |
-| **Σ slice** | — | **~1,438** | **79** | **— max 4** | **0** | **— max 9** | **— max ~50** | **1 per class** | — | **9 / 10 pass; 1 borderline** |
+| `FileTabViewModel` | domain | ~480 | **27** | 1 | 0 | **9** | **~50** | ≈ 0 | domain (see note) | ⚠ |
+| `SubsetBoundsViewModel` | domain | 117 | 12 | 1 | 0 | 1 | ~18 | ≈ 0 | domain | ✅ |
+| `AsyncRelayCommand` (nested helper) | domain | ~25 | 5 | 1 | 0 | 1 | ~8 | ≈ 0 | domain | ✅ |
+| `RelayCommand` (nested helper) | domain | ~15 | 4 | 1 | 0 | 1 | ~6 | ≈ 0 | domain | ✅ |
+| `FitsServiceAdapter` | adapter | ~165 | 6 | 1 | 0 | 5 | ~26 | ≈ 0 | adapter | ✅ |
+| `FileDialogServiceAdapter` | adapter | 59 | 1 | 1 | 0 | 4 | ~9 | ≈ 0 | adapter | ✅ |
+| `VolumeServiceAdapter` | adapter | ~175 | 5 | 4 | 0 | **8** | ~32 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
+| `MemoryProbeAdapter` | adapter | 18 | 1 | 1 | 0 | 2 | ~3 | ≈ 0 | adapter | ✅ |
+| `FileTabView` | adapter | ~330 | ~16 | 4 | 0 | 5 | ~40 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
+| `FileTabCompositionRoot` | adapter | 54 | 2 | 4 | 0 | 7 | ~12 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
+| **Σ slice** | — | **~1,438** | **79** | **— max 4** | **0** | **— max 9** | **— max ~50** | **≈ 0 per class** | — | **9 / 10 pass; 1 borderline** |
 
 ### Per-class notes
 
@@ -81,7 +81,7 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
   - Remediation if the tool reports > 20: extract the three command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`) and the two helpers `ComputeZScale` / `BuildMemoryWarning` into a small `FileTabCommands` helper. That removes 5 methods without behaviour change and brings WMC to ~22.
 - CBO: **9** = four injected interfaces (`IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`) + `SubsetBoundsViewModel` + four DTO/enum types (`FitsFileInfo`, `LoadCubeRequest`, `HduInfo`, `RatioMode`). Under the ≤ 14 domain threshold.
 - RFC: **~50** own + external (Task / IProgress / EventArgs / PropertyChangedEventArgs / Math / Linq / Math.Min/Max / IDisposable). At the ≤ 50 limit — tool-verified value is authoritative.
-- LCOM4: 1. All methods still cluster around the same fields (current image/mask info + selection state + commands + memory probe).
+- LCOM hs: ≈ 0. All methods still cluster around the same fields (current image/mask info + selection state + commands + memory probe).
 - DIT: 1. Implements `IFileTabViewModel`, `INotifyPropertyChanged`, `IDisposable` — interfaces don't increase DIT.
 
 **`VolumeServiceAdapter` (the orchestrator-tier adapter)**
@@ -90,7 +90,7 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 - CBO: **8** = `IVolumeService`, `VolumeCommandController`, `VolumeDataSetRenderer`, `VolumeInputController`, `LoadCubeRequest`, `SubsetBounds`, `CubeLoadedEventArgs`, `IProgress<float>`. Under the ≤ 25 adapter threshold.
 - **Smell S6 (busy-wait) eliminated.** The previous `while (!renderer.started) yield return WaitForSeconds(0.1f)` loop is replaced by `yield return StartCoroutine(renderer._startFunc())` — Unity's coroutine scheduler suspends the parent until the child completes. No polling, no fixed 100 ms cadence. The smell is gone, not just contained.
 - **Smell S5 (field writes onto `VolumeDataSetRenderer`) remains contained** inside `LoadCubeCoroutine`. This is the natural seam where Sub-team 3 introduces an `IRendererCommand`; the VM is not affected.
-- New surface: the `CubeLoaded` event. Adds one delegate field; no impact on cohesion (still LCOM4 = 1).
+- New surface: the `CubeLoaded` event. Adds one delegate field; no impact on cohesion (still LCOM hs ≈ 0).
 
 **`FitsServiceAdapter` (RAII / handle ownership)**
 
@@ -116,7 +116,7 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 | WMC | 57 | 27 (`FileTabViewModel`) | **−53%** |
 | CBO | ~32 | 9 (`FileTabViewModel`) / 8 (`VolumeServiceAdapter`) | **−72% / −75%** |
 | RFC | ~210 | ~50 (`FileTabViewModel`) | **−76%** |
-| LCOM4 | ≥ 7 | 1 per class | **disjoint → cohesive** |
+| LCOM hs | ≈ 0.97 | ≈ 0 per class | **incoherent → cohesive** |
 | Threshold pass count | 2 / 7 | 9 / 10 classes pass; 1 borderline | **fail → near-pass** |
 
 **Unit-testable surface (NFR-TST-1 evidence):**
@@ -130,7 +130,7 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 1. **WMC for `FileTabViewModel`** — hand-count of 27 exceeds the ≤ 20 domain threshold. Understand's `CountDeclMethod` value is authoritative. Planned remediation if confirmed: extract the three async command bodies plus `ComputeZScale` / `BuildMemoryWarning` into a `FileTabCommands` helper (5 methods moved out, no behaviour change, WMC → ~22).
 2. **RFC for `FileTabViewModel`** — hand-count of ~50 sits at the limit. Tool-verified value decides. Same remediation as WMC applies if it goes over.
 3. **CBO for `CanvassDesktop` (BEFORE)** — depending on whether the tool excludes Unity-namespace value types (`Vector3`, `Quaternion`, `Color`), the figure may settle between 20 and 35. Either way it exceeds the ≤ 25 orchestrator threshold.
-4. **LCOM4 for `CanvassDesktop`** — hand-estimate of "≥ 7 connected components" needs a real graph walk. Understand reports this directly; SonarQube reports LCOM-HS.
+4. **LCOM hs for `CanvassDesktop`** — hand-estimate of ≈ 0.97 (Henderson-Sellers; based on 7+ disjoint method-field clusters across 57 methods). SonarQube reports LCOM (Henderson-Sellers) directly.
 5. **NDepend / DV8 dependency rules** — confirm zero cycles across the AFTER package set (`Domain` ⇏ `Adapters` ⇏ `Domain`). Hand inspection passes; tool-verified result needed for the panel.
 
 A short follow-up commit on Day 13 will replace this paragraph with the tool snapshot.

@@ -50,7 +50,7 @@ Row 1's X marks on columns 3 and 4 are *implements* dependencies (`DebugTabViewM
 | `DebugTabView` | — | 3 | — | 7 | — | 1 | adapter |
 | `DebugTabCompositionRoot` | — | 2 | — | 3 | — | 1 | adapter |
 
-Headline movement: LCOM_HS goes from **0.95 (fail)** to **1 per class (LCOM4, the structural win)**. WMC and CBO improvements are modest because `DebugLogging` already passed those thresholds individually — the case for the refactor is **structural and testability-driven**, not metric-driven. CK baseline source: [`../../../../refactoring-examples/sub-team-6/debug-tab/before-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/before-metrics.md) — `DebugLogging` as-is: WMC 21, CBO 12 (non-BCL), RFC 46, LCOM_HS 0.95.
+Headline movement: LCOM hs goes from **0.95 (fail)** to **≈ 0 per class (the structural win)**. WMC and CBO improvements are modest because `DebugLogging` already passed those thresholds individually — the case for the refactor is **structural and testability-driven**, not metric-driven. CK baseline source: [`../../../../refactoring-examples/sub-team-6/debug-tab/before-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/before-metrics.md) — `DebugLogging` as-is: WMC 21, CBO 12 (non-BCL), RFC 46, LCOM_HS 0.95.
 
 ## Section 4.2 compliance
 

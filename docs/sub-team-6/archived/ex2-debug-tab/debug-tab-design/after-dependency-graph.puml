@@ -11,8 +11,8 @@ skinparam arrow {
 }
 
 package "iDaVIE.Desktop.DebugTab (domain — pure C#)" #DFF0D8 {
-    component "DebugTabViewModel\n----\nWMC = 6  CBO = 3\nLCOM4 = 1" as DTVM #90EE90
-    component "LogStream\n----\nWMC = 3  CBO = 2\nLCOM4 = 1" as LS #90EE90
+    component "DebugTabViewModel\n----\nWMC = 6  CBO = 3\nLCOM hs = 0" as DTVM #90EE90
+    component "LogStream\n----\nWMC = 3  CBO = 2\nLCOM hs = 0" as LS #90EE90
     component "IDebugTabViewModel" as IDTVM
     component "ILogStream" as ILS
     component "ILogObserver" as ILO

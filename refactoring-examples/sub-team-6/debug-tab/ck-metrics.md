@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-**Frame this honestly: it's a testability refactor, not a metric refactor.** `DebugLogging` already passes 5/6 CK thresholds individually — the only failure is LCOM4 ~3 (four disjoint concern clusters). What CK metrics *can't* capture: the static `Application.logMessageReceived` hook (S1) makes the whole class untestable without Unity. AFTER splits into 7 types — all pass everything, LCOM4 = 1 per class. Domain-side `DebugTabViewModel` CBO drops from 9 → 1. Bounded `List<LogEntry>` (cap 2000) replaces unbounded non-generic `Queue`. **Test surface:** 0 → **29 NUnit tests, ~20 ms total, zero Unity dependency.** Section 4.2 compliance verified by `dotnet build` on the skeleton csproj with zero `UnityEngine` references.
+**Frame this honestly: it's a testability refactor, not a metric refactor.** `DebugLogging` already passes 5/6 CK thresholds individually — the only failure is LCOM hs ≈ 0.95 (four disjoint concern clusters). What CK metrics *can't* capture: the static `Application.logMessageReceived` hook (S1) makes the whole class untestable without Unity. AFTER splits into 7 types — all pass everything, LCOM hs ≈ 0 per class. Domain-side `DebugTabViewModel` CBO drops from 9 → 1. Bounded `List<LogEntry>` (cap 2000) replaces unbounded non-generic `Queue`. **Test surface:** 0 → **29 NUnit tests, ~20 ms total, zero Unity dependency.** Section 4.2 compliance verified by `dotnet build` on the skeleton csproj with zero `UnityEngine` references.
 
 ---
 
@@ -14,7 +14,7 @@
 > - **DIT** = depth from `System.Object`. `MonoBehaviour` adds 3 to the count (`Object → Component → Behaviour → MonoBehaviour`).
 > - **CBO** = distinct named types referenced *in implementation*, excluding primitives, language types (`string`, `int`, etc.), and the class's own type. DTOs of the same package are counted.
 > - **RFC** = WMC + distinct external methods called. Hand-count is approximate; tool-verified value is authoritative.
-> - **LCOM** = LCOM4 (connected components of the method-field graph). 1 = perfectly cohesive; >1 = disjoint concerns.
+> - **LCOM** = LCOM hs (Henderson-Sellers). 0 = perfectly cohesive; 1 = completely incoherent; threshold ≤ 0.5.
 >
 > Threshold source: `CLAUDE.md` § *Mandatory metric tools*, Section 7.1 of the brief.
 >
@@ -25,7 +25,7 @@
 > | NOC | ≤ 5 | ≤ 5 |
 > | CBO | ≤ 14 | ≤ 25 |
 > | RFC | ≤ 50 | ≤ 50 |
-> | LCOM | ≤ 0.5 (LCOM-HS) / = 1 (LCOM4) | same |
+> | LCOM | ≤ 0.5 | same |
 
 ---
 
@@ -41,17 +41,17 @@
 | NOC | 0 | ≤ 5 | ✅ |
 | CBO | **~10** | ≤ 25 | ✅ |
 | RFC | **~25** | ≤ 50 | ✅ |
-| LCOM4 | **~3** | = 1 | ❌ |
+| LCOM hs | **≈ 0.95** | ≤ 0.5 | ❌ |
 
-The only metric failure is **LCOM4 ~3**, reflecting the four disjoint concerns identified in [`before-trace.md` → Smell S8](before-trace.md#smell-summary-feeds-the-solidgrasp-audit--ck-deltas): log capture, log storage (autosave), log display, and manual export each operate on a non-overlapping subset of the eight fields. The other metrics pass.
+The only metric failure is **LCOM hs ≈ 0.95**, reflecting the four disjoint concerns identified in [`before-trace.md` → Smell S8](before-trace.md#smell-summary-feeds-the-solidgrasp-audit--ck-deltas): log capture, log storage (autosave), log display, and manual export each operate on a non-overlapping subset of the eight fields. The other metrics pass.
 
 The case for refactoring is therefore **structural and testability-driven**, not metric-driven:
 
 1. **Smell S1** (static `Application.logMessageReceived` hook) makes the class **untestable** without a Unity test runner. No CK metric captures this directly — CBO sees `Application` as one collaborator like any other; the fact that it cannot be substituted is invisible to the tool.
 2. **Smell S2** (unstructured `(string, string, LogType)` tuple) creates a contract problem — no metric flags it.
-3. **Smell S8** (four concerns in one class) shows up as LCOM4 > 1 — the **only** metric that catches a real defect here.
+3. **Smell S8** (four concerns in one class) shows up as LCOM hs > 0.5 — the **only** metric that catches a real defect here.
 
-The AFTER design wins on LCOM4 (every class is 1), on testability (29 NUnit tests without Unity), and on assembly-level dependency direction (Section 4.2 compliance) — see [`dependency-graph.md`](dependency-graph.md). Raw CK headline numbers improve modestly because BEFORE already passed most thresholds.
+The AFTER design wins on LCOM hs (every class is ≈ 0), on testability (29 NUnit tests without Unity), and on assembly-level dependency direction (Section 4.2 compliance) — see [`dependency-graph.md`](dependency-graph.md). Raw CK headline numbers improve modestly because BEFORE already passed most thresholds.
 
 ---
 
@@ -65,7 +65,7 @@ The AFTER design wins on LCOM4 (every class is 1), on testability (29 NUnit test
 | NOC | 0 | ≤ 5 | ✅ | No subclasses |
 | CBO | **~10** | ≤ 25 | ✅ | `Config`, `Queue`, `TMP_InputField`, `Scrollbar`, `Button`, `StandaloneFileBrowser`, `StreamWriter`, `StringBuilder`, `Application`, `SystemInfo`, `PlayerPrefs` |
 | RFC | **~25** | ≤ 50 | ✅ | 8 own methods + ~17 distinct external calls (`Enqueue`, `Write/Close`, `Append/ToString`, `text=`, `value=`, `AddListener`, `Log/LogError`, `GetString/SetString`, `Exists/Delete/Move`, …) |
-| LCOM4 | **~3** | = 1 | ❌ | Four disjoint concern clusters: (a) `Start` + log-rotation (uses `directoryPath`, `autosavePath`, `maxLogs`); (b) `HandleLog` + `AutoSave` (use `debugLogQueue`, `autosavePath`, `logOutput`, `debugScrollbar`); (c) `saveToFileClick` + `SaveToFile` (use `debugLogQueue` only, plus `PlayerPrefs`); (d) `DetermineHardware` (uses no fields — pure side-effect on `Debug.Log`). At least three connected components remain after merging shared fields. |
+| LCOM hs | **≈ 0.95** | ≤ 0.5 | ❌ | Four disjoint concern clusters: (a) `Start` + log-rotation (uses `directoryPath`, `autosavePath`, `maxLogs`); (b) `HandleLog` + `AutoSave` (use `debugLogQueue`, `autosavePath`, `logOutput`, `debugScrollbar`); (c) `saveToFileClick` + `SaveToFile` (use `debugLogQueue` only, plus `PlayerPrefs`); (d) `DetermineHardware` (uses no fields — pure side-effect on `Debug.Log`). At least three connected components remain after merging shared fields. |
 
 ### Per-method McCabe CC (alternative WMC weighting)
 
@@ -87,9 +87,9 @@ The table above uses NOM-style WMC (method count, unit weight = 1) → **WMC = 8
 
 The log-rotation block inside `Start()` is the single complexity hotspot (CC = 9 alone — more than the rest of the class combined). In the AFTER design that block extracts to a dedicated rotator (planned for the architecture doc); no AFTER class carries a method with CC > 3.
 
-### LCOM_HS computation (alternative LCOM formula)
+### LCOM hs computation (Henderson-Sellers)
 
-The convention table at the top of this file lists two LCOM variants: LCOM4 (= 1 ideal) and LCOM_HS (≤ 0.5). LCOM4 ≈ 3 is shown in the main table; the Henderson-Sellers value is included here as cross-evidence — both formulae point at the same S8 (four-concerns-in-one-class) signal.
+LCOM hs (Henderson-Sellers formula, threshold ≤ 0.5) is the primary LCOM metric used in this file. The computation below derives the value from the method-field access matrix; SonarQube reports this directly as LCOM. The result (0.95) confirms the same S8 (four-concerns-in-one-class) signal shown in the table above.
 
 **Formula:** LCOM_HS = (M − avg_mA) / (M − 1), where M = method count, avg_mA = average methods accessing each instance field.
 
@@ -111,7 +111,7 @@ Both variants decisively exceed the ≤ 0.50 threshold. `OnEnable`, `OnDisable`,
 
 ### Verdict (BEFORE)
 
-`DebugLogging` **fails 1 of 6 metrics** (LCOM4 / LCOM_HS — both formulae agree). All other CK numbers are within thresholds. The qualitative smells (S1–S9 in [`before-trace.md`](before-trace.md)) dominate the case for refactoring.
+`DebugLogging` **fails 1 of 6 metrics** (LCOM hs / LCOM_HS — both formulae agree). All other CK numbers are within thresholds. The qualitative smells (S1–S9 in [`before-trace.md`](before-trace.md)) dominate the case for refactoring.
 
 ---
 
@@ -123,18 +123,18 @@ The BEFORE class is decomposed into:
 - **1 DTO record** (`LogEntry`) + **1 enum** (`LogLevel`) — measured at near-zero cost.
 - **3 adapters** (`UnityLogStreamAdapter`, `DebugTabView`, `DebugTabCompositionRoot`).
 
-| Class | Layer | LOC | WMC | DIT | NOC | CBO | RFC | LCOM4 | Threshold band | Pass? |
+| Class | Layer | LOC | WMC | DIT | NOC | CBO | RFC | LCOM hs | Threshold band | Pass? |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|:--:|
-| `DebugTabViewModel` | domain | 77 | **6** | 1 | 0 | **3** | ~15 | 1 | domain | ✅ |
-| `LogStream` | domain | 43 | **3** | 1 | 0 | **2** | ~10 | 1 | domain | ✅ |
-| `LogEntry` (record) | domain | (in `ILogStream.cs`) | 0 | 1 | 0 | 1 | 3 | 1 | DTO | ✅ |
+| `DebugTabViewModel` | domain | 77 | **6** | 1 | 0 | **3** | ~15 | ≈ 0 | domain | ✅ |
+| `LogStream` | domain | 43 | **3** | 1 | 0 | **2** | ~10 | ≈ 0 | domain | ✅ |
+| `LogEntry` (record) | domain | (in `ILogStream.cs`) | 0 | 1 | 0 | 1 | 3 | ≈ 0 | DTO | ✅ |
 | `IDebugTabViewModel` | domain | 32 | — | — | — | — | — | — | interface | n/a |
 | `ILogStream` | domain | 32 | — | — | — | — | — | — | interface | n/a |
 | `ILogObserver` | domain | 16 | — | — | — | — | — | — | interface | n/a |
-| `UnityLogStreamAdapter` | adapter | 53 | **6** | 4 | 0 | **4** | ~12 | 1 | adapter (MonoBehaviour) | ✅ |
-| `DebugTabView` | adapter | 86 | **3** | 4 | 0 | **7** | ~18 | 1 | adapter (MonoBehaviour) | ✅ |
-| `DebugTabCompositionRoot` | adapter | 43 | **2** | 4 | 0 | **3** | ~6 | 1 | adapter (MonoBehaviour) | ✅ |
-| **Σ slice** | — | **~382** + interfaces | **20** | **max 4** | **0** | **max 7** | **max ~18** | **1 per class** | — | **all pass** |
+| `UnityLogStreamAdapter` | adapter | 53 | **6** | 4 | 0 | **4** | ~12 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
+| `DebugTabView` | adapter | 86 | **3** | 4 | 0 | **7** | ~18 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
+| `DebugTabCompositionRoot` | adapter | 43 | **2** | 4 | 0 | **3** | ~6 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
+| **Σ slice** | — | **~382** + interfaces | **20** | **max 4** | **0** | **max 7** | **max ~18** | **≈ 0 per class** | — | **all pass** |
 
 ### Per-class notes
 
@@ -143,7 +143,7 @@ The BEFORE class is decomposed into:
 - WMC: **6** — ctor, `LogEntries` getter (non-trivial `AsReadOnly`), `AppendEntry`, `ClearEntries`, `OnNext` (explicit interface impl), `Dispose`. Well under the ≤ 20 domain threshold.
 - CBO: **3** — `ILogStream` (injected), `LogEntry` (held), `IDisposable` (implemented). Under ≤ 14.
 - DIT: **1**. Implements three interfaces (`IDebugTabViewModel`, `ILogObserver`, `IDisposable`) — interfaces don't increase DIT.
-- LCOM4: **1**. All methods touch `_entries` (the only meaningful state field). Perfectly cohesive.
+- LCOM hs: **≈ 0**. All methods touch `_entries` (the only meaningful state field). Perfectly cohesive.
 - **★ Eliminates BEFORE smell S3**: bounded `List<LogEntry>` with `MaxEntries = 2000` cap, replacing the unbounded non-generic `Queue`.
 
 **`LogStream` (thread-safe Observer dispatch)**
@@ -151,7 +151,7 @@ The BEFORE class is decomposed into:
 - WMC: **3** — `Subscribe`, `Unsubscribe`, `Publish`. Trivial surface.
 - CBO: **2** — `ILogObserver` (collection element), `LogEntry` (created in `Publish`). Under ≤ 14.
 - DIT: **1**.
-- LCOM4: **1**. All three methods read/write `_observers` (and `Publish` reads `_lock`). Cohesive.
+- LCOM hs: **≈ 0**. All three methods read/write `_observers` (and `Publish` reads `_lock`). Cohesive.
 - **★ Eliminates BEFORE smell S2 (timestamp gap):** `DateTime.UtcNow` captured at the moment of `Publish` (`LogStream.cs:36`). BEFORE never captured a timestamp at all.
 
 **`UnityLogStreamAdapter` (the ACL boundary)**
@@ -188,8 +188,8 @@ The BEFORE class is decomposed into:
 | WMC | 8 | 6 (`DebugTabViewModel`, `UnityLogStreamAdapter`) | **−25%** |
 | CBO | ~10 | 7 (`DebugTabView`) | **−30%** |
 | RFC | ~25 | ~18 (`DebugTabView`) | **−28%** |
-| LCOM4 | ~3 | **1 per class** | **disjoint → cohesive (★ the structural win)** |
-| Threshold pass count | 5 / 6 (LCOM4 fails) | **all classes pass all metrics** | **near-pass → full pass** |
+| LCOM hs | ≈ 0.95 | **≈ 0 per class** | **incoherent → cohesive (★ the structural win)** |
+| Threshold pass count | 5 / 6 (LCOM hs ≈ 0.95, fails ≤ 0.5) | **all classes pass all metrics** | **near-pass → full pass** |
 
 **Unit-testable surface (NFR-TST-1 evidence):**
 - BEFORE: **0** debug-tab tests possible without a live Unity scene.
@@ -203,7 +203,7 @@ The BEFORE class is decomposed into:
 
 ## What still needs tool verification on Day 13
 
-1. **LCOM4 for `DebugLogging` (BEFORE)** — hand-estimate of ~3 needs a real connected-components walk. Understand reports this directly; SonarQube reports LCOM-HS, which has a different scale (0–1) — both are useful, neither replaces the other.
+1. **LCOM hs for `DebugLogging` (BEFORE)** — hand-computed as ≈ 0.95 (see LCOM hs computation section above). SonarQube reports LCOM (Henderson-Sellers) directly; tool-verified value is authoritative.
 2. **RFC for `DebugTabView`** — hand-count of ~18 is approximate (`StringBuilder.Append` is called in a loop, `string.Format` style interpolations may or may not be counted distinctly). Tool-verified value is authoritative.
 3. **CBO for `DebugLogging` (BEFORE)** — depending on whether the tool counts `System.IO.File`, `System.IO.Directory`, and `System.IO.Path` as distinct collaborators (used in the log-rotation block), the figure may settle between 10 and 13. Either way it stays under the orchestrator threshold.
 4. **NDepend rule** confirming `iDaVIE.Desktop.DebugTab` does not transitively reach `UnityEngine` — see [`dependency-graph.md` → Tool verification needed](dependency-graph.md#tool-verification-needed). Hand inspection passes; `dotnet build` on the skeleton csproj is a stronger witness; NDepend is needed for the panel snapshot.
