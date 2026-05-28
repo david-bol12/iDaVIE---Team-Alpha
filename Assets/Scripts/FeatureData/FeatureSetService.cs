@@ -148,13 +148,17 @@ namespace iDaVIE.Application.Feature
         /// <param name="mapping">Column-to-axis mapping (from FeatureMapper).</param>
         /// <param name="columnsMask">Which data columns to include.</param>
         /// <param name="excludeExternal">If true, features outside the volume bounds are dropped.</param>
+        /// <param name="volumeMin">Lower-left-back corner of the volume in voxel space. Required when <paramref name="excludeExternal"/> is true.</param>
+        /// <param name="volumeMax">Upper-right-front corner of the volume in voxel space. Required when <paramref name="excludeExternal"/> is true.</param>
         /// <returns>The new FeatureSet, or null on load failure.</returns>
         public FeatureSet ImportFromFile(
             string filePath,
             string name,
             Dictionary<SourceMappingOptions, string> mapping,
             bool[] columnsMask,
-            bool excludeExternal)
+            bool excludeExternal,
+            Vec3 volumeMin = default,
+            Vec3 volumeMax = default)
         {
             var table = _loader.Load(filePath, out string error);
             if (table == null)
@@ -169,7 +173,7 @@ namespace iDaVIE.Application.Feature
             var set = _catalog.CreateImportedSet(name);
             set.FileName = filePath;
 
-            PopulateFromTable(set, mapping, table, columnsMask, excludeExternal);
+            PopulateFromTable(set, mapping, table, columnsMask, excludeExternal, volumeMin, volumeMax);
 
             FeatureSetImported?.Invoke(set);
             return set;
@@ -340,7 +344,9 @@ namespace iDaVIE.Application.Feature
             Dictionary<SourceMappingOptions, string> mapping,
             FeatureTable                             table,
             bool[]                                   columnsMask,
-            bool                                     excludeExternal)
+            bool                                     excludeExternal,
+            Vec3                                     volumeMin = default,
+            Vec3                                     volumeMax = default)
         {
             if (table.Rows.Count == 0 || table.Column.Count == 0)
                 return;
@@ -447,7 +453,7 @@ namespace iDaVIE.Application.Feature
                     rawData:   rawData.ToArray(),
                     visible:   false);
 
-                if (excludeExternal && feature.IsOutsideVolume())
+                if (excludeExternal && feature.IsOutsideVolume(volumeMin, volumeMax))
                     continue;
 
                 set.Add(feature);

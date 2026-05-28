@@ -136,21 +136,31 @@ package "iDaVIE.Infrastructure.Unity\n(ONLY class with using UnityEngine)" #FFF8
     class MomentMapRendererAdapter <<MonoBehaviour>> #FFF0C8 {
         - _momentMapService : IMomentMapService
         - _computeShader : ComputeShader
+        - _kernelIndex : int
+        - _kernelIndexMasked : int
+        - _threadGroupX : uint
+        - _threadGroupY : uint
+        - [SerializeField] _momentMapMenuController : MomentMapMenuController
         + Awake() : void
         + RefreshMomentMaps(...) : void
         + Compute(request) : (float[], float[])
         - ApplyResultToUI(result) : void
         - CreateRenderTexture(w, h) : RenderTexture
         - ReadbackTexture(rt, w, h) : float[]
+        - PixelsToTexture2D(pixels, w, h) : Texture2D
+        - ConvertFloatArrayToBytes(values) : byte[]
     }
 }
 
 note bottom of MomentMapRendererAdapter
   <b>ADR-006 compliant thin adapter</b>
   Only UnityEngine import in Example 1.
-  Delegates ALL business logic to
-  IMomentMapService (injected).
+  Delegates ALL business logic to IMomentMapService.
   GPU dispatch isolated here only.
+  ──
+  <b>Scene dependencies</b>
+  [RequireComponent] VolumeDataSetRenderer (on same GameObject)
+  _momentMapMenuController wired via Inspector [SerializeField]
 end note
 
 ' ── Dependency arrows (after state) ──────────────────────────────────────────
@@ -160,7 +170,7 @@ MomentMapService          o--> IMomentMapAdapter        : <<inject>>
 MomentMapService          --> MomentMapCalculator       : calls (domain math)
 MomentMapService          --> MomentMapRequest          : reads
 MomentMapService          --> MomentMapResult           : creates
-MomentMapRendererAdapter  o--> IMomentMapService        : <<inject>>
+MomentMapRendererAdapter  --> IMomentMapService         : <<creates in Awake>>\nnew MomentMapService(this)
 MomentMapRendererAdapter  --> MomentMapRequest          : creates
 MomentMapRendererAdapter  --> MomentMapResult           : reads (for UI)
 

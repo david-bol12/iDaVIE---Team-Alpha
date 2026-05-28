@@ -160,6 +160,15 @@ namespace DataFeatures
         // ── Service-layer API aliases ─────────────────────────────────────────
         public bool  BoundsContains(Vec3 point) => ContainsPoint(point);
         public float BoundsVolume()             => Volume;
-        public bool  IsOutsideVolume()          => false; // stub — volume bounds not known at domain level
+
+        /// <summary>
+        /// Returns true if this feature's center lies outside [volumeMin, volumeMax].
+        /// Matches the check in FeatureSetRenderer.FeatureIsWithinVolume (which uses
+        /// Data.XDim/YDim/ZDim as the max bounds with an implicit min of 0).
+        /// </summary>
+        public bool IsOutsideVolume(Vec3 volumeMin, Vec3 volumeMax) =>
+            Center.X < volumeMin.X || Center.X > volumeMax.X ||
+            Center.Y < volumeMin.Y || Center.Y > volumeMax.Y ||
+            Center.Z < volumeMin.Z || Center.Z > volumeMax.Z;
     }
 }

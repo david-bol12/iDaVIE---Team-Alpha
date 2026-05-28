@@ -60,9 +60,24 @@ using System;
 namespace iDaVIE.Domain.Feature
 {
     /// <summary>
-    /// Excerpt: FeatureCatalog showing constructor injection and
-    /// ExportToVoTable delegation.
+    /// DOCUMENTATION EXCERPT — NOT COMPILED AS PART OF THE UNITY PROJECT.
+    /// <para>
+    /// This file is an annotated copy of selected members from
+    /// <c>Assets/Scripts/FeatureData/FeatureCatalog.cs</c>. It is NOT a real
+    /// <c>partial</c> extension of that class; it is placed outside <c>Assets/</c>
+    /// so Unity's compiler never sees it.
+    /// </para>
+    /// <para>
+    /// Do NOT add this file to the Assets folder or any .asmdef. Doing so will
+    /// produce duplicate-member compile errors because <c>_persistence</c>,
+    /// the constructor, and <c>ExportToVoTable</c> are already declared in the
+    /// production class, which is <b>not</b> <c>partial</c>.
+    /// </para>
+    /// <para>
+    /// Purpose: illustrate the ExportToVoTable delegation chain for
+    /// Refactoring Example 2 without reproducing the full 224-line class.
     /// See the full class in Assets/Scripts/FeatureData/FeatureCatalog.cs.
+    /// </para>
     /// </summary>
     public sealed partial class FeatureCatalog
     {

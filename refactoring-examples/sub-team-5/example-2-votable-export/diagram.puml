@@ -142,6 +142,15 @@ package "iDaVIE.Infrastructure.Persistence" #FFF8E8 {
         - BuildDocument(headers, featureSet) : XDocument
         - BuildRow(feature, normRa, normDec, normZ) : XElement
     }
+
+    class FeaturePersistenceService #FFF0C8 {
+        - _exporter : IVoTableExporter
+        - _transformer : ICoordinateTransformer
+        + FeaturePersistenceService(\n    exporter : IVoTableExporter,\n    transformer : ICoordinateTransformer)
+        + ExportToVoTable(featureSet : FeatureSet) : string
+        + AppendFeatureToAscii(feature, fileName) : void
+        + AsciiOutputExists(fileName) : bool
+    }
 }
 
 ' ═══════════════════════════════════════════════════════════════════════════
@@ -159,10 +168,11 @@ package "iDaVIE.Infrastructure.NativePlugins\n(Sub-team 2 ownership)" #F5F0FA {
 }
 
 ' ── Dependency arrows (after state) ──────────────────────────────────────────
-FeatureSetService        --> FeatureCatalog                   : delegates to
-FeatureCatalog           o--> IFeaturePersistenceService       : <<inject>>
-IFeaturePersistenceService ..> IVoTableExporter               : <<inject, uses>>
-IFeaturePersistenceService ..> ICoordinateTransformer         : <<inject, uses>>
+FeatureSetService        o--> FeatureCatalog                  : <<inject>>
+FeatureCatalog           o--> IFeaturePersistenceService      : <<inject>>
+FeaturePersistenceService ..|> IFeaturePersistenceService     : implements
+FeaturePersistenceService o--> IVoTableExporter               : <<inject>>
+FeaturePersistenceService o--> ICoordinateTransformer         : <<inject>>
 VoTableExportService    ..|> IVoTableExporter                 : implements
 VoTableExportService    --> FeatureSet                        : reads
 VoTableExportService    --> Feature                           : reads

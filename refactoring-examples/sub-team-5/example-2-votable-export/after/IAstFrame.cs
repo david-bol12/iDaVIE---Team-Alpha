@@ -39,6 +39,11 @@
  * LCOM = 0
  */
 
+// DOCUMENTATION COPY — NOT COMPILED AS PART OF THE UNITY PROJECT.
+// The authoritative production file is Assets/Scripts/FeatureData/IAstFrame.cs.
+// This copy exists only to make Example 2 self-contained for readers.
+// If the production IAstFrame changes, update this file to match.
+
 namespace iDaVIE.Domain.Feature
 {
     /// <summary>

@@ -322,6 +322,12 @@ namespace iDaVIE.Infrastructure.Unity
     internal sealed class NullFeaturePersistenceService : IFeaturePersistenceService
     {
         public void   AppendFeatureToAscii(Feature f, string fn) { }
+        /// <summary>
+        /// Returns <see cref="string.Empty"/> — no file is written.
+        /// Callers that display the returned path as a UI confirmation must guard for
+        /// empty string (e.g. <c>if (!string.IsNullOrEmpty(path)) ShowMessage(path);</c>).
+        /// Replace this stub with the real WP7 implementation before shipping export.
+        /// </summary>
         public string ExportToVoTable(FeatureSet set)             => string.Empty;
         public bool   AsciiOutputExists(string fn)                => false;
     }
@@ -383,7 +389,9 @@ namespace iDaVIE.Infrastructure.Unity
             //     CentroidY   = stats.cY,
             //     CentroidZ   = stats.cZ,
             //     W20         = stats.channelW20,
-            //     W50         = stats.veloVsys,   // confirm correct field with WP2
+            //     W50         = 0,   // W50 is NOT in SourceStats; the struct exposes channelW20 and veloW20 only.
+            //                        // veloVsys (previously noted here) is systemic velocity — wrong field for W50.
+            //                        // Confirm with WP2 whether a W50 field will be added to SourceStats.
             // };
 
             return new FeatureStatistics();   // stub until DataAnalysis binding is confirmed
