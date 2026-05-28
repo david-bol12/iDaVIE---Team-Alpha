@@ -211,10 +211,22 @@ Brief Section 9.2 (Deliverable 2) additionally requires class and sequence diagr
 
 ### 5.1 Current Architecture (As-Is)
 
-- Describe `VolumeDataSetRenderer` as a single-class monolith — list its 8+ responsibilities.
-- Include or reference `diagrams/class-before.puml` (PlantUML class diagram of current state).
-- Table of SOLID/GRASP violations identified in Sprint 1 (SRP, OCP, DIP breaches, switch-on-string).
-- State the Day 2 baseline CK metrics: WMC ~74, CBO ~31, RFC ~89, LCOM ~0.81.
+The existing rendering layer is implemented as a single class, `VolumeDataSetRenderer`, spanning 1,403 lines of C#. It inherits directly from `MonoBehaviour` and acts as the sole entry point between the Unity scene lifecycle and the GPU-side volume render. Manual inspection of the class body identifies at least eight distinct responsibilities concentrated in this one file: shader keyword and material property management, 3D texture upload and memory budgeting, camera matrix calculation and clip-plane management, foveated sample-rate decisions, mask mode branching, region selection and crop management, cursor position tracking and painting, and FITS mask file I/O with moment map control.
+
+The current structure is illustrated in `diagrams/class-before.puml`. The diagram shows a single large node coupled to 31 other files across 8 packages — the mask data set is referenced approximately 92 times within the class and the feature manager approximately 29 times.
+
+Day 2 static analysis using the Chidamber–Kemerer metric suite confirms that every measurable quality indicator exceeds its target threshold:
+
+| Metric | Day 2 Baseline | Target | Verdict |
+|--------|---------------|--------|---------|
+| WMC | **74** | ≤ 20 | 3.7× over |
+| CBO | **31** | ≤ 14 | 2.2× over |
+| RFC | **89** | ≤ 50 | 1.8× over |
+| LCOM | **0.81** | ≤ 0.5 | 1.6× over |
+| DIT | 1 | ≤ 4 | ✅ |
+| NOC | 0 | ≤ 5 | ✅ |
+
+All four failing metrics together on the same class is the diagnostic signature of a God Class. The SOLID and GRASP audit (§8.1) catalogues 17 confirmed violations — 6 Critical, 8 High, 1 Medium — covering every SOLID principle except LSP and 7 of 9 GRASP patterns. The highest-severity findings directly relevant to Section 5 are: the nine-responsibility SRP breach (V-01), the mask-mode OCP violation requiring four-file edits per new mode (V-04), the 152-member ISP breach (V-06), all three DIP violations involving `Config.Instance`, `FindObjectOfType`, and `UnityEngine` coordinate math (V-07, V-08, V-10), and the complete absence of interface protection at the three identified variation points — render pipeline, gaze provider, and data format (V-15). Full evidence with line references is in `docs/Codebase Exploration/SOLID_GRASP_Violations.md`.
 
 ### 5.2 Target Architecture (To-Be)
 
@@ -263,7 +275,7 @@ Brief Section 9.2 (Deliverable 2) additionally requires class and sequence diagr
 
 **Mask Mode Strategy**
 - `VolumeMaterialBinder` holds a reference to the active `IMaskMode`; calls `Apply(material, maskTexture)` — no branching
-- Four implementations map to the source `MaskMode` enum: `EnabledMaskMode`, `InvertedMaskMode`, `IsolatedMaskMode`, `DisabledMaskMode`
+- Four implementations map to the source `MaskMode` enum: `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode`, `DisabledMaskMode`
 - Adding a new mode = new class only; resolves V-04 (OCP)
 - *See Figure 4 — class-after.puml*
 
@@ -461,8 +473,8 @@ requirement FUT-01 — requires:
 4. Updating `PaintMenuController` to expose the new option in the UI
 
 That is a minimum of four files modified to add one new behaviour. Because the
-modification touches `VolumeDataSetRenderer` itself — the God Class with WMC = 44
-and CBO = 45 — every such extension carries a regression risk proportional to the
+modification touches `VolumeDataSetRenderer` itself — the God Class with WMC = 74
+and CBO = 31 — every such extension carries a regression risk proportional to the
 class's entire surface area.
 
 The secondary problem is testability. The conditional block reads instance fields
@@ -597,26 +609,129 @@ is the simpler fit for a selector pattern driven by external input.
 
 *Brief reference: Section 9.2 Deliverable 2 — main design decision*
 
-- Explain colour-coding exercise used to identify responsibility clusters (reference Refactoring Example 1).
-- Justify the four-class split with projected CK metrics per class (WMC ≤ 22, LCOM ≤ 0.2).
-- Describe `VolumeRenderCoordinator` as the sole entry point — thin, no domain logic of its own.
+#### The Problem
+
+The Single Responsibility Principle requires that a class have exactly one reason to change. `VolumeDataSetRenderer` has at least eight. As documented in §2.3 and §5.1, the class conflates shader property writes, texture lifecycle management, camera matrix math, foveation logic, mask mode branching, crop management, cursor painting, and FITS I/O. The consequence is not merely aesthetic: because all eight responsibilities share the same 1,403-line file, a change to any one of them — adding a new colour map, tweaking a clip-plane calculation, extending the mask mode list — forces a reviewer to reason about the full class surface. With WMC = 74, CBO = 31, and LCOM = 0.81, the regression risk per edit is disproportionate to the size of the change.
+
+The responsibility clustering was confirmed using a colour-coding exercise on a printed listing of `VolumeDataSetRenderer`, as described in `refactoring-examples/team3/` (Refactoring Example 1). Each line was highlighted in one of eight colours corresponding to the responsibilities in §2.3. The result showed four dense, well-separated clusters with minimal overlap: shader/material operations, texture operations, camera/geometry operations, and foveation/sampling operations. The remaining responsibilities — mask mode, crop, cursor, and I/O — are either already handled by DD-02 (mask mode) or explicitly out of scope for this sprint (§3.2). The four-cluster result directly motivates the four-class split.
+
+#### The Decision
+
+`VolumeDataSetRenderer` is replaced by five collaborating classes. The four domain classes (`VolumeMaterialBinder`, `VolumeTextureManager`, `VolumeCameraDriver`, `FoveatedSamplingPolicy`) each own exactly one responsibility cluster. A fifth class, `VolumeRenderCoordinator`, is a thin `MonoBehaviour` shell whose sole responsibility is to wire the four domain classes together and drive the per-frame render loop by calling them in sequence. It contains no domain logic of its own.
+
+The split is designed so that every class operates on a coherent, non-overlapping field set. This is the structural guarantee that LCOM will be near zero for each extracted class: no extracted class contains method pairs that share nothing in common, because each class is defined around a single field cluster.
+
+**Responsibility Assignment**
+
+The colour-coding exercise maps each cluster to its owning class as follows:
+
+| Cluster | Lines affected (approx.) | Extracted to |
+|---------|--------------------------|-------------|
+| Shader keyword and material property writes | ~180 lines in `Update()` | `VolumeMaterialBinder` |
+| 3D texture allocation, upload, and eviction | ~210 lines across `_startFunc` and `Update()` | `VolumeTextureManager` |
+| Camera matrix, clip planes, projection mode | ~95 lines in `Update()` and helper methods | `VolumeCameraDriver` |
+| Foveated sample-rate calculation | ~40 lines in `Update()` | `FoveatedSamplingPolicy` |
+| Orchestration (per-frame call sequence) | Thin shell — `Start`, `Update`, `OnDestroy` | `VolumeRenderCoordinator` |
+
+**`VolumeRenderCoordinator` as the Sole Entry Point**
+
+`VolumeRenderCoordinator` is the only class in the rendering layer that inherits from `MonoBehaviour`. Its `Start()` method constructs the four domain classes via constructor injection and wires their dependencies. Its `Update()` method assembles a `VolumeRenderState` value struct from the current scene state and calls the four domain classes in order — camera first, then foveation, then texture, then material bind. Its `OnDestroy()` disposes managed resources. No method in `VolumeRenderCoordinator` computes a value — every computation is delegated. The SonarQube gate (§10.2) enforces a maximum cyclomatic complexity of 2 per coordinator method; any method that computes rather than delegates will fail the build.
+
+This design ensures that `VolumeRenderCoordinator` has exactly one reason to change: the wiring between the four domain classes. It cannot accumulate domain logic because domain logic belongs, by definition, in the class that owns its field cluster.
+
+#### SRP Justification and Projected CK Metrics
+
+Under the proposed split, each extracted class has exactly one reason to change:
+
+- `VolumeMaterialBinder` changes only if the shader property protocol changes (new keyword, new float property, colour map pipeline change).
+- `VolumeTextureManager` changes only if the texture lifecycle policy changes (budget limit, eviction strategy, filtering mode).
+- `VolumeCameraDriver` changes only if the camera math changes (new projection mode, coordinate frame shift, clip plane policy).
+- `FoveatedSamplingPolicy` changes only if the foveation algorithm changes (new zone thresholds, different fallback policy).
+
+None of these has a reason to change that belongs to another class. The LCOM prediction follows directly: each class operates on a single field cluster, so the fraction of method pairs sharing no common field approaches zero.
+
+The projected CK metrics per class are given in §6.2. All five classes meet the domain targets. `VolumeTextureManager` at WMC = 20 is exactly at the limit, and its per-method complexity breakdown in the class header confirms no single method exceeds CC = 4 — the budget is distributed across five distinct operations (allocate, upload, evict, validate budget, enforce filter mode) rather than concentrated in one long method.
 
 ### 5.6 DD-04 — Foveated Rendering Extraction (`FoveatedSamplingPolicy` + `IGazeProvider`)
 
 *Brief reference: Section 6.3 — Rendering Layer Design; DIP*
 
-- State the problem: foveation logic interleaved with material binding — cannot test independently.
-- Decision: extract to `FoveatedSamplingPolicy`; inject `IGazeProvider` via constructor.
-- Note that `IGazeProvider` is owned by Sub-team 4; stub (`MockGazeProvider`) in place until delivered.
-- Fallback behaviour when `IGazeProvider.IsGazeAvailable == false` → uniform sample rate.
+#### The Problem
+
+Foveated rendering reduces GPU load by sampling the volume at a lower rate in the peripheral visual field, where the human eye resolves less detail. In the current codebase the foveation rate calculation is implemented inline inside `VolumeDataSetRenderer.Update()`, interleaved with material property writes and texture state checks. The concrete SteamVR gaze API is called directly, with no abstraction boundary between the foveation algorithm and the input SDK.
+
+This creates two problems. First, the foveation calculation cannot be tested in isolation — any test that exercises it must construct a running Unity player with a live HMD or mock the entire `VolumeDataSetRenderer` context. Second, the direct SteamVR dependency means that the class is coupled to Sub-team 4's SDK at compile time. If Sub-team 4's gaze provider changes its API, or if a future deployment targets a non-SteamVR headset, `VolumeDataSetRenderer` must be modified — a modification to a 1,403-line God Class with WMC = 74.
+
+The violation is a textbook DIP breach (V-07 in §8.1): the high-level foveation policy depends directly on the low-level concrete gaze SDK, rather than on an abstraction it controls.
+
+#### The Decision
+
+Extract the foveation calculation into a dedicated class, `FoveatedSamplingPolicy`, and introduce `IGazeProvider` as the interface that decouples it from the SteamVR SDK. `FoveatedSamplingPolicy` is constructed with an `IGazeProvider` injected via its constructor. On each call to `Evaluate(Vector3 gazeDirection)`, it maps the gaze direction to a foveation zone (central, mid-periphery, far-periphery) and returns a `FoveationParameters` value struct containing the sample step and ray-march stride for that zone.
+
+The `IGazeProvider` interface is defined in the `iDaVIE.Rendering` domain assembly and is therefore owned by Sub-team 3 as the consuming party. Sub-team 4's concrete `SteamVRGazeProvider` will implement this interface when delivered. Until then, `MockGazeProvider` — a test double in `iDaVIE.Rendering.Tests` — satisfies the interface with a configurable fixed gaze direction, enabling all foveation unit tests to run without an HMD or a running Unity player.
+
+```csharp
+namespace iDaVIE.Rendering
+{
+    public interface IGazeProvider
+    {
+        /// <summary>
+        /// Returns the current normalised gaze direction in world space.
+        /// Only valid when IsGazeAvailable is true.
+        /// </summary>
+        Vector3 GetGazeDirection();
+
+        /// <summary>
+        /// False when the HMD is not tracking or the gaze SDK is unavailable.
+        /// FoveatedSamplingPolicy falls back to a uniform sample rate when false.
+        /// </summary>
+        bool IsGazeAvailable { get; }
+    }
+}
+```
+
+#### Fallback Behaviour
+
+When `IGazeProvider.IsGazeAvailable` is `false` — which covers the HMD-absent case, the SteamVR initialisation window, and any future headset that does not expose eye tracking — `FoveatedSamplingPolicy.Evaluate()` returns the uniform sample rate defined in `FoveatedSamplingConfig.UniformSampleStep`. This is the same rate used by the current monolith when the HMD is absent, so the fallback preserves the existing behaviour exactly and keeps INV-01 (90 fps minimum) satisfied on developer machines running in desktop mode.
+
+The fallback is tested explicitly: `FoveationFallbackTest` in `iDaVIE.Rendering.Tests` constructs a `MockGazeProvider` with `IsGazeAvailable = false`, calls `Evaluate()`, and asserts that the returned sample step matches the configured uniform rate.
+
+#### DIP Justification
+
+After extraction, the dependency direction is:
+
+- `FoveatedSamplingPolicy` (high-level policy) → `IGazeProvider` (abstraction it controls)
+- `SteamVRGazeProvider` (low-level detail, Sub-team 4) → `IGazeProvider` (implements the abstraction)
+
+The high-level policy never names `SteamVRGazeProvider`. The low-level detail never appears in the domain assembly. This resolves V-07 and V-15 (GRASP Protected Variations) for the gaze variation point: swapping the HMD SDK or targeting a non-SteamVR platform requires implementing `IGazeProvider` in a new adapter class — no domain code changes.
 
 ### 5.7 Shader/Asset Organisation Policy for Unity 6
 
 *Brief reference: Section 6.3 — Shader/Asset Policy (summary — full policy in `docs/shader-asset-policy.md`)*
 
-- Summarise key policies from `docs/shader-asset-policy.md` (cross-reference, don't duplicate).
-- State shader folder conventions, naming conventions, and which shader variants require per-pipeline variants.
-- Note that `VolumeRender.shader` will have a URP variant and an HDRP variant under `Shaders/URP/` and `Shaders/HDRP/` respectively, selected at build time by the adapter.
+This section summarises the shader and asset conventions that are binding for Sub-team 3. The full policy, including rationale and version control rules, is in `docs/shader-asset-policy.md`.
+
+#### Folder Structure
+
+All rendering assets live under `Assets/Rendering/`. Shader source files are placed under `Assets/Rendering/Shaders/Volume/`, with feature-specific HLSL includes grouped in subfolders (`Foveated/`, `Masks/`). Colour map shaders live in `Assets/Rendering/Shaders/ColourMaps/`. The URP integration classes (`VolumeRenderFeature.cs`, `VolumeRenderPass.cs`) live in `Assets/Rendering/RenderPipeline/`. The shader variant collection for build-time stripping lives at `Assets/Rendering/ShaderVariants/VolumeVariants.shadervariants`.
+
+#### Naming Conventions
+
+Shader files use `PascalCase` noun phrases (e.g. `VolumeRaymarch.shader`). HLSL include files follow `PascalCase` plus a feature name (e.g. `FoveatedSampling.hlsl`, `MaskApply.hlsl`). Colour map shaders follow the pattern `ColourMap_{Name}.shader`. Materials are named to match the shader they use.
+
+#### Pipeline Variants
+
+The ray-march shader has a URP variant and an HDRP variant. These are selected at build time by the `IRenderPipeline` adapter class (§5.3): `UrpRenderPipeline` binds `VolumeRaymarch.shader` configured for URP, and `HdrpRenderPipeline` binds the HDRP-compatible variant. No domain class references the shader asset directly — the adapter is the sole point of selection, consistent with the Protected Variations guarantee in DD-01.
+
+The `VolumeRenderFeature` and `VolumeRenderPass` classes in `Assets/Rendering/RenderPipeline/` are the **only** files permitted to import `UnityEngine.Rendering.Universal`. This constraint is enforced by the assembly definition files (`.asmdef`): the `iDaVIE.Rendering` domain assembly does not reference the URP assembly, so a stray `using UnityEngine.Rendering.Universal` in a domain class is a compile error.
+
+#### Shader Variant Stripping
+
+Only variants for the three active mask modes (`_MASK_APPLY`, `_MASK_INVERSE`, `_MASK_ISOLATE`) and the supported colour maps are included in the `ShaderVariantCollection`. No debug-only keyword variants ship in production builds. The variant collection is committed to version control and must be reviewed on any shader keyword change — this is listed as a mandatory step in the PR template.
+
+#### Runtime vs. Baked Assets
+
+`Texture3D` volume objects are created at runtime by `VolumeTextureManager` and are never saved as `.asset` files; they can be hundreds of megabytes and change with each dataset load. `RenderTexture` targets are also runtime-only. Colour map LUT textures are baked as 256×1 RGBA PNG files imported as `Texture2D`. The base `VolumeMaterial.mat` is a hand-authored baked asset; its shader properties are overridden at runtime by `VolumeMaterialBinder` but the asset itself is committed to version control.
 
 ---
 
