@@ -82,19 +82,19 @@ The PlantUML source is owed by Day 8 (Gap #2 in Appendix A, owner TL). The Level
 `CanvassDesktop` resolves the button via a `transform.Find` chain, calls `StandaloneFileBrowser` directly, passes the path into `FitsReader` directly, mutates fields on `VolumeCommandController` directly, and updates ~30 UI elements imperatively. No unit test can cover any step because every dependency is a concrete type held in a `MonoBehaviour`.
 
 ### Q3.2 — "Walk me through what happens after the refactor."
-The View's `Open` button is bound to `FileTabViewModel.OpenCubeCommand`. The ViewModel calls `IFileService.OpenAsync(path)`, awaits the result, sets `SelectedDataset`. The View observes the property change via `INotifyPropertyChanged` and re-renders. The native call lives behind `FitsServiceAdapter`; the ViewModel never sees it.
+The View's `Browse` button is bound to `FileTabViewModel.BrowseImageCommand`; the `Load` button to `LoadCommand`. `BrowseImageCommand` calls `IFitsService.OpenImageAsync(path)`, awaits the result, and sets `ImagePath` (and populates `HduOptions`, `HeaderText`, `IsLoadable`). `LoadCommand` then builds a `LoadCubeRequest` and calls `IVolumeService.LoadCubeAsync`. The View observes the property changes via `INotifyPropertyChanged` and re-renders. The FITS read sits behind the `IFitsService` boundary; the ViewModel never sees the wire.
 
-### Q3.3 — "Show me where `OpenCubeCommand` is defined."
-In the skeleton at `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs`. It is an `ICommand`-implementing property; `Execute` calls `_fileService.OpenAsync` with the `SelectedPath`.
+### Q3.3 — "Show me where `BrowseImageCommand` is defined."
+In the skeleton at `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs`. It is an `IAsyncCommand` property wired in the constructor to `BrowseImageAsync`; `ExecuteAsync` calls `_fitsService.OpenImageAsync(path)` with the path returned by the file dialog.
 
 ### Q3.4 — "What if the user clicks Open twice before the first call completes?"
 `IsBusy` is set when the command begins. The command's `CanExecute` returns false while busy. UI Toolkit disables the bound button automatically. The third test in `test-strategy.md` §6 covers this contract.
 
-### Q3.5 — "The native FITS plug-in is synchronous. How can `OpenAsync` be async?"
-The adapter wraps the synchronous P/Invoke in `Task.Run`, exposing an async surface. The cost is one extra thread for the duration of the load; the benefit is the UI thread stays responsive. The ViewModel never blocks. `mvvm-binding-policy.md` §4.3.
+### Q3.5 — "The native FITS plug-in is synchronous. How can `OpenImageAsync` be async?"
+After the gateway rewire the FITS read is no longer a client-side P/Invoke. `OpenImageAsync` issues a JSON-RPC request (`file.open` → `dataset.getAxes`) over the named pipe to the server, which performs the FITS parse and returns the metadata. The call is asynchronous by nature — the pipe round-trip returns a `Task` the ViewModel awaits — so no `Task.Run`-wrapped synchronous P/Invoke is needed and the UI thread never blocks. (Phase B, the volume load, stays client-side via `VolumeServiceAdapter`.) ADR-0002 wire spec; `mvvm-binding-policy.md` §4.3.
 
 ### Q3.6 — "How do you cancel a load mid-call?"
-The `OpenAsync` signature takes a `CancellationToken`. Between native calls we poll the token; mid-native-call cancellation is not possible because the existing C plug-in does not support it. This is an inherited limitation, not one we introduce.
+The `OpenImageAsync` signature takes a `CancellationToken`. Between native calls we poll the token; mid-native-call cancellation is not possible because the existing C plug-in does not support it. This is an inherited limitation, not one we introduce.
 
 ### Q3.7 — "What about errors — the file is corrupt, the path is invalid?"
 The adapter throws a typed exception. The ViewModel catches it in the command, sets `Error` to the message, and `IsBusy` to false. The View is bound to `Error` and shows it. The command itself never propagates the exception. `mvvm-binding-policy.md` §2.3.
@@ -144,7 +144,7 @@ Both examples share the same three-assembly split, the same composition root, th
 ## Section 5 — Testability + Unity 6 migration
 
 ### Q5.1 — "How many tests do you have today?"
-Zero in the new style. The skeleton is committed; the three `OpenCubeCommand` tests are owed by Day 10. That is the gate at which CI begins enforcing the coverage rule.
+Zero in the new style. The skeleton is committed; the `BrowseImage`/`Load` command tests are owed by Day 10. That is the gate at which CI begins enforcing the coverage rule.
 
 ### Q5.2 — "70 % branch + line on ViewModel — how do you guarantee that gate is hit?"
 The `FileTabViewModel` is ~27 mostly-trivial methods and property accessors (CC 1–2; `metrics.md §2.2`), so the path count is bounded. A small fixed test set (happy / error / cancel / threading for each command) covers the branches by construction — the 34 committed NUnit tests already do. The number is not aspirational.
@@ -206,7 +206,7 @@ The shape of the gateway's notification channel — they prefer a single server-
 ## Section 7 — Summary + forward look
 
 ### Q7.1 — "If we approve this, what do you build first?"
-Composition root + `IServiceGateway` adapter + `FileTabViewModel` against the real `IFileService`. The File tab is the smallest end-to-end vertical that exercises the whole architecture. Two-week sprint, single owner.
+Composition root + `IServiceGateway` adapter + `FileTabViewModel` against the real `IFitsService`. The File tab is the smallest end-to-end vertical that exercises the whole architecture. Two-week sprint, single owner.
 
 ### Q7.2 — "How does the Python console actually use a C# ViewModel?"
 The ViewModel layer is `System.*`-only — it can be hosted in any .NET process. A Python bridge (Python.NET or a thin RPC) instantiates the same ViewModel objects. They behave identically to the Unity case because no Unity types touch them. ARQ-1 in `requirements.md` §4.
