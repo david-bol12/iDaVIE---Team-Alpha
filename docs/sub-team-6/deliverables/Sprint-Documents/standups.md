@@ -119,25 +119,6 @@
 
 ---
 
-## 2026-05-27 (Day 8 — Wed) — Sprint 2 Day 3
-
-**Present:** 
-
-| Person | Yesterday | Today | Blockers |
-|---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
-
-**Decisions:**
-- _(decisions made in stand-up)_
-
-**Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
-
----
-
 ## 2026-05-28 (Day 9 — Thu) — Sprint 2 Day 4 — Worked examples 2/2 complete; SOLID/GRASP audit
 
 **Present:** 
