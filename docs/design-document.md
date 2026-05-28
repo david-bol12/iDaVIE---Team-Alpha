@@ -186,24 +186,37 @@ Brief Section 9.2 (Deliverable 2) additionally requires class and sequence diagr
 
 ## 4. Requirements Recap
 
-*Brief reference: Section 9.2 — link back to `docs/requirements.md` (Deliverable 1)*
 
 ### 4.1 Current Invariants (must survive refactoring)
 
 - Table: INV-01 through INV-06 — 90 fps, 4 GB texture limit, 368 MB cube budget, nearest-neighbour filtering, foveated rendering, mask mode correctness.
-- One sentence per invariant on how the proposed design preserves it.
+- VR Performance: Maintain 90 FPS on reference hardware to prevent motion sickness.
+- Texture Cap: Total 3D texture memory must not exceed 4GB (Unity limit).
+- Volume Budget: Default volume limited to 368 MB.
+- Sampling: use nearest-neighbor filtering only (billinear / trilinear distorts voxel data).
+- Foveated Rendering: Eye-tracking based rendering must remain fully functional so in the system can maintain 90 FPS at useable image quality. 
+- Mask Modes: Visual output for Apply, INverse and isolate modes must match legacy system. 
 
 ### 4.2 Key Functional Requirements
 
-- Short prose recap of FR-01 to FR-08; point reader to `docs/requirements.md` for full table.
-- Highlight FR-06 (`IRenderPipeline`) and FR-08 (`IGazeProvider`) as design-driving requirements.
+- FR01 Volume Visualization: Ray-march through 3D texture, accumulating colour/opcaity via active color map.
+- FR02 Runtime Msdking: Support three mask modes (Apply, Inverse, Isolate) without pipeline restart.
+- FR03 Dynamic Colour Mapping: Apply configurable colour map with a single-frame visual updates.
+- FR04 Gaze-Contingent Sampling: Adjust sample rate based on gaze direction (higher at focus, lower at periphery).
+- FR05 Cache Management: Enforce 368 MB budget by eicting/reusing GPU texture slots.
+- FR06 Pipeline Isolation: Core assemblies must not import URP / HDRP types directly or transistively. This is a critical design-driven requirement. 
 
 ### 4.3 Key Non-Functional Requirements
 
-- Recap the CK metric targets (WMC ≤ 20, CBO ≤ 14, LCOM ≤ 0.5) that gate acceptance.
-- Note NFR for no circular dependencies and no `UnityEngine` transitive imports in domain classes.
+# CK Metrics Targets (per domain class):
+- WMC (Weighted Methods per Class) <= 20, CBO (Coupling Between Objects) <= 14, LCOM (Lack Of Cohesion in Methods) <= 0.5, DIT (Depth Of Inheritance Tree), RFC (Response for Class) <= 50.
 
----
+# Design Standards:
+- Zero circular dependencies (verified via NDpend).
+- All rendering logic must be unit-testing  without Unity runtime.
+- Addine new mask modes requires only a new iMaskMode implementation (no existing code changes).
+- Switching URP to HDRP requreis only replacing one adapter class.
+- All internal APIs must be explicitly defined interface.
 
 ## 5. Design Decisions
 
