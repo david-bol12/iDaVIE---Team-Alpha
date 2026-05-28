@@ -99,8 +99,8 @@ The `OpenAsync` signature takes a `CancellationToken`. Between native calls we p
 ### Q3.7 — "What about errors — the file is corrupt, the path is invalid?"
 The adapter throws a typed exception. The ViewModel catches it in the command, sets `Error` to the message, and `IsBusy` to false. The View is bound to `Error` and shows it. The command itself never propagates the exception. `mvvm-binding-policy.md` §2.3.
 
-### Q3.8 — "You projected WMC ~12 for `FileTabViewModel`. How did you compute that without a real implementation?"
-Counted from the skeleton: ~12 methods, each cyclomatic complexity 1–2 (no nested branching in the ViewModel; validation lives in `SubsetBoundsViewModel`). Sum is ~15. We rounded down to ~12 in the projection table; conservative re-derivation would land at 15, still well under threshold 20.
+### Q3.8 — "Your table lists WMC 27 for `FileTabViewModel` — that is over your ≤ 20 domain threshold. Explain."
+WMC 27, hand-counted from the committed skeleton on Day 6 (`metrics.md §2.2`), not projected. It is borderline over the ≤ 20 domain threshold and we flag it as such — we do not hide it. Documented remediation: extract a `FileTabCommands` helper for the four command bodies, dropping the ViewModel to WMC ~22. Every other class in the file-tab slice is within threshold.
 
 ### Q3.9 — "Which SOLID principle does `SubsetBoundsViewModel` exemplify?"
 SRP and GRASP Information Expert — the class owns the bounds *data*, so it owns the bounds *validation*. Plus DIP: the file ViewModel depends on the bounds ViewModel via interface, not concrete type.
@@ -147,7 +147,7 @@ Both examples share the same three-assembly split, the same composition root, th
 Zero in the new style. The skeleton is committed; the three `OpenCubeCommand` tests are owed by Day 10. That is the gate at which CI begins enforcing the coverage rule.
 
 ### Q5.2 — "70 % branch + line on ViewModel — how do you guarantee that gate is hit?"
-The skeleton has ~12 methods of low cyclomatic complexity, so the path count is bounded. A small fixed test set (happy / error / cancel / threading for each command) covers the branches by construction. The number is not aspirational.
+The `FileTabViewModel` is ~27 mostly-trivial methods and property accessors (CC 1–2; `metrics.md §2.2`), so the path count is bounded. A small fixed test set (happy / error / cancel / threading for each command) covers the branches by construction — the 34 committed NUnit tests already do. The number is not aspirational.
 
 ### Q5.3 — "Why NUnit and not xUnit?"
 NUnit is the Unity Test Framework's default; using the same runner inside and outside Unity reduces our tooling surface. xUnit is technically newer; the cost of switching is greater than the value.
@@ -259,7 +259,7 @@ Different constraints — Unity 5, no UI Toolkit, single-client assumption. The 
 Slide 2.6 (concern map redistribution). It supports Slide 2.2; if compressed, 2.2 carries the load and 2.6 lives in the appendix. Never cut a Section 3 or 4 slide — the brief allocates 12 minutes there.
 
 ### QH.4 — "I do not believe your CK numbers. Re-derive WMC for `FileTabViewModel` live."
-~12 methods, each CC 1–2 (no nested branching, validation lives elsewhere). Sum ~15. We rounded down to 12; conservative re-derivation lands at 15, still under threshold 20.
+WMC 27, hand-counted from the committed skeleton: constructor + ~9 non-trivial property setters + 4 command bodies + the HDU/Z-axis/memory helpers + the notify methods (`metrics.md §2.2`). That is borderline **over** the ≤ 20 domain threshold — we do not hide it. Documented remediation: extract a `FileTabCommands` helper, dropping the ViewModel to WMC ~22.
 
 ### QH.5 — "Defend your worst slide."
 *(Be ready: probably Slide 2.7 if ADR-0003 has not landed yet, or Slide 1.3 if the cycle report is still pending.)* The slide is honest about the gap; the architectural argument does not depend on the missing artefact; the gap is owed by [date] with named owner.

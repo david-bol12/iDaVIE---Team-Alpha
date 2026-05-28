@@ -375,7 +375,7 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 
 ### Slide 3.4 — CK delta — the numbers (~75 sec)
 
-**Claim:** Replace `CanvassDesktop` *for the file-tab slice* with three classes; the projected CK numbers all fall within §7.1 thresholds.
+**Claim:** Replace `CanvassDesktop` *for the file-tab slice* with three classes; the measured CK numbers fall within §7.1 thresholds, with `FileTabViewModel` WMC (27) the one borderline case over the ≤ 20 domain ceiling — remediation documented.
 
 **Why this matters:** Section 7 of the assignment is unambiguous — "speculative numbers without evidence are not accepted". The projection must be supported by the skeleton code, not by hope.
 
@@ -389,9 +389,11 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 | Class | WMC before | WMC after | CBO before | CBO after | RFC before | RFC after | LCOM before | LCOM after | Threshold (domain) |
 |---|---|---|---|---|---|---|---|---|---|
 | CanvassDesktop (post-split, composition-root shell) | 63 | ~8 | 47 | ~4 | 118 | ~12 | 0.955 | ~0.30 | ≤ 40 (orchestrator) |
-| FileTabViewModel | — | ~12 | — | ~5 | — | ~25 | — | ~0.25 | ≤ 20 |
+| FileTabViewModel | — | 27 ⚠ | — | 9 | — | ~50 | — | ≈0.20 | ≤ 20 |
 | SubsetBoundsViewModel | — | ~8 | — | ~1 | — | ~15 | — | ~0.20 | ≤ 20 |
 | FitsServiceAdapter | — | ~10 | — | ~6 | — | ~20 | — | ~0.30 | ≤ 40 (adapter) |
+
+**Note on `FileTabViewModel` WMC = 27 (⚠):** hand-counted Day 6 (`metrics.md §2.2`), this is borderline **over** the ≤ 20 domain threshold and we say so on the slide. Documented remediation: extract a `FileTabCommands` helper for the four command bodies, dropping the ViewModel to WMC ~22. Every other class in the slice is within threshold. Do not quote the old "~12 / re-derive to 15" figure — it was a stale projection, superseded by the measured 27.
 
 **Speaker note:** "the projection is evidenced by the skeleton code in `refactoring-examples/sub-team-6/file-tab/`. The numbers are not aspirational — they are countable from the skeleton. The full Understand re-run on the skeleton is owed by Day 13."
 
@@ -926,7 +928,7 @@ These questions sit alongside the Risk lines on the slides themselves. Where a s
 
 #### B.2.3 — Worked examples (Sections 3 & 4 — 12 min slot, the centrepiece)
 
-- **Q: "I see `FileTabViewModel` ~ 12 WMC. Show me the method list."** — Skeleton probe. Answer: open `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs` if it exists; otherwise narrate from `after-class-diagram.puml`: `OpenAsync`, `CloseAsync`, `OnAxisChanged`, `OnThresholdChanged`, `OnSubsetBoundsChanged`, `Validate`, `Reset`, `IsBusy` get, `SelectedDataset` get/set, `Error` get, plus 2 INPC plumbing — ~12 methods.[EVIDENCE-GAP-B.2.3a — confirm method list against committed skeleton] **Trap:** quoting a number without method names.
+- **Q: "I see `FileTabViewModel` WMC 27. Show me the method list."** — Skeleton probe. Answer: open the committed `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs` and narrate: constructor, 9 non-trivial property setters (`ImagePath`, `MaskPath`, `SelectedHduIndex`, `SelectedZAxisIndex`, `SubsetEnabled`, `RatioMode`, `IsLoading`, `HeaderText`, `ValidationMessage`), the `IsLoadable` getter, 4 command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `ClearMask`), `Dispose`, `RefreshHduHeaderAsync`, `BuildMemoryWarning`, `PopulateZAxisOptions`, `UpdateZAxisMax`, `GetAxisMaxima`, `ComputeZScale`, `MaskAxesMatchImage`, plus the notify helpers — 27 total (hand-counted Day 6, `metrics.md §2.2`). WMC 27 is borderline over the ≤ 20 domain threshold; documented remediation: extract a `FileTabCommands` helper → WMC ~22. **Trap:** quoting a number without method names; quoting the stale "~12".
 
 - **Q: "How does the View know when `SelectedDataset` changes?"** — Binding mechanics. Answer: `INotifyPropertyChanged` event. The ViewModel raises `PropertyChanged("SelectedDataset")`; the View's `UIDocument` has a binding registered against `SelectedDataset` via UI Toolkit's binding system (Unity 6) or via our `UnityBinder<T>` shim (Unity 2021). `mvvm-binding-policy.md` §2.1. **Trap:** "the View polls it". That would be the old design.
 
@@ -1008,7 +1010,7 @@ These are the questions designed to break composure or expose unfounded confiden
 
 - **Q: "Your sub-team is allocated to 'Desktop GUI and Client Shell'. The brief lists you as Sub-team 5 (Die Boks) in §5.5 but you call yourselves Sub-team 6. Why?"** — **A:** §5.5 numbers are *allocation IDs*; §6.x numbers are *work-package IDs*. We are allocation 5, work package 6. We refer to "Sub-team 6" because that is the work package we read; we are formally Die Boks / Sub-team 5 in cohort coordination. (Resolved 2026-05-19 — see CLAUDE.md project header.)
 
-- **Q: "I don't believe your CK projections. Re-derive WMC for `FileTabViewModel` from first principles, live."** — **A:** WMC is the sum of method complexities (CC). The skeleton lists ~12 methods, each cyclomatic complexity 1–2 (no nested branching in the ViewModel — the validation logic lives in `SubsetBoundsViewModel`). Sum is ~15. We rounded to ~12 in the projection. If the live re-derivation gives 15, the projection is conservative-by-3, still well under the threshold of 20.
+- **Q: "I don't believe your CK projections. Re-derive WMC for `FileTabViewModel` from first principles, live."** — **A:** WMC is the sum of method complexities. The committed skeleton has 27 methods/accessors, most of cyclomatic complexity 1–2 (validation lives in `SubsetBoundsViewModel`), so WMC 27 — hand-counted Day 6 (`metrics.md §2.2`), measured not projected. That is borderline over the ≤ 20 domain threshold and we say so; documented remediation is to extract a `FileTabCommands` helper → WMC ~22.
 
 - **Q: "What is one thing about your design you are uncertain about?"** — **A:** The `IUIDispatcher` abstraction may be heavier than necessary if UI Toolkit's binding system already marshals to the UI thread reliably under all event sources. We carry the abstraction because the Unity 2021 path (without UI Toolkit) needs it; once we are Unity-6-only it may simplify. Open question for Sprint 3.
 

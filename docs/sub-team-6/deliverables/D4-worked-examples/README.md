@@ -20,13 +20,15 @@ All source lives under [`refactoring-examples/sub-team-6/`](../../../../refactor
 
 **Key Metrics (BEFORE → AFTER):**
 
-| Metric | Before | After |
+| Metric | Before (CanvassDesktop) | After |
 |--------|--------|-------|
 | LOC | 1899 | ~1438 across 8 classes |
-| WMC | 57 | 27 (FileTabViewModel) |
-| CBO | ~32 | 9 (FileTabViewModel) |
-| RFC | ~210 | ~50 (FileTabViewModel) |
-| LCOM4 | ≥7 | 1 per class |
+| WMC | 63 | 27 (FileTabViewModel) |
+| CBO | 47 | 9 (FileTabViewModel) |
+| RFC | 118 | ~50 (FileTabViewModel) |
+| LCOM-HS | 0.955 | ≈0.20 (FileTabViewModel) |
+
+> Before-state figures are `CanvassDesktop`'s measured Day-2 baseline (`SK_BNCH.md`; WMC 63 / CBO 47 / RFC 118 / LCOM-HS 0.955 — *not* `DesktopPaintController`'s 57). After-state figures are hand-counted Day 6 (`metrics.md §2.2`). `FileTabViewModel` WMC 27 is borderline over the ≤ 20 domain threshold; documented remediation: extract a `FileTabCommands` helper → WMC ~22.
 
 ### Documentation
 
