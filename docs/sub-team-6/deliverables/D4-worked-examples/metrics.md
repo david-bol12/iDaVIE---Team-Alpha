@@ -167,15 +167,46 @@ See [`ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-me
 
 ### 3.1 Old Debug Tab
 
-There is no Debug tab class in the current codebase. The before-state is an absence of
-design: **40 `Debug.Log` / `Debug.LogWarning` / `Debug.LogError` call-sites** embedded
-inline in existing `CanvassDesktop` methods, with no structure, no UI panel, and no
-interception point for testing.
+The before-state debug tab **is** a dedicated class: `Assets/Scripts/Debuggers/DebugLogging.cs`
+(255 lines, single `MonoBehaviour`). It is the log *consumer* — it captures everything Unity
+routes to the console and renders it into the in-app debug panel. The defect is not size or
+complexity (it passes 5 of 6 CK thresholds); it is that the class is welded to Unity at its
+seam and has no interception point for tests:
 
-**WMC = 0** (no dedicated methods).  
-**CBO = 0** (no additional types — `UnityEngine.Debug` is already counted in the shared CBO).
+| Aspect | Detail (`DebugLogging.cs`) |
+|---|---|
+| Log source | Subscribes to the **static** `Application.logMessageReceived` event in `OnEnable` (`:149`) — cannot be substituted in a unit test without the Unity runtime |
+| Storage | Non-generic `Queue` (`:49`) — boxes every entry as `object`, no element type |
+| File I/O | `AutoSave` opens a fresh `StreamWriter`, writes one line, and closes it **on every message** (`:249`) |
+| Display | `HandleLog` rebuilds the **entire** `TMP_InputField.text` from the whole queue on every message — O(N) per log line (`:189`) |
+| Scroll | Forces `debugScrollbar.value = 1.0f` on every message (`:196`) — no scroll-position retention |
+| Format | Unstructured `"[" + type + "] : " + logString` (`:179`) — no `Level` enum, no `Source` tag, no machine-readable timestamp |
 
-**Call-site map (all 40 sites):**
+**Before metrics (hand-counted; ground truth in [`debug-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md)):**
+
+| Metric | Value | Threshold (orchestrator) | Status |
+|---|:---:|:---:|:---:|
+| WMC (method count) | **8** | ≤ 40 | ✅ |
+| DIT | **4** | ≤ 4 | ✅ (at limit — MonoBehaviour) |
+| NOC | 0 | ≤ 5 | ✅ |
+| CBO | **~10** | ≤ 25 | ✅ |
+| RFC | **~25** | ≤ 50 | ✅ |
+| LCOM4 | **~3** | = 1 | 🔴 |
+
+`DebugLogging` passes 5 of 6 CK thresholds, so this is a **testability** refactor, not a metric
+refactor. The defect CK *cannot* see is the static `Application.logMessageReceived` hook — no
+metric flags that the log source cannot be mocked. LCOM4 ≈ 3 (four disjoint concerns: log
+capture, autosave, display, manual export) is the only metric that fails.
+
+#### Producer-side concern (separate from the debug tab)
+
+Distinct from the `DebugLogging` *consumer*, **40 `Debug.Log` / `Debug.LogWarning` /
+`Debug.LogError` call-sites** are scattered inline across `CanvassDesktop` methods. These are
+log *producers* — the sites that *emit* into the stream the tab displays — not the debug tab
+itself. They are catalogued here because the after-state replaces the ad-hoc `Debug.Log` emit
+path with a structured stream, and because 24 of these sites inflate `checkSubsetBounds`.
+
+**Call-site map (all 40 producer sites):**
 
 | Method (line range) | Sites | Level(s) | Representative message |
 |---|:---:|:---:|---|
@@ -201,24 +232,28 @@ pattern for each of 6 subset-bounds fields. This inflates `checkSubsetBounds` fr
 logical CC of ~4 (the 4 branching conditions) to an observed CC of ~7 because each
 condition triggers an additional `Debug.Log` statement with string concatenation.
 
-**Before-state quality gaps:**
+**Producer-side quality gaps (the 40 emit sites):**
 
 | Gap | Detail |
 |---|---|
 | No structured format | Raw string concatenation — no `Level` enum, no `Source` tag, no `Timestamp` |
-| Log output invisible to end user | Unity console only; no in-app panel |
 | No interception point for tests | Cannot assert on a `Debug.Log` call in a unit test without Unity runner + console parsing |
 | `UnityEngine.Debug` is a hidden transitive dependency | Every method that calls `Debug.Log` is coupled to `UnityEngine` in its static call graph, even if it imports no other Unity types |
 | 24 / 40 sites produce structurally identical messages | The 4-condition repeat across 6 fields is a template, not 24 independent decisions — a single parameterised method would reduce them to 1 call per field |
 
 ### 3.2 New Debug Tab [projected]
 
+Figures aligned to the committed hand-counts in
+[`debug-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md)
+(tool verification due Day 13). The headline slice is three types; `ck-metrics.md` measures all
+seven (adding `LogStream`, `DebugTabCompositionRoot`, and the three interfaces).
+
 | Type | Layer | WMC | DIT | NOC | CBO | RFC | LCOM | Role threshold |
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| `DebugTabView` | View (Unity) | **5** | 1 | 0 | **3** | **10** | **0.05** | WMC≤40 / CBO≤25 ✅ |
-| `DebugTabViewModel` | ViewModel (pure C#) | **7** | 0 | 0 | **3** | **12** | **0.10** | WMC≤20 / CBO≤14 ✅ |
-| `UnityLogStreamAdapter` | Adapter (Unity asm) | **5** | 0 | 0 | **4** | **10** | **0.10** | WMC≤40 / CBO≤25 ✅ |
-| **Total / max** | | **17 total / 7 max** | | | **10 total / 4 max** | **32 total / 12 max** | **0.10 max** | |
+| `DebugTabView` | View (Unity asm) | **3** | 4 | 0 | **7** | **~18** | **0.05** | WMC≤40 / CBO≤25 ✅ |
+| `DebugTabViewModel` | ViewModel (pure C#) | **6** | 1 | 0 | **3** | **~15** | **0.10** | WMC≤20 / CBO≤14 ✅ |
+| `GatewayLogStreamAdapter` | Adapter (pure C#) | **8** | 1 | 0 | **5** | **~14** | **0.10** | WMC≤40 / CBO≤25 ✅ |
+| **Total / max** | | **17 total / 8 max** | **max 4** | **0** | **15 total / 7 max** | **~47 total / ~18 max** | **0.10 max** | |
 
 **All 3 types: 0 CK violations.**
 
@@ -226,35 +261,34 @@ condition triggers an additional `Debug.Log` statement with string concatenation
 
 | Interface | Methods | Purpose |
 |---|:---:|---|
-| `ILogStream` | 3 (`Subscribe`, `Unsubscribe`, `Publish(level, source, message)`) | Log producer contract; the only interface any log caller needs to know |
+| `ILogStream` | 4 (`Publish(level, message)`, `Publish(level, message, timestamp)`, `Subscribe`, `Unsubscribe`) | Log-stream contract; observers subscribe, emitters publish |
 | `ILogObserver` | 1 (`OnNext(LogEntry)`) | Observer contract; `DebugTabViewModel` implements this |
-| `IDebugTabViewModel` | 4 (`LogEntries`, `ClearCommand`, `AutoScrollEnabled`, `FilterLevel`) | View binding contract |
+| `IDebugTabViewModel` | 4 (`LogEntries`, `AppendEntry`, `ClearEntries`, `EntriesChanged`) | View binding contract |
 
-**`LogEntry` DTO** (replaces raw string concatenation):
-`Level : LogLevel` (enum: Debug / Info / Warning / Error),
-`Source : string` (e.g. `"FitsServiceAdapter"`),
+**`LogEntry` DTO** (replaces raw string concatenation) — immutable `record`:
+`Level : LogLevel` (enum: Info / Warning / Error),
 `Message : string`,
-`Timestamp : DateTimeOffset`.
+`Timestamp : DateTime`.
 
 **Method derivation:**
-- `DebugTabView` (WMC=5): `BindTo`, `OnEnable`, `OnDisable` + `AppendEntryToScrollView` (private, called on binding update) + `ScrollToBottom`. All 5 touch `_vm : IDebugTabViewModel` → LCOM ≈ 0.05. CBO=3: `IDebugTabViewModel`, `UnityEngine` (UI element), `LogEntry`.
-- `DebugTabViewModel` (WMC=7): `OnNext(LogEntry)` (implements `ILogObserver`) + `LogEntries` getter + `AutoScrollEnabled` getter/setter + `FilterLevel` getter/setter + `ClearCommand.Execute` + constructor. CBO=3: `ILogStream`, `ILogObserver` (self-implements), `LogEntry`. **Zero `UnityEngine` imports.** Consistent with "WMC ≈ 5, CBO ≈ 2" in `mvvm-binding-policy.md §8.1` (+2 for filter setter and property-changed notification).
-- `UnityLogStreamAdapter` (WMC=5): `Subscribe`, `Unsubscribe`, `Publish` (3 public, implementing `ILogStream`) + `ForwardToUnityConsole` (private — maintains parity with Unity IDE console) + constructor. CBO=4: `ILogStream`, `ILogObserver`, `LogEntry`, `UnityEngine.Debug`. **This is the only class that calls `UnityEngine.Debug.*`.** All 40 former call-sites in `CanvassDesktop` become `_logStream.Publish(level, source, message)` — compiled against `ILogStream` only.
+- `DebugTabView` (WMC=3): `BindTo`, `OnDestroy`, `OnEntriesChanged` (rebuilds the capped TMP text — `MaxDisplayLines = 500` — on each change). DIT=4 (MonoBehaviour). CBO=7: `IDebugTabViewModel`, `TMP_Text`, `Scrollbar`, `Button`, `LogEntry`, `LogLevel`, `StringBuilder`. The only debug-tab class that references Unity UI types.
+- `DebugTabViewModel` (WMC=6): constructor (subscribes to `ILogStream`) + `LogEntries` getter (`AsReadOnly`) + `AppendEntry` (bounded `List<LogEntry>`, cap 2000) + `ClearEntries` + `OnNext` (explicit `ILogObserver` impl → `AppendEntry`) + `Dispose` (unsubscribes); raises `EntriesChanged`. CBO=3: `ILogStream`, `LogEntry`, `IDisposable`. **Zero `UnityEngine` imports.** This is the Observer (`ILogObserver`).
+- `GatewayLogStreamAdapter` (WMC=8): constructor (subscribes to `IServiceGateway.OnNotification`) + `OnGatewayNotification` (filters `method == "log.emit"`, deserialises params to a level/msg/ts triple) + `ParseLevel` (wire string → `LogLevel`) + two `Publish` overloads + `Subscribe` + `Unsubscribe` (all four delegate to an inner `LogStream`) + `Dispose` (detaches from the gateway). CBO=5: `IServiceGateway`, `JsonRpcNotification`, `LogStream`, `ILogStream`, `LogLevel` (the nested `LogEmitParams` record is the `log.emit` wire DTO). **No `UnityEngine`, no `[DllImport]` — compiles in isolation against GatewayContracts + DebugTabSkeleton.** It consumes **server-pushed `log.emit` notifications** per ADR-0002 and republishes through the inner `LogStream`, so the `ILogObserver` contract (`DebugTabViewModel`) is unchanged. It replaces the earlier Unity-console adapter, which hooked the static `Application.logMessageReceived` event.
 
 ### 3.3 Debug Tab Delta
 
-| Metric | Old | New | Δ |
+| Metric | Old (`DebugLogging`) | New | Δ |
 |---|:---:|:---:|:---:|
-| Dedicated debug class | 0 | **3** (View, ViewModel, Adapter) | +3 |
-| WMC (dedicated debug class) | 0 | **7** (`DebugTabViewModel`) | +7 *(new focused class)* |
-| CBO (dedicated debug class) | 0 | **4** (`UnityLogStreamAdapter`, max) | +4 *(new isolated class)* |
-| CK violations in debug types | 0 (no class) | **0** (all within threshold) | 0 |
-| Unstructured `Debug.Log` call-sites | **40** | **0** (replaced by `ILogStream.Publish`) | **−40** |
-| Classes importing `UnityEngine.Debug` | ≥ 1 (`CanvassDesktop` + any other) | **1** (`UnityLogStreamAdapter` only) | **−N+1** |
-| `checkSubsetBounds` CC (debug contribution) | ~7 (18 log branches) | **~2** (`SubsetBoundsViewModel` clamping setters — no logging) | **−5** |
-| Interfaces backing log stream | 0 | **3** (`ILogStream`, `ILogObserver`, `IDebugTabViewModel`) | **+3** |
-| Log call-sites testable without Unity runner | **0** | **40** (all behind `ILogStream.Publish`) | **+40** |
-| Structured log fields (level, source, timestamp) | **0** | **4** (`LogEntry` DTO) | **+4** |
+| Dedicated debug-tab class(es) | **1** (`DebugLogging`, 255 LOC) | **3** headline (View / ViewModel / Adapter); 7 total incl. interfaces + `LogStream` | restructured |
+| WMC (log domain class) | **8** | **6** (`DebugTabViewModel`) | **−2** |
+| CBO (log domain class) | **~10** | **3** (`DebugTabViewModel`, domain) | **−7** |
+| LCOM4 (log domain class) | **~3** (4 disjoint concerns) | **1** (cohesive — every method touches `_entries`) | **−2** |
+| CK violations in debug types | **1** (LCOM4 on `DebugLogging`) | **0** (all types within threshold) | **−1** |
+| Log source | static `Application.logMessageReceived` hook | server-pushed `log.emit` over `IServiceGateway` (interface seam) | substitutable |
+| `UnityEngine` in the log-transport path | **Yes** (`DebugLogging` hooks the static event) | **No** (`GatewayLogStreamAdapter` + `LogStream` + `DebugTabViewModel` are pure C#; only `DebugTabView` touches Unity UI) | eliminated |
+| Interfaces backing the log stream | **0** | **3** (`ILogStream`, `ILogObserver`, `IDebugTabViewModel`) | **+3** |
+| Debug-tab logic testable without Unity runner | **0** | adapter (fake `IServiceGateway`) + VM (`ILogStream`) — **29** NUnit tests, ~20 ms, zero Unity dependency | **+29 tests** |
+| Structured log fields | **0** (raw `"[type] : msg"` string) | **3** (`LogEntry`: level, message, timestamp) | **+3** |
 
 ---
 
@@ -297,7 +331,7 @@ by the same pattern), `CanvassDesktop` is reduced to a **composition root**:
 
 | Method | Concern |
 |---|---|
-| `Awake` | Construct adapters (`FitsServiceAdapter`, `UnityLogStreamAdapter`, etc.) |
+| `Awake` | Construct adapters (`FitsServiceAdapter`, `GatewayLogStreamAdapter`, etc.) |
 | `Start` | Construct ViewModels, call `BindTo` on each View |
 | `OnDestroy` | Unsubscribe all bindings, dispose adapters |
 | `WireFileTab` (private) | Instantiate `FileTabViewModel`, pass to `FileTabView.BindTo` |
@@ -369,7 +403,7 @@ CBO = 4 reflects composition-root scope (`FileTabView`, `DebugTabView`,
 
 | Blocker | Resolved by |
 |---|---|
-| `UnityEngine.Debug` is static — cannot be mocked or redirected | All log calls go through `ILogStream.Publish()`; `UnityLogStreamAdapter` is the only `UnityEngine.Debug` caller |
+| Static `Application.logMessageReceived` hook — cannot be substituted in a test | Log records arrive as server-pushed `log.emit` notifications on `IServiceGateway.OnNotification` (an interface); `GatewayLogStreamAdapter` consumes them with no `UnityEngine` dependency |
 | 24 log calls in `checkSubsetBounds` — no assertion target | `SubsetBoundsViewModel` property setters replace inline validation+logging; test asserts on property value |
 | No end-user visibility of log output | `DebugTabView` scrolls `LogEntry` list; smoke-testable by running the app |
 | No log level or source filtering | `IDebugTabViewModel.FilterLevel` property filters by `LogLevel` enum in ViewModel without touching View |
@@ -389,7 +423,7 @@ Counts across CanvassDesktop before vs all WE1 + WE2 successor types combined.
 | Dead methods | **1** | **0** | −1 |
 | Unstructured `Debug.Log` call-sites | **40** | **0** | −40 |
 | Types pure-C# unit-testable (no Unity assemblies, no native DLL) | **0** | **3** (`FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`) | +3 |
-| Adapters integration-testable behind interface seams | **0** | **2** (`FitsServiceAdapter` via `IFitsService` test double; `UnityLogStreamAdapter` via `ILogStream` test double) | +2 |
+| Adapters integration-testable behind interface seams | **0** | **2** (`FitsServiceAdapter` via `IFitsService` test double; `GatewayLogStreamAdapter` via a fake `IServiceGateway`) | +2 |
 
 ---
 
@@ -404,7 +438,7 @@ Cycles are forbidden across all top-level components (see §6, row "Circular dep
 
 Role assignments:
 - **Domain / ViewModel:** `FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`
-- **Adapter / Orchestrator:** `FileTabView`, `FitsServiceAdapter`, `StandaloneFileDialogAdapter`, `VolumeServiceAdapter`, `DebugTabView`, `UnityLogStreamAdapter`, `CanvassDesktop` shell
+- **Adapter / Orchestrator:** `FileTabView`, `FitsServiceAdapter`, `StandaloneFileDialogAdapter`, `VolumeServiceAdapter`, `DebugTabView`, `GatewayLogStreamAdapter`, `CanvassDesktop` shell
 
 ---
 
