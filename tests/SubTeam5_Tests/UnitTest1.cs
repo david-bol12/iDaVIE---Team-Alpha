@@ -2,75 +2,69 @@ using DataFeatures;
 
 namespace SubTeam5_Tests;
 
-public class FeatureStatisticsTests
+[TestFixture]
+public class FeatureTests
 {
     private static readonly FeatureColor DefaultColor = new FeatureColor(1f, 1f, 1f);
 
-    // TEST 1: Feature.Center lies inside the feature's bounding box
-    [TestCase(0f, 10f, 0f, 10f, 0f, 10f)]
-    [TestCase(1f, 99f, 1f, 99f, 1f, 99f)]
-    [TestCase(-5f, 5f, -5f, 5f, -5f, 5f)]
-    [TestCase(10f, 50f, 10f, 50f, 10f, 50f)]
-    [TestCase(0f, 1f, 0f, 1f, 0f, 1f)]
-    public void Feature_Center_IsInsideBoundingBox(
+    // TEST 1: Center returns the exact computed midpoint of the two corners.
+    // Fails if the formula is wrong (e.g. using only one corner, integer division, etc.)
+    [TestCase( 0f, 10f,  0f, 10f,  0f, 10f,   5f,   5f,   5f)]
+    [TestCase( 2f,  8f,  4f, 12f,  6f, 18f,   5f,   8f,  12f)]
+    [TestCase(-5f,  5f, -5f,  5f, -5f,  5f,   0f,   0f,   0f)]
+    [TestCase( 1f,  1f,  1f,  1f,  1f,  1f,   1f,   1f,   1f)]
+    [TestCase( 0f,  1f,  0f,  2f,  0f,  3f,  0.5f,  1f,  1.5f)]
+    public void Feature_Center_IsExactMidpoint(
         float minX, float maxX,
         float minY, float maxY,
-        float minZ, float maxZ)
+        float minZ, float maxZ,
+        float expectedX, float expectedY, float expectedZ)
     {
         var feature = new Feature(
             new Vec3(minX, minY, minZ), new Vec3(maxX, maxY, maxZ),
             DefaultColor, "test", "", 0, 1, Array.Empty<string>(), true);
 
-        Assert.That(feature.Center.X, Is.GreaterThanOrEqualTo(feature.CornerMin.X));
-        Assert.That(feature.Center.X, Is.LessThanOrEqualTo(feature.CornerMax.X));
-        Assert.That(feature.Center.Y, Is.GreaterThanOrEqualTo(feature.CornerMin.Y));
-        Assert.That(feature.Center.Y, Is.LessThanOrEqualTo(feature.CornerMax.Y));
-        Assert.That(feature.Center.Z, Is.GreaterThanOrEqualTo(feature.CornerMin.Z));
-        Assert.That(feature.Center.Z, Is.LessThanOrEqualTo(feature.CornerMax.Z));
+        Assert.That(feature.Center.X, Is.EqualTo(expectedX));
+        Assert.That(feature.Center.Y, Is.EqualTo(expectedY));
+        Assert.That(feature.Center.Z, Is.EqualTo(expectedZ));
     }
 
-    // TEST 2: Flux values stored in Feature.RawData are non-negative
-    [TestCase(new double[] { 1.0, 2.0, 3.0 })]
-    [TestCase(new double[] { 0.0, 0.0, 0.0 })]
-    [TestCase(new double[] { 100.0, 50.0, 200.0 })]
-    [TestCase(new double[] { 0.001, 0.002, 0.003 })]
-    [TestCase(new double[] { 999.9 })]
-    public void Feature_Flux_IsNonNegative(double[] fluxValues)
+    // TEST 2: Size pads each axis by one voxel (bounding box includes both min and max voxels).
+    // Fails if the +1 padding is missing or applied to the wrong dimension.
+    [TestCase( 0f,  9f,  0f,  9f,  0f,  9f,  10f, 10f, 10f)]
+    [TestCase( 5f, 14f,  5f, 14f,  5f, 14f,  10f, 10f, 10f)]
+    [TestCase( 0f,  0f,  0f,  0f,  0f,  0f,   1f,  1f,  1f)]
+    [TestCase( 0f,  4f,  0f,  9f,  0f, 19f,   5f, 10f, 20f)]
+    [TestCase(-5f,  4f, -5f,  4f, -5f,  4f,  10f, 10f, 10f)]
+    public void Feature_Size_IsPaddedByOneVoxel(
+        float minX, float maxX,
+        float minY, float maxY,
+        float minZ, float maxZ,
+        float expectedX, float expectedY, float expectedZ)
     {
-        var rawData = fluxValues.Select(v => v.ToString("G")).ToArray();
+        var feature = new Feature(
+            new Vec3(minX, minY, minZ), new Vec3(maxX, maxY, maxZ),
+            DefaultColor, "test", "", 0, 1, Array.Empty<string>(), true);
+
+        Assert.That(feature.Size.X, Is.EqualTo(expectedX));
+        Assert.That(feature.Size.Y, Is.EqualTo(expectedY));
+        Assert.That(feature.Size.Z, Is.EqualTo(expectedZ));
+    }
+
+    // TEST 3: ContainsPoint correctly classifies interior, boundary, and exterior points.
+    // Fails if the comparison uses < instead of <= (excludes boundary) or has an axis wrong.
+    [TestCase( 5f,    5f,   5f, true)]   // interior
+    [TestCase( 0f,    0f,   0f, true)]   // min corner — included
+    [TestCase(10f,   10f,  10f, true)]   // max corner — included
+    [TestCase(-0.1f,  5f,   5f, false)]  // just outside x_min
+    [TestCase(10.1f,  5f,   5f, false)]  // just outside x_max
+    public void Feature_ContainsPoint_ReturnsCorrectResult(
+        float px, float py, float pz, bool expected)
+    {
         var feature = new Feature(
             new Vec3(0f, 0f, 0f), new Vec3(10f, 10f, 10f),
-            DefaultColor, "test", "", 0, 1, rawData, true);
+            DefaultColor, "test", "", 0, 1, Array.Empty<string>(), true);
 
-        var parsed = feature.RawData.Select(double.Parse).ToList();
-        double sum = parsed.Sum();
-        double peak = parsed.Max();
-
-        Assert.That(sum, Is.GreaterThanOrEqualTo(0.0));
-        Assert.That(peak, Is.GreaterThanOrEqualTo(0.0));
-    }
-
-    // TEST 3: Feature Z-extent representing W20 is at least as wide as W50
-    // On any Gaussian spectral profile, the line measured at 20% of peak is
-    // always wider than at 50% of peak.
-    [TestCase(100.0)]
-    [TestCase(500.0)]
-    [TestCase(1.0)]
-    [TestCase(9999.0)]
-    [TestCase(0.5)]
-    public void Feature_W20_Width_AtLeast_W50_Width(double peakFlux)
-    {
-        float w20 = 2.0f * (float)Math.Sqrt(-2.0 * Math.Log(0.20));
-        float w50 = 2.0f * (float)Math.Sqrt(-2.0 * Math.Log(0.50));
-
-        var featureW20 = new Feature(
-            new Vec3(0f, 0f, -w20 / 2f), new Vec3(0f, 0f, w20 / 2f),
-            DefaultColor, "W20", "", 0, 1, new[] { peakFlux.ToString("G") }, true);
-
-        var featureW50 = new Feature(
-            new Vec3(0f, 0f, -w50 / 2f), new Vec3(0f, 0f, w50 / 2f),
-            DefaultColor, "W50", "", 0, 2, new[] { peakFlux.ToString("G") }, true);
-
-        Assert.That(featureW20.Size.Z, Is.GreaterThanOrEqualTo(featureW50.Size.Z));
+        Assert.That(feature.ContainsPoint(new Vec3(px, py, pz)), Is.EqualTo(expected));
     }
 }

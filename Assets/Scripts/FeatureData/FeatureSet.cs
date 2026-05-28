@@ -60,6 +60,10 @@ namespace DataFeatures
         public string[] RawDataTypes { get; set; } = Array.Empty<string>();
         public string   FileName     { get; set; } = string.Empty;
 
+        // ── Coordinate frame (passed to ICoordinateTransformer during export) ─
+        public IAstFrame AstFrame   { get; set; } = new NullAstFrame();
+        public string    ZAxisLabel { get; set; } = "z_phys";
+
         // ── Feature list ─────────────────────────────────────────────────────
         private readonly List<Feature> _features = new List<Feature>();
 
@@ -138,27 +142,4 @@ namespace DataFeatures
         }
     }
 
-    /// <summary>
-    /// Unity-free colour value used by FeatureSet.
-    /// The visualiser converts this to UnityEngine.Color before GPU upload.
-    /// </summary>
-    public readonly struct FeatureColor
-    {
-        public float R { get; }
-        public float G { get; }
-        public float B { get; }
-        public float A { get; }
-
-        public FeatureColor(float r, float g, float b, float a = 1f)
-        {
-            R = r; G = g; B = b; A = a;
-        }
-
-        public UnityEngine.Color ToUnityColor() => new UnityEngine.Color(R, G, B, A);
-
-        public static readonly FeatureColor White   = new FeatureColor(1, 1, 1);
-        public static readonly FeatureColor Cyan    = new FeatureColor(0, 1, 1);
-        public static readonly FeatureColor Magenta = new FeatureColor(1, 0, 1);
-        public static readonly FeatureColor Green   = new FeatureColor(0, 1, 0);
-    }
 }
