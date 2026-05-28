@@ -56,11 +56,6 @@ namespace DataFeatures
             Visible = visible;
         }
 
-        public void ShowAxes(bool show)
-        {
-            // TODO: Handle this
-        }
-
         public Vec3 CornerMin => Vec3.Min(_corners[0], _corners[1]);
 
         public Vec3 CornerMax => Vec3.Max(_corners[0], _corners[1]);

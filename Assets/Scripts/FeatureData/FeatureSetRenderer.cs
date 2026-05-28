@@ -168,7 +168,7 @@ namespace DataFeatures
         public void RemoveFeature(Feature featureToRemove)
         {
             FeatureList.Remove(featureToRemove);
-            FeatureMenuScrollerDataSource.InitData();
+            FeatureMenuScrollerDataSource?.InitData();
         }
 
         public void ClearFeatures()
@@ -278,7 +278,7 @@ namespace DataFeatures
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                 AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, flag, FeatureList.Count, item.Key - 1, rawStrings, false));
             }
-            FeatureMenuScrollerDataSource.InitData();
+            FeatureMenuScrollerDataSource?.InitData();
         }
 
         // Spawn Feature objects into world from FileName
@@ -392,7 +392,7 @@ namespace DataFeatures
             for (int row = 0; row < table.Rows.Count; row++)   // For each row (feature)...
             {
                 featureRawData[row] = new List<string>();
-                for (int i = 0; i < table.Columns.Count; i++)
+                for (int i = 0; i < table.Column.Count; i++)
                 {
                     if (columnsMask[i])
                         featureRawData[row].Add(table.Rows[row].ColumnData[i].ToString());
@@ -535,9 +535,9 @@ namespace DataFeatures
                     BoxMaxPositions = boxMaxPositions;
                 }
             }
-            FeatureMenuScrollerDataSource.InitData();
+            FeatureMenuScrollerDataSource?.InitData();
         }
-        
+
         /// <summary>
         /// Method checks if the given feature's center point is within the given volume's bounds
         /// </summary>
@@ -546,9 +546,9 @@ namespace DataFeatures
         /// <returns></returns>
         public static bool FeatureIsWithinVolume(Feature feature, VolumeDataSetRenderer volume)
         {
-            return (feature.Center.x < 0 || feature.Center.x > volume.Data.XDim ||
-                feature.Center.y < 0 || feature.Center.y > volume.Data.YDim || 
-                feature.Center.z < 0 || feature.Center.z > volume.Data.ZDim);
+            return (feature.Center.x >= 0 && feature.Center.x <= volume.Data.XDim &&
+                feature.Center.y >= 0 && feature.Center.y <= volume.Data.YDim &&
+                feature.Center.z >= 0 && feature.Center.z <= volume.Data.ZDim);
         }
         
         void OnRenderObject()
