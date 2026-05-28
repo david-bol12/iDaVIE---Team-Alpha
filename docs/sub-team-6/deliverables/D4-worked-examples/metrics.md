@@ -191,12 +191,14 @@ seam and has no interception point for tests:
 | NOC | 0 | ≤ 5 | ✅ |
 | CBO | **~10** | ≤ 25 | ✅ |
 | RFC | **~25** | ≤ 50 | ✅ |
-| LCOM4 | **~3** | = 1 | 🔴 |
+| LCOM (HS) | **~0.95** | ≤ 0.50 | 🔴 |
 
 `DebugLogging` passes 5 of 6 CK thresholds, so this is a **testability** refactor, not a metric
 refactor. The defect CK *cannot* see is the static `Application.logMessageReceived` hook — no
-metric flags that the log source cannot be mocked. LCOM4 ≈ 3 (four disjoint concerns: log
-capture, autosave, display, manual export) is the only metric that fails.
+metric flags that the log source cannot be mocked. LCOM (HS) ≈ 0.95 — near the 1.0 ceiling,
+quantifying four disjoint concerns (log capture, autosave, display, manual export) that share
+almost no fields — is the only metric that fails. (The Understand connected-components
+cross-check points at the same four-concern defect; see [`debug-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md) for the full derivation.)
 
 #### Producer-side concern (separate from the debug tab)
 
@@ -282,8 +284,8 @@ seven (adding `LogStream`, `DebugTabCompositionRoot`, and the three interfaces).
 | Dedicated debug-tab class(es) | **1** (`DebugLogging`, 255 LOC) | **3** headline (View / ViewModel / Adapter); 7 total incl. interfaces + `LogStream` | restructured |
 | WMC (log domain class) | **8** | **6** (`DebugTabViewModel`) | **−2** |
 | CBO (log domain class) | **~10** | **3** (`DebugTabViewModel`, domain) | **−7** |
-| LCOM4 (log domain class) | **~3** (4 disjoint concerns) | **1** (cohesive — every method touches `_entries`) | **−2** |
-| CK violations in debug types | **1** (LCOM4 on `DebugLogging`) | **0** (all types within threshold) | **−1** |
+| LCOM (HS) (log domain class) | **~0.95** (4 disjoint concerns) | **0.10** (cohesive — every method touches `_entries`) | **−0.85** |
+| CK violations in debug types | **1** (LCOM on `DebugLogging`) | **0** (all types within threshold) | **−1** |
 | Log source | static `Application.logMessageReceived` hook | server-pushed `log.emit` over `IServiceGateway` (interface seam) | substitutable |
 | `UnityEngine` in the log-transport path | **Yes** (`DebugLogging` hooks the static event) | **No** (`GatewayLogStreamAdapter` + `LogStream` + `DebugTabViewModel` are pure C#; only `DebugTabView` touches Unity UI) | eliminated |
 | Interfaces backing the log stream | **0** | **3** (`ILogStream`, `ILogObserver`, `IDebugTabViewModel`) | **+3** |
