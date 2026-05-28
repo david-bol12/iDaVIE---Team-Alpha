@@ -256,18 +256,18 @@ We map every architectural choice back to one of these. The panel cannot disagre
 **Theory anchor:**
 - **SRP (Martin).** Each unit has one *actor*: the menu actor, the panel-state actor, the file-dialog actor, the configuration actor, the threshold-maths actor.
 - **GRASP — Information Expert.** The class that *owns the data* owns the operation. Subset bounds maths moves to `SubsetBoundsViewModel` because the bounds *are* its state.
-- **Concern-map convention** (Section 10.4 — must be text-based; the existing `concern-map.png` violates that rule [EVIDENCE-GAP-2.6a]).
+- **Concern-map convention** (Section 10.4 — diagrams must be text-based; satisfied by `D2-Architecture/concern-map.puml`, which supersedes the now-archived `concern-map.png` [EVIDENCE-GAP-2.6a CLOSED]).
 
 **Evidence:**
 - `architecture.md` §7 — SRP audit placeholder.
-- `concern-map.png` exists (binary only — fix owed per Section 10.4).
+- `D2-Architecture/concern-map.puml` — text-based concern map (8 concerns → SRP homes), satisfies Section 10.4; supersedes the binary `archived/concern-map.png`.
 - After-class diagrams: `D4-worked-examples/ex1-file-tab/after-class-diagram.puml`.
 
-**Speaker note:** "the slide shows the old class as a centre node with nine concerns radiating out, and an arrow from each concern to its new home. Every arrow has a label: SRP, Information Expert, Indirection. No code is lost — what is lost is the *coincidence* of all nine concerns being in the same class."
+**Speaker note:** "the slide shows the old class as a centre node with eight concerns radiating out, and an arrow from each concern to its new home. Every arrow has a label: SRP, Information Expert, Indirection. No code is lost — what is lost is the *coincidence* of all eight concerns being in the same class."
 
 **Risk if challenged — "did you measure this redistribution didn't just move the god class somewhere else?":** yes — `after-dsm.md` and the CK projection in §3 are the numerical answer. Show the table in Slide 3.4 / 4.4.
 
-**[EVIDENCE-GAP-2.6a]** Convert `concern-map.png` to PlantUML / Mermaid source (Section 10.4 compliance). Owner: TL. Due: Day 7.
+**EVIDENCE-GAP-2.6a — CLOSED 2026-05-28.** `concern-map.png` converted to text-based PlantUML at `D2-Architecture/concern-map.puml` (Section 10.4 compliance). The binary `.png` is retired to `archived/` (history kept, no longer the live artefact). Owner: TL.
 
 ---
 
@@ -852,7 +852,7 @@ Ranked by pitch-day visibility. Each gap names an artefact, an owner, and a due 
 | 2 | PlantUML C4 Level 1 diagram for our slice | `docs/sub-team-6/diagrams/c4-context.puml` | TL | Day 8 (ARCH-3) | 2.1 |
 | 3 | C4 Level 2 + Level 3 PlantUML | `docs/sub-team-6/diagrams/c4-container.puml`, `c4-component.puml` | TL | Day 8 | 2.2, 2.3 |
 | 4 | NDepend rules wired into CI (cycles, no-Unity-in-VM, no-static-singleton) | `tools/ndepend/rules.cqlinq` | Quality Guild | Day 10 | 2.5, 6.2 |
-| 5 | Concern map text-source (replace `.png`) | `docs/sub-team-6/concern-map.puml` or `.mmd` | TL | Day 7 | 2.6 |
+| 5 | Concern map text-source (replace `.png`) — **CLOSED 2026-05-28** | `docs/sub-team-6/deliverables/D2-Architecture/concern-map.puml` | TL | Day 7 | 2.6 |
 | 6 | ADR-0003 (ACL + Unity 6 UI Toolkit migration) | `docs/sub-team-6/adrs/0003-acl-uitk-migration.md` | TL | Day 8 | 2.7, 5.4 |
 | 7 | `mvvm-binding-policy.md` §3.1 + §3.2 walkthroughs filled | `…/D3-MVVM-binding-policy/mvvm-binding-policy.md` | TL | Day 7 | 3.2, 4.5 |
 | 8 | Before- and after-sequence diagrams for file-tab | `…/D4-worked-examples/ex1-file-tab/*-sequence-diagram.puml` | TL | Day 8 | 3.3 |
