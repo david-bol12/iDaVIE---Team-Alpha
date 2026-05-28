@@ -612,13 +612,13 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 - `requirements.md` NFR-REU-2 (ISP ≤ 7), NFR-TST-2 (mocking difficulty = 0).
 - `test-strategy.md` §7 — Interface-size audit (BNCH-7).
 - `test-strategy.md` §8 — Mocking-difficulty count (BNCH-6).
-- [EVIDENCE-GAP-5.2] — BNCH-6 and BNCH-7 audit tables owed.
+- BNCH-6 (`other/T2-baseline-benchmark/BNCH-6.md`) and BNCH-7 (`…/BNCH-7.md`) audit tables — both committed (EVIDENCE-GAP-5.2 CLOSED).
 
 **Speaker note:** "the proof that the design is testable is not 'we wrote unit tests'. The proof is 'the interfaces are small enough that any developer can write a test in five lines'. ISP and DIP, working together, are the operational testability lever."
 
 **Risk if challenged — "is ≤ 7 a magic number?":** it is the threshold the assignment specifies (§7.2). The literature varies — 5 to 10 are all defensible. We picked the assignment number and made it a hard gate.
 
-**[EVIDENCE-GAP-5.2]** BNCH-6 mocking-difficulty count + BNCH-7 ISP audit tables filled with real numbers. Owner: Quality Champion. Due: Day 9.
+**EVIDENCE-GAP-5.2 — CLOSED 2026-05-28.** BNCH-6 mocking-difficulty count (`other/T2-baseline-benchmark/BNCH-6.md` — `CanvassDesktop` 205 → ViewModel 0) and BNCH-7 ISP audit (`…/BNCH-7.md` — 11/12 interfaces ≤ 7; `IFileTabViewModel` facade is the documented trade-off) both committed with real numbers. Owner: Quality Champion.
 
 ---
 
@@ -859,7 +859,7 @@ Ranked by pitch-day visibility. Each gap names an artefact, an owner, and a due 
 | 7 | `mvvm-binding-policy.md` §3.1 + §3.2 walkthroughs filled | `…/D3-MVVM-binding-policy/mvvm-binding-policy.md` | TL | Day 7 | 3.2, 4.5 |
 | 8 | Before- and after-sequence diagrams for file-tab | `…/D4-worked-examples/ex1-file-tab/*-sequence-diagram.puml` | TL | Day 8 | 3.3 |
 | 9 | Debug-tab before-state UML | `…/D4-worked-examples/ex2-debug-tab/before-*.puml` | TL | Day 8 | 4.1 |
-| 10 | BNCH-6 mocking-difficulty + BNCH-7 ISP audit tables | `docs/sub-team-6/metrics/bnch-6.md`, `bnch-7.md` | Quality Champion | Day 9 | 5.2 |
+| 10 | BNCH-6 mocking-difficulty + BNCH-7 ISP audit tables — **CLOSED 2026-05-28** (both committed; BNCH-6 `CanvassDesktop` 205 → VM 0; BNCH-7 11/12 interfaces ≤ 7, `IFileTabViewModel` facade documented trade-off) | `docs/sub-team-6/deliverables/other/T2-baseline-benchmark/BNCH-6.md`, `BNCH-7.md` | Quality Champion | ✅ Day 9 | 5.2 |
 | 11 | File-tab skeleton + 3 `OpenCubeCommand` unit tests | `refactoring-examples/sub-team-6/file-tab/code/` | Sub-team | Day 10 | 5.3 |
 | 12 | Day-13 CK re-measurement on skeleton (Understand re-run) | `docs/sub-team-6/metrics/projection.md` | Quality Champion | Day 13 | 3.4, 4.4 |
 | 13 | Author names on ADR-0002, mvvm-binding-policy | inline | TL | Day 7 | 7.3 |
