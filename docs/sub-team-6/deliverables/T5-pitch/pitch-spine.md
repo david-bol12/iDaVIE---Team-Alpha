@@ -189,7 +189,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 
 **Evidence:**
 - `architecture.md` §6 — interface contracts list (`IServiceGateway`, `IFileTabViewModel`, `IDebugTabViewModel`, `ILogStream`, `ILogObserver`, `IPanel`).
-- `adrs/0001-mvvm-split.md` `Decision` section — "composition root replaces all `FindObjectOfType<>` singleton lookups; dependencies are explicit and mockable".
+- `D2-Architecture/architecture.md §4 (ADR-0001)` `Decision` section — "composition root replaces all `FindObjectOfType<>` singleton lookups; dependencies are explicit and mockable".
 - `mvvm-binding-policy.md` §5 — "Composition root owns instantiation".
 
 **Speaker note:** "the composition root is a single `MonoBehaviour` in the View assembly. It calls `new FitsServiceAdapter()`, `new FileTabViewModel(fits, dialog, ...)`, attaches the ViewModel to the `UIDocument`'s `userData`, and is done. There are no static singletons. There are no scene-graph lookups. There is one `new` site per type, and the test suite can replace any of them with a fake."
@@ -282,7 +282,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 - **Reversibility (Fowler — irreversibility as the gate for ADR-grade decisions).** A decision that costs significantly to reverse is ADR-grade. MVVM split, transport, ACL — all three pass.
 
 **Evidence:**
-- `adrs/0001-mvvm-split.md` — Status proposed, with Alternatives section covering MVP, MVU, MVC, status quo, Reactive MVVM.
+- `D2-Architecture/architecture.md §4 (ADR-0001)` — Status accepted, with Alternatives section covering MVP, MVU, MVC, status quo, Reactive MVVM.
 - `D2-Architecture/architecture.md` — ADR-0002 (§4), Alternatives covering gRPC-on-Day-1, REST, in-process.
 - ADR-0003 owed [EVIDENCE-GAP-2.7a].
 
@@ -832,7 +832,7 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 **Why this matters:** the close ends with names. Section 8.4 interviews follow within 48 hours; any name on a slide is a name interviewed against that slide.
 
 **Evidence:**
-- `adrs/0001-mvvm-split.md` — author named.
+- `D2-Architecture/architecture.md §4 (ADR-0001)` — author named.
 - `D2-Architecture/architecture.md` — ADR-0002 author owed [EVIDENCE-GAP-7.3a].
 - `mvvm-binding-policy.md` — author owed [EVIDENCE-GAP-7.3b].
 - Pitch speaker assignments per slide owed [EVIDENCE-GAP-7.3c].
@@ -1076,7 +1076,7 @@ Phrases to bank-avoid in Q&A. Each has been a known anti-signal in past assessme
 
 ## Cross Reference
 
-- ADR-0001 — `docs/sub-team-6/adrs/0001-mvvm-split.md`
+- ADR-0001 — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` (§4)
 - ADR-0002 — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` (§4)
 - D1 Requirements — `docs/sub-team-6/requirements.md`
 - D2 Architecture — `docs/sub-team-6/architecture.md`
