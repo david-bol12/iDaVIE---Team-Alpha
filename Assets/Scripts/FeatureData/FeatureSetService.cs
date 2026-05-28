@@ -53,36 +53,7 @@ namespace iDaVIE.Application.Feature
         FeatureTable Load(string filePath, out string error);
     }
 
-    /// <summary>
-    /// Provides real-time statistics for a feature derived from the volume mask.
-    /// Implemented against DataAnalysis.SourceStats (PluginInterface layer).
-    /// </summary>
-    public interface IFeatureStatisticsProvider
-    {
-        FeatureStatistics GetStatistics(Feature feature);
-    }
-
-    /// <summary>
-    /// Value object carrying the statistics for one Feature.
-    /// Kept separate from Feature so the domain object stays a plain aggregate.
-    /// </summary>
-    public sealed class FeatureStatistics
-    {
-        public long   VoxelCount            { get; init; }
-        public double TotalFlux             { get; init; }
-        public double PeakFlux              { get; init; }
-        public double CentroidX             { get; init; }
-        public double CentroidY             { get; init; }
-        public double CentroidZ             { get; init; }
-        public double W20                   { get; init; }
-        public double W50                   { get; init; }
-
-        /// <summary>Invariant check: centroid must lie inside the bounding box.</summary>
-        public bool CentroidInsideBounds(Feature f) =>
-            CentroidX >= f.CornerMin.X && CentroidX <= f.CornerMax.X &&
-            CentroidY >= f.CornerMin.Y && CentroidY <= f.CornerMax.Y &&
-            CentroidZ >= f.CornerMin.Z && CentroidZ <= f.CornerMax.Z;
-    }
+    // IFeatureStatisticsProvider and FeatureStatistics live in FeatureStatistics.cs.
 
     // ── FeatureSetService ─────────────────────────────────────────────────────
 
