@@ -8,7 +8,7 @@ Observer pattern + MVVM + ACL boundary. Four phases: **A** `CompositionRoot.Awak
 
 Structural counterpart to [`before-trace.md`](before-trace.md). Every message below is anchored to a file and line in the skeleton (`skeleton/`) or adapter (`adapters/`) code that already lives in this folder, so the AFTER sequence diagram is defensible at the panel.
 
-A Mermaid rendering lives in [`after-sequence.md`](after-sequence.md). A higher-level PlantUML version (architectural overview, no line citations) is at [`docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml`](../../../docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml).
+A Mermaid rendering lives in [`after-sequence.md`](after-sequence.md). Pairs with [`before-sequence.md`](before-sequence.md) for side-by-side panel display.
 
 ---
 
@@ -119,7 +119,7 @@ This is deliberately surfaced rather than papered over. Two paths forward:
 1. **Add `source` to `ILogStream.Publish` and `LogEntry`.** Required only for the `ILogStream.Publish(...)` path (direct, structured callers). Captures via `Application.logMessageReceived` cannot recover the source string — Unity does not expose the caller. Worth the schema change only if at least one consumer (e.g. a level-filter or a per-tab error counter) actually uses it.
 2. **Defer.** `LogEntry` is an immutable `record` — adding `Source` is a single-line change later. Until a consumer needs it, the field would be unused metadata.
 
-Decision belongs in the architecture doc / debug-tab ADR (not yet written).
+Decision belongs in the desktop client architecture document.
 
 ---
 

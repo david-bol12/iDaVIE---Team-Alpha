@@ -1,173 +1,178 @@
-// WE1-3 | File tab AFTER — FitsServiceAdapter (Unity-assembly adapter)
-// Wraps FitsReader P/Invoke calls. Lives in the Unity assembly; the ViewModel
-// never references this class. Satisfies ADR-0003 (ACL) and ADR-0001 (DIP).
-// NOTE: requires UnityEngine and FitsReader — does not compile in the standalone
-// skeleton project. The skeleton's IFitsService is the boundary; this is the plug.
+// WE1-3 | File tab AFTER — FitsServiceAdapter (client-side gateway proxy)
+//
+// Adapts IServiceGateway to IFitsService. Per the brief §6.6 ("direct file I/O
+// that belongs server-side"), FITS reading happens in a server-side plug-in;
+// this client-side adapter only translates IFitsService method calls into the
+// JSON-RPC method catalogue defined in ADR-0002 §"Method catalogue (v1)":
+//
+//   IFitsService.OpenImageAsync(path)              →  file.open       + dataset.getAxes
+//   IFitsService.OpenMaskAsync(path)               →  file.open       + dataset.getAxes
+//   IFitsService.GetHeaderTextAsync(handle, hdu)   →  dataset.getHeader
+//   IFitsHandle.Dispose()                          →  file.close (best-effort)
+//
+// No UnityEngine, no [DllImport], no IntPtr. The dataset id is server-assigned
+// and opaque to the ViewModel — RemoteFitsHandle carries it round-trip.
+//
+// Satisfies ADR-009 Decision §1 ("ViewModel commands → server calls via the
+// transport contract"), ADR-0003 (ACL — Unity-side coupling eliminated), and
+// brief §6.6 ("from direct native-plugin call → ViewModel command via service
+// gateway").
+
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using iDaVIE.Client.Gateway;
 using iDaVIE.Desktop.FileTab;
-using UnityEngine;
 
 namespace iDaVIE.Desktop.Adapters.FileTab
 {
     /// <summary>
-    /// Concrete adapter for <see cref="IFitsService"/>.
-    /// All P/Invoke calls are confined here — no IntPtr escapes this class.
-    /// The ViewModel receives only plain <see cref="FitsFileInfo"/> DTOs that
-    /// carry an opaque <see cref="IFitsHandle"/> for subsequent HDU reads.
-    ///
-    /// Replaces the scattered FitsReader calls in CanvassDesktop._browseImageFile
-    /// (lines 349–407), UpdateHeaderFromFits (lines 539–568), and
-    /// ChangeHduSelection (lines 1435–1465) — the last of which reopened the file
-    /// from disk on every dropdown selection.
+    /// Client-side <see cref="IFitsService"/> implementation that forwards every
+    /// call through <see cref="IServiceGateway"/>. The ViewModel sees only the
+    /// interface; whether the gateway is the real named-pipe transport
+    /// (<see cref="JsonRpcPipeGateway"/>) or an in-memory <see cref="FakeGateway"/>
+    /// is a composition-root decision.
     /// </summary>
     public sealed class FitsServiceAdapter : IFitsService
     {
+        // ADR-0002 method names — single source of truth so a rename here matches
+        // both the spec text and the unit tests in step 4.
+        internal const string MethodFileOpen        = "file.open";
+        internal const string MethodFileClose       = "file.close";
+        internal const string MethodDatasetGetAxes  = "dataset.getAxes";
+        internal const string MethodDatasetGetHeader = "dataset.getHeader";
+
+        private readonly IServiceGateway _gateway;
+
+        public FitsServiceAdapter(IServiceGateway gateway)
+        {
+            _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
+        }
+
         public Task<FitsFileInfo> OpenImageAsync(string path, CancellationToken ct = default)
-            => Task.Run(() => OpenAndReadMetadata(path), ct);
+            => OpenAsync(path, isMask: false, ct);
 
         public Task<FitsFileInfo> OpenMaskAsync(string path, CancellationToken ct = default)
-            => Task.Run(() => OpenAndReadMetadata(path), ct);
+            => OpenAsync(path, isMask: true, ct);
 
-        public Task<string> GetHeaderTextAsync(IFitsHandle handle, int hduIndex, CancellationToken ct = default)
-            => Task.Run(() => ReadHeaderText(handle, hduIndex), ct);
-
-        // ── Core P/Invoke logic (thread-pool, away from Unity main thread) ────
-
-        private static FitsFileInfo OpenAndReadMetadata(string path)
+        private async Task<FitsFileInfo> OpenAsync(string path, bool isMask, CancellationToken ct)
         {
-            int status = 0;
-            if (FitsReader.FitsOpenFile(out IntPtr fptr, path, out status, true) != 0)
-                throw new InvalidOperationException($"FITS open failed (status {status}): {path}");
+            // 1. file.open → datasetId (ADR-0002 method catalogue v1).
+            var openResult = await _gateway
+                .SendAsync<FileOpenResult>(MethodFileOpen, new FileOpenParams(path, isMask), ct)
+                .ConfigureAwait(false);
 
-            // From here on we own fptr. On any failure path we must close it
-            // before rethrowing — only the success path passes ownership to the
-            // FitsHandle returned inside FitsFileInfo.
+            // 2. dataset.getAxes → HDU list + axis metadata + primary-HDU header.
+            //    Two calls instead of one because the catalogue separates "obtain
+            //    a handle" from "read structural metadata" — leaves room for a
+            //    later "open without parsing" optimisation.
             try
             {
-                // 1. Enumerate HDUs for the dropdown
-                FitsReader.FitsGetHduCount(fptr, out int hduNum, out status);
-                var hduList = new List<HduInfo>(hduNum);
-                var sb      = new StringBuilder(80);
-
-                for (int i = 0; i < hduNum; i++)
-                {
-                    FitsReader.FitsMovabsHdu(fptr, i + 1, out _, out status);
-                    sb.Clear();
-
-                    // Try EXTNAME, fall back to HDUNAME, then synthesise a name
-                    if (FitsReader.FitsReadKey(fptr, (int)FitsReader.DataType.TSTRING,
-                            "EXTNAME", sb, IntPtr.Zero, out status) != 0)
-                    {
-                        status = 0;
-                        if (FitsReader.FitsReadKey(fptr, (int)FitsReader.DataType.TSTRING,
-                                "HDUNAME", sb, IntPtr.Zero, out status) != 0)
-                        {
-                            status = 0;
-                            sb.Append($"HDU {i + 1}");
-                        }
-                    }
-                    hduList.Add(new HduInfo(i + 1, sb.ToString(), "IMAGE"));
-                }
-
-                // 2. Read NAXIS keywords from HDU 1 (same as CanvassDesktop.UpdateHeaderFromFits)
-                FitsReader.FitsMovabsHdu(fptr, 1, out _, out status);
-                var headers = FitsReader.ExtractHeaders(fptr, out status);
-
-                int  nAxis     = 0;
-                var  axisSizes = new Dictionary<int, long>();
-                var  headerSb  = new StringBuilder();
-
-                foreach (var kvp in headers)
-                {
-                    headerSb.Append(kvp.Key).Append("\t\t ").Append(kvp.Value).Append('\n');
-
-                    if (kvp.Key.Length < 5 || kvp.Key.Substring(0, 5) != "NAXIS")
-                        continue;
-
-                    string suffix = kvp.Key.Substring(5);
-                    if (suffix == "")
-                        nAxis = (int)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture);
-                    else if (int.TryParse(suffix, out int axisNum))
-                        axisSizes[axisNum] = (long)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture);
-                }
-
-                // Success: transfer ownership of fptr into the handle.
-                var handle = new FitsHandle(fptr, path);
-
-                // Cube footprint estimate — product of NAXIS sizes × sizeof(float).
-                // Replaces the FileInfo.Length + nelem*sizeof(float|short) computation
-                // in CanvassDesktop.CheckMemSpaceForCubes (lines 995-1013).
-                long estimatedBytes = sizeof(float);
-                foreach (var size in axisSizes.Values)
-                    estimatedBytes = checked(estimatedBytes * Math.Max(1, size));
+                var meta = await _gateway
+                    .SendAsync<DatasetAxesResult>(MethodDatasetGetAxes, new DatasetIdParams(openResult.DatasetId), ct)
+                    .ConfigureAwait(false);
 
                 return new FitsFileInfo
                 {
-                    Handle         = handle,
+                    Handle         = new RemoteFitsHandle(_gateway, openResult.DatasetId, path),
                     FilePath       = path,
-                    HduList        = hduList,
-                    NAxis          = nAxis,
-                    AxisSizes      = axisSizes,
-                    HeaderText     = headerSb.ToString(),
-                    EstimatedBytes = estimatedBytes,
+                    HduList        = meta.HduList,
+                    NAxis          = meta.NAxis,
+                    AxisSizes      = meta.AxisSizes,
+                    HeaderText     = meta.HeaderText,
+                    EstimatedBytes = meta.EstimatedBytes,
                 };
             }
             catch
             {
-                // Failure: close the file before letting the exception escape so we
-                // do not leak the native pointer.
-                FitsReader.FitsCloseFile(fptr, out _);
+                // dataset.getAxes failed: the server allocated a dataset id we
+                // will never use. Fire a best-effort file.close so we do not
+                // leak it server-side.
+                BestEffortClose(openResult.DatasetId);
                 throw;
             }
         }
 
-        private static string ReadHeaderText(IFitsHandle handle, int hduIndex)
+        public Task<string> GetHeaderTextAsync(IFitsHandle handle, int hduIndex, CancellationToken ct = default)
         {
-            if (handle is not FitsHandle fh)
+            if (handle is not RemoteFitsHandle rh)
                 throw new ArgumentException("Handle was not produced by this adapter.", nameof(handle));
-            if (fh.IsClosed)
+            if (rh.IsClosed)
                 throw new ObjectDisposedException(nameof(IFitsHandle));
 
-            int status = 0;
-            FitsReader.FitsMovabsHdu(fh.Ptr, hduIndex, out _, out status);
-            var headers = FitsReader.ExtractHeaders(fh.Ptr, out status);
-            var sb = new StringBuilder();
-            foreach (var kvp in headers)
-                sb.Append(kvp.Key).Append("\t\t ").Append(kvp.Value).Append('\n');
-            return sb.ToString();
+            return _gateway.SendAsync<string>(
+                MethodDatasetGetHeader,
+                new GetHeaderParams(rh.DatasetId, hduIndex),
+                ct);
         }
 
-        // ── Handle implementation — sealed inside the adapter ─────────────────
-        //
-        // The ViewModel sees only IFitsHandle; the IntPtr never escapes this class.
-        // Dispose closes the native pointer exactly once and is safe to call twice.
-
-        private sealed class FitsHandle : IFitsHandle
+        private void BestEffortClose(string datasetId)
         {
-            private IntPtr _ptr;
+            // IDisposable.Dispose is synchronous and IFitsHandle.Dispose is
+            // called from that path; we cannot await without deadlocking on
+            // some sync contexts, so fire-and-forget and observe the task's
+            // exception to avoid an unobserved-exception fault.
+            _ = _gateway
+                .SendAsync<object?>(MethodFileClose, new DatasetIdParams(datasetId))
+                .ContinueWith(t => { _ = t.Exception; }, TaskScheduler.Default);
+        }
 
-            public FitsHandle(IntPtr ptr, string filePath)
+        // ── Wire DTOs ─────────────────────────────────────────────────────────
+        //
+        // These are private to the adapter — they exist only to shape the JSON
+        // on the wire and never escape. System.Text.Json with the gateway's
+        // camelCase policy produces the field names documented in ADR-0002
+        // §"Message shape" (e.g. params: { "path": "...", "isMask": false }).
+
+        private sealed record FileOpenParams(string Path, bool IsMask);
+
+        private sealed record DatasetIdParams(string DatasetId);
+
+        private sealed record GetHeaderParams(string DatasetId, int HduIndex);
+
+        private sealed record FileOpenResult(string DatasetId);
+
+        private sealed record DatasetAxesResult(
+            IReadOnlyList<HduInfo> HduList,
+            int NAxis,
+            IReadOnlyDictionary<int, long> AxisSizes,
+            string HeaderText,
+            long EstimatedBytes);
+
+        // ── Handle implementation ─────────────────────────────────────────────
+        //
+        // Wraps a server-assigned dataset id; the ViewModel sees only IFitsHandle.
+        // Disposal issues a best-effort file.close — see BestEffortClose above.
+
+        private sealed class RemoteFitsHandle : IFitsHandle
+        {
+            private readonly IServiceGateway _gateway;
+            private string? _datasetId;
+
+            public RemoteFitsHandle(IServiceGateway gateway, string datasetId, string filePath)
             {
-                _ptr     = ptr;
-                FilePath = filePath;
+                _gateway   = gateway;
+                _datasetId = datasetId;
+                FilePath   = filePath;
             }
 
             public string FilePath { get; }
 
-            internal IntPtr Ptr      => _ptr;
-            internal bool   IsClosed => _ptr == IntPtr.Zero;
+            internal string DatasetId
+                => _datasetId ?? throw new ObjectDisposedException(nameof(IFitsHandle));
+
+            internal bool IsClosed => _datasetId is null;
 
             public void Dispose()
             {
-                if (_ptr == IntPtr.Zero) return;
-                FitsReader.FitsCloseFile(_ptr, out _);
-                _ptr = IntPtr.Zero;
+                var id = _datasetId;
+                if (id is null) return;
+                _datasetId = null;
+
+                _ = _gateway
+                    .SendAsync<object?>(MethodFileClose, new DatasetIdParams(id))
+                    .ContinueWith(t => { _ = t.Exception; }, TaskScheduler.Default);
             }
         }
     }

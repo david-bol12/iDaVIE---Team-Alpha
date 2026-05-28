@@ -27,8 +27,11 @@ namespace iDaVIE.Desktop.DebugTab.Tests
         private readonly List<ILogObserver> _observers = new();
 
         public void Publish(LogLevel level, string message)
+            => Publish(level, message, DateTime.UtcNow);
+
+        public void Publish(LogLevel level, string message, DateTime timestamp)
         {
-            var entry = new LogEntry(level, message, DateTime.UtcNow);
+            var entry = new LogEntry(level, message, timestamp);
             foreach (var o in _observers) o.OnNext(entry);
         }
 

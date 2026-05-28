@@ -9,8 +9,16 @@ namespace iDaVIE.Desktop.DebugTab
     /// </summary>
     public interface ILogStream
     {
-        /// <summary>Publish a log entry to all registered observers.</summary>
+        /// <summary>Publish a log entry to all registered observers. The stream assigns <see cref="System.DateTime.UtcNow"/> as the timestamp.</summary>
         void Publish(LogLevel level, string message);
+
+        /// <summary>
+        /// Publish a log entry to all registered observers with an externally
+        /// supplied timestamp. Used by <c>GatewayLogStreamAdapter</c> so the
+        /// server-emitted <c>ts</c> in a <c>log.emit</c> notification (ADR-0002)
+        /// is preserved end-to-end instead of being overwritten on arrival.
+        /// </summary>
+        void Publish(LogLevel level, string message, System.DateTime timestamp);
 
         /// <summary>Register an observer to receive future log entries.</summary>
         void Subscribe(ILogObserver observer);

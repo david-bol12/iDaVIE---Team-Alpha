@@ -8,9 +8,9 @@ Code-anchored walkthrough of the live `CanvassDesktop.cs` File-tab path (1899-li
 
 Raw code-side trace of the production behaviour as of branch `team6`. Every message below is anchored to a file and line in the live codebase so the resulting sequence diagram is defensible at the maintainer panel.
 
-User-visible controls (button labels, panel names, scene-file line numbers) are taken from `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/file-tab-info-docs/file-tab-scope.md` §§1, 5, 7, which is anchored to `Assets/Scenes/ui.unity` line numbers — not invented.
+User-visible controls (button labels, panel names, scene-file line numbers) are taken from `docs/sub-team-6/archived/ex1-file-tab/file-tab-info-docs/file-tab-scope.md` §§1, 5, 7, which is anchored to `Assets/Scenes/ui.unity` line numbers — not invented.
 
-The compiled PlantUML diagram lives next to this trace at `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/file-tab-design/before-sequence.puml`.
+The Mermaid rendering of this trace lives in [`before-sequence.md`](before-sequence.md). Pairs with [`after-sequence.md`](after-sequence.md) for side-by-side panel display.
 
 ---
 

@@ -32,7 +32,7 @@ Source: [`backlog.md`](../../backlog.md) Part B.
 
 | File | Size / shape | Status | Notes |
 |---|---|---|---|
-| **`client-server-transport.md`** | ADR-0002 + 7-section Appendix A | **Complete** | Nygard-format ADR + a substantial **wire specification appendix**: pipe naming (`\\.\pipe\idavie.<session-id>`, owner-only ACL), LSP-style framing (`<length><LF><utf-8>`), JSON-RPC 2.0 message shape with examples, **initial method catalogue (v1)** mapping 9 RPC methods to backlog items (`session.hello`, `file.open`, `file.close`, `file.listRecent`, `dataset.getAxes`, `log.subscribe`/`unsubscribe`/`emit`, `progress.update`), error code table including domain-specific codes (`-32011` FITS header invalid, `-32030` native plug-in failure), and versioning policy. Author line still says *"Sub-team 6 TL — fill in"* — needs a real name before pitch. |
+| **`architecture.md`** | Full D2 architecture document (8 sections) | **Complete** | Contains ADR-0001 (MVVM), ADR-0002 (transport + wire spec), ADR-0003 (ACL), ADR-0004 (UI Toolkit), C4 L3 diagram, SRP decomposition, interface contracts, state contract, §4.2 compliance check. ADR-0002 includes the full wire specification: pipe naming, framing, method catalogue (v1), error model, versioning policy. Author line in ADR-0002 still needs a real name before pitch. |
 
 ### 2.3 `D3-MVVM-binding-policy/` — MVVM operating manual (feeds ARCH-9)
 
@@ -121,7 +121,7 @@ Source: [`backlog.md`](../../backlog.md) Part B.
 | **REQ-3** Roadmap drivers | POL | **Done** | `D1-requirements/Long-Term-Python-Console.md` + `requirements.md` §4 |
 | **REQ-4** Consolidated req doc | POL | **Done** | `docs/sub-team-6/requirements.md` |
 | **ARCH-1** ADR-01 MVVM split | TL | **Done** | `adrs/0001-mvvm-split.md` |
-| **ARCH-2** ADR-02 Transport | TL | **Done** | `D2-Architecture/client-server-transport.md` (with wire spec) |
+| **ARCH-2** ADR-02 Transport | TL | **Done** | `D2-Architecture/architecture.md` §4 ADR-0002 (with wire spec) |
 | **ARCH-8** Interface contracts to Sub-team 1 | TL | **Partial** | Interfaces drafted in `refactoring-examples/sub-team-6/{file-tab,debug-tab}/skeleton/`; formal hand-off owed Day 8 (DEPS-3) |
 | **DESN-1** Concern map | TL + all | **Done** | `docs/sub-team-6/concern-map.png` *(spec gap: §10.4 requires text-based source — `.puml`/`.mmd` companion owed)* |
 | **DEPS-1** Gateway dependency risk raised | SM | **Done** | Cited in ADR-0001 §Context as R01 |
@@ -220,7 +220,7 @@ This is real cushion against Sprint 2's heavier load (31 cards).
 | CanvassDesktop method reference + server-side I/O map | `D1-requirements/CanvassDesktop.md` |
 | Long-term roadmap drivers | `D1-requirements/Long-Term-Python-Console.md` |
 | ADR-0001 MVVM split | `docs/sub-team-6/adrs/0001-mvvm-split.md` |
-| ADR-0002 Transport (+ wire spec) | `D2-Architecture/client-server-transport.md` |
+| ADR-0002 Transport (+ wire spec) | `D2-Architecture/architecture.md` §4 |
 | MVVM binding policy scaffold | `D3-MVVM-binding-policy/mvvm-binding-policy.md` |
 | File-tab BEFORE class diagram | `D4-worked-examples/ex1-file-tab/before-class-diagram.puml` |
 | File-tab AFTER class diagram | `D4-worked-examples/ex1-file-tab/after-class-diagram.puml` |

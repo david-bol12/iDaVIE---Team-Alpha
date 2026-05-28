@@ -32,8 +32,12 @@ namespace iDaVIE.Desktop.DebugTab
 
         /// <inheritdoc/>
         public void Publish(LogLevel level, string message)
+            => Publish(level, message, DateTime.UtcNow);
+
+        /// <inheritdoc/>
+        public void Publish(LogLevel level, string message, DateTime timestamp)
         {
-            var entry = new LogEntry(level, message, DateTime.UtcNow);
+            var entry = new LogEntry(level, message, timestamp);
             ILogObserver[] snapshot;
             lock (_lock) { snapshot = _observers.ToArray(); }
             foreach (var observer in snapshot)

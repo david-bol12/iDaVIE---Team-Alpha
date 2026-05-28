@@ -1,11 +1,11 @@
 # MVVM Strategy — Desktop Client Shell
 
-- **Status:** draft
-- **Date:** 2026-05-26
+- **Status:** final
+- **Date:** 2026-05-27
 - **Authors:** Sub-team 6 (Desktop GUI & Client Shell)
 - **Backlog:** ARCH-1, ARCH-9
-- **Supersedes:** `adrs/0001-mvvm-split.md` (decision rationale folded in), `refactor.md` (informal proposal folded in)
-- **Related:** [ADR-0002 — Client–server transport](../D2-Architecture/client-server-transport.md)
+- **Supersedes:** ADR-009 draft (decision rationale folded in)
+- **Related:** [ADR-0002 — Client–server transport](../D2-Architecture/architecture.md#adr-0002--clientserver-transport-json-rpc-over-named-pipes--grpc)
 
 ---
 
@@ -45,9 +45,9 @@ CBO of 47 breaks down as: 23 project types (e.g. `VolumeDataSetRenderer`, `FitsR
 
 Three forces make the status quo unsustainable:
 
-**Testability vs MonoBehaviour lifecycle.** Unity's `MonoBehaviour` requires a running engine to instantiate; any logic embedded in it cannot be unit-tested with NUnit alone. The assignment mandates ≥ 70% branch/line coverage on domain code (NFR-TST-1). With CanvassDesktop scoring a mocking-difficulty index of 205 (163 scene-graph traversals + 36 static P/Invoke calls), this target is unreachable without decomposition.
+**Testability vs MonoBehaviour lifecycle.** `MonoBehaviour` cannot be instantiated without a live engine, so any logic inside it cannot be unit-tested with NUnit. CanvassDesktop's mocking-difficulty index of 205 (163 scene-graph traversals + 36 P/Invoke calls) makes the ≥ 70% branch/line target (NFR-TST-1) unreachable without decomposition.
 
-**Unity 2021.3 → Unity 6 migration.** The legacy `UnityEngine.UI` Canvas system is the current runtime; the target is UI Toolkit. Any UI code that is not isolated behind an interface must be rewritten in full during migration. Mixing view logic and domain logic in a single `MonoBehaviour` doubles the migration surface unnecessarily.
+**Unity 2021.3 → Unity 6 migration.** The legacy Canvas system must migrate to UI Toolkit. Any UI code not isolated behind an interface must be rewritten in full; mixing view logic and domain logic in one `MonoBehaviour` doubles that migration surface.
 
 **Assignment constraints (non-negotiable).**
 - §4.2.3: Domain code must not transitively depend on `UnityEngine` or `SteamVR`.
@@ -170,18 +170,77 @@ ILogStream  ──publishes──►  DebugTabViewModel  ──binds──►  D
 - Commands: `ApplyThreshold`, `ChangeColorMap`
 
 The current `Update()` loop polls `firstActiveRenderer.ThresholdMin` every frame and pushes it to a slider. In the refactored design:
-- `VolumeDataSetRenderer` raises a `ThresholdChanged` event (or ViewModel polls via `IVolumeService`)
+- `IVolumeService` raises a `ThresholdChanged` event
 - `RenderingTabViewModel` subscribes and updates its own properties
 - `RenderingTabView` binds sliders to those properties — no per-frame sync needed
 
-### 3.4 InformationTabViewModel
+**Split from current code:**
+
+| Current (CanvassDesktop) | Proposed home |
+|---|---|
+| `Update()` polls `firstActiveRenderer.ThresholdMin/Max` every frame | `IVolumeService.ThresholdChanged` event → `RenderingTabViewModel` subscribes |
+| Slider wiring in `Start()` | `RenderingTabView` bound to `MinThreshold` / `MaxThreshold` |
+| `_restFrequency` field (declared, never read) | Removed — dead code confirmed by LCOM field-access analysis |
+| Colormap dropdown wiring in `Start()` | `RenderingTabView.OnColorMapChanged()` → `ChangeColorMapCommand` |
+
+### 3.4 StatsTabViewModel
+
+The Stats tab today is eight methods on `CanvassDesktop` (`populateStatsValue`, `UpdateUI`, `UpdateSigma`, `RestoreDefaults`, `UpdateScale`, `SetMaxMinPercentile`, `UpdateScaleMin`, `UpdateScaleMax`) that read in-memory float buffers and write sliders / labels directly. They share state with the Render tab via `CanvassDesktop` fields — moving the slider in Render silently changes Stats. That cross-tab coupling is the proximate cause of defect **B-03** (slider sync) named in `D1/requirements.md` §2.
 
 **Owns:**
-- `HeaderText` (string) — formatted FITS header dump
-- `AxisInfo` (list of axis key/value pairs)
-- `NAxis`, `ImageSize`, `MaskSize`
+- `Histogram` (`IReadOnlyList<HistogramBin>`) — bound to the chart control
+- `PercentilePresets` (list of `{Label, Lower, Upper}`) — the quick-pick row
+- `ManualMin`, `ManualMax` (float, two-way bindable)
+- `ScaleMode` (enum: `Linear` / `Log`)
+- `SigmaOverlay` (float — multiplier for the σ band)
+- Commands: `ApplyPercentileCommand`, `RestoreDefaultsCommand`, `RecomputeHistogramCommand`
 
-Populated by `IFitsService.GetHeaderAsync(path)` returning a plain DTO — no Unity types.
+The `IsExactPercentile` toggle currently freezes the UI on large cubes (defect **B-04**); the ViewModel exposes `IsRecomputing` so the View can show a progress indicator instead.
+
+Histogram and percentile work belong to the same domain as the volume renderer, so `IVolumeService` is the natural producer. Two surface additions over the WE1 contract:
+- `Task<IReadOnlyList<HistogramBin>> ComputeHistogramAsync(int bins, CancellationToken ct)` — exact percentiles on demand.
+- `event Action<HistogramChangedEventArgs>? HistogramChanged` — fires when the loaded cube or thresholds change, replacing the per-frame `Update()` poll.
+
+**Split from current code:**
+
+| Current (CanvassDesktop) | Proposed home |
+|---|---|
+| `populateStatsValue()` reads buffer on tab show | `StatsTabViewModel` subscribes to `IVolumeService.HistogramChanged`; no tab-show side effect |
+| `UpdateUI()` mutates sliders + labels directly | View binds to `Histogram`, `ManualMin`, `ManualMax`, `ScaleMode` — no imperative UI writes |
+| `SetMaxMinPercentile(p)` freezes UI for exact computation | `ApplyPercentileCommand` issues `ComputeHistogramAsync` with `IProgress<float>`; View shows progress |
+| `UpdateScale()` reaches into Render tab's threshold fields | `IVolumeService.SetThresholds(min, max)` — Render tab observes the same event |
+| `RestoreDefaults()` re-reads renderer state | `RestoreDefaultsCommand` calls `IVolumeService.ResetThresholds()` |
+
+### 3.5 SourcesTabViewModel
+
+The Sources tab today is ten methods on `CanvassDesktop` (`BrowseSourcesFile`, `_browseSourcesFile`, `BrowseMappingFile`, `_browseMappingFile`, `SaveMappingFile`, `_saveMappingFile`, `ChangeSourceMapping`, `AreMappingsIncompatible`, `AreMinimalMappingsSet`, `LoadSourcesFile`) that handle two file dialogs, JSON mapping I/O, per-column validation, and a singleton-lookup feature-set load. Mapping-rule logic is intermixed with UI updates. Defect **B-05** (WCS vs (x,y,z) one-voxel offset, open issue #464) sits in this code.
+
+**Owns:**
+- `CataloguePath`, `MappingPath` (observable strings)
+- `AvailableColumns` (`IReadOnlyList<ColumnDescriptor>`) — populated after a catalogue is opened
+- `ColumnMappings` (`IDictionary<MappingRole, string>`) — bound to per-role dropdowns
+- `MinimalMappingsSet` (bool, computed) — gates the Load button
+- `ValidationMessage` (string?) — surfaces "WCS ↔ voxel mismatch" etc.
+- Commands: `BrowseCatalogueCommand`, `BrowseMappingCommand`, `SaveMappingCommand`, `LoadCatalogueCommand`
+
+Catalogue parsing is server-side (VOTable / FITS table — the same brief-§6.6 logic that puts FITS reading server-side). Mapping JSON is small enough to stay client-local but consistent with persistence, it should route through `IConfigService` rather than direct file I/O.
+
+Two domain interfaces are needed (out-of-scope for the worked examples; gestures only):
+- `ICatalogueService` — `OpenCatalogueAsync(path)` returns a `CatalogueInfo { Columns, RowCount, SuggestedMappings }`. Implemented by a `CatalogueServiceAdapter` gateway proxy that dispatches `catalogue.open` / `catalogue.close` over `IServiceGateway`.
+- `IFeatureSetService` — `LoadFromCatalogueAsync(datasetId, mappings)` materialises features in the running session.
+
+**Split from current code:**
+
+| Current (CanvassDesktop) | Proposed home |
+|---|---|
+| `BrowseSourcesFile()` opens dialog, then calls `_browseSourcesFile` | `BrowseCatalogueCommand` → `IFileDialogService.PickFileAsync` → `ICatalogueService.OpenCatalogueAsync` |
+| `_browseSourcesFile()` reads VOTable / FITS catalogue via native reader | `ICatalogueService` server-side; client sees only `CatalogueInfo` DTO |
+| `AreMinimalMappingsSet()` / `AreMappingsIncompatible()` validation | Computed property `MinimalMappingsSet` + private `Validate()` method |
+| `SaveMappingFile()` / `_saveMappingFile()` JSON serialisation | `SaveMappingCommand` → `IConfigService.SaveMappingAsync(path, ColumnMappings)` |
+| `LoadSourcesFile()` via `FindObjectOfType<FeatureSetManager>()` | `LoadCatalogueCommand` → `IFeatureSetService.LoadFromCatalogueAsync` |
+| WCS ↔ voxel offset bug **B-05** | Mapping role enum makes WCS vs voxel coordinate an explicit choice rather than an implicit field-order assumption; `Validate()` rejects incompatible combinations |
+
+These two sections are **design gestures**, not worked examples — the brief mandates only File and Debug as full worked examples (D4). They show the same MVVM split applies, and they identify the new interfaces (`IStatsService` extension, `ICatalogueService`, `IFeatureSetService`) the Architecture Guild needs to ratify before any of these tabs ships.
 
 ---
 
@@ -263,6 +322,42 @@ Unity 6 UI Toolkit supports `INotifyValueChanged<T>` and data binding natively. 
 2. A thin `UnityBinder<T>` helper subscribes to `PropertyChanged` and sets the UI element value.
 3. Views register bindings in `Awake` / `OnEnable` and unregister in `OnDisable`.
 
+```csharp
+// View assembly only — never imported by ViewModel
+public sealed class UnityBinder<T> : IDisposable
+{
+    private readonly INotifyPropertyChanged _source;
+    private readonly string   _propertyName;
+    private readonly Func<T>   _getter;
+    private readonly Action<T> _setter;
+
+    public UnityBinder(
+        INotifyPropertyChanged source, string propertyName,
+        Func<T> getter, Action<T> setter)
+    {
+        _source = source; _propertyName = propertyName;
+        _getter = getter; _setter = setter;
+        source.PropertyChanged += OnChanged;
+    }
+
+    private void OnChanged(object _, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == _propertyName) _setter(_getter());
+    }
+
+    public void Dispose() => _source.PropertyChanged -= OnChanged;
+}
+
+// Usage in FileTabView.Awake():
+_binders = new List<IDisposable>
+{
+    new UnityBinder<bool>(_vm, nameof(_vm.IsLoadable),
+        () => _vm.IsLoadable,   v => _loadButton.interactable = v),
+    new UnityBinder<string>(_vm, nameof(_vm.HeaderText),
+        () => _vm.HeaderText,   v => _headerScrollText.text = v),
+};
+```
+
 This eliminates the manual `transform.Find(...)` chains and the per-frame `Update()` sync.
 
 ---
@@ -275,21 +370,28 @@ The existing `CanvassDesktop.Start()` does singleton hunting via `FindObjectOfTy
 
 ```csharp
 // Composition root (pseudo-code — design only)
-var fitsService    = new FitsServiceAdapter();        // wraps FitsReader P/Invoke
-var volumeService  = new VolumeServiceAdapter();      // wraps VolumeCommandController
-var fileDialogSvc  = new StandaloneFileDialogAdapter();
-var logStream      = new UnityLogStreamAdapter();     // wraps Debug.Log
+var gateway        = new JsonRpcServiceGateway(sessionPipeName);   // ADR-0002 transport
+await gateway.ConnectAsync();
+
+var fitsService    = new FitsServiceAdapter(gateway);              // gateway proxy
+var logStream      = new GatewayLogStreamAdapter(gateway);         // gateway proxy
+var volumeService  = new VolumeServiceAdapter();                   // Unity adapter
+var dialogService  = new StandaloneFileDialogAdapter();            // Unity adapter
+var memoryProbe    = new MemoryProbeAdapter();                     // Unity adapter
+var catalogue     = new CatalogueServiceAdapter(gateway);          // gateway proxy (gesture — §3.5)
 var dispatcher     = new UnityMainThreadDispatcher();
 
-var fileVM    = new FileTabViewModel(fitsService, fileDialogSvc, volumeService);
-var debugVM   = new DebugTabViewModel(logStream, dispatcher);
-var renderVM  = new RenderingTabViewModel(volumeService);
-var infoVM    = new InformationTabViewModel(fitsService);
+var fileVM     = new FileTabViewModel(fitsService, dialogService, volumeService, memoryProbe);
+var debugVM    = new DebugTabViewModel(logStream, dispatcher);
+var renderVM   = new RenderingTabViewModel(volumeService);
+var statsVM    = new StatsTabViewModel(volumeService);
+var sourcesVM  = new SourcesTabViewModel(catalogue, dialogService);
 
 fileTabView.BindTo(fileVM);
 debugTabView.BindTo(debugVM);
 renderingTabView.BindTo(renderVM);
-informationTabView.BindTo(infoVM);
+statsTabView.BindTo(statsVM);
+sourcesTabView.BindTo(sourcesVM);
 ```
 
 ### 5.2 Wiring Rules
@@ -312,15 +414,16 @@ informationTabView.BindTo(infoVM);
 The ACL lives at the Service Gateway boundary only:
 
 ```
-Domain code (ViewModels)         Service adapters (Unity-dependent)
-─────────────────────────        ──────────────────────────────────
-IFitsService                ◄──── FitsServiceAdapter   (FitsReader P/Invoke)
-IVolumeService              ◄──── VolumeServiceAdapter (VolumeCommandController)
-IFileDialogService          ◄──── StandaloneFileDialogAdapter
-ILogStream                  ◄──── UnityLogStreamAdapter (Debug.Log)
+Domain code (ViewModels)         Service adapters (Gateway Layer, ACL)
+─────────────────────────        ──────────────────────────────────────────
+IFitsService                ◄──── FitsServiceAdapter         (gateway proxy — JSON-RPC)
+ILogStream                  ◄──── GatewayLogStreamAdapter    (gateway proxy — JSON-RPC notifications)
+IVolumeService              ◄──── VolumeServiceAdapter       (Unity adapter — VolumeCommandController)
+IFileDialogService          ◄──── StandaloneFileDialogAdapter (Unity adapter — SFB)
+IConfigService              ◄──── ConfigServiceAdapter       (Unity adapter — PlayerPrefs)
 ```
 
-Rule: nothing left of the `◄────` line may `using UnityEngine`, `using Valve.VR`, or `[DllImport]`.
+Rule: nothing left of the `◄────` line may `using UnityEngine`, `using Valve.VR`, or `[DllImport]`. The two **gateway proxies** also forbid those usings on their own side — they compile against `iDaVIE.Client.Gateway` only. The three **Unity adapters** are the only classes permitted to touch the Unity SDK (see ADR-0001 Decision item 3 in `D2/architecture.md`).
 
 **DTO contract (Gateway ↔ ViewModel):**
 - DTOs are immutable plain C# records.
@@ -449,16 +552,13 @@ All target values fall within §7.1 thresholds. Full before/after delta tables a
 
 | Pattern | Why forbidden | Replacement |
 |---|---|---|
-| `using UnityEngine;` in ViewModel file | ADR-0001 dependency direction; §4.2.3 | DTO with primitive fields |
-| `Vector3` field on ViewModel | UnityEngine type leak | `(float X, float Y, float Z)` record / tuple |
+| Any `UnityEngine` type in ViewModel (`using UnityEngine`, `Vector3` field, `[SerializeField]`) | Violates §4.2.3; domain code must not depend on Unity | DTO with primitives; plain C# properties; constructor injection |
 | Coroutine in ViewModel | Unity-bound execution model | `async Task` + `IUIDispatcher` |
-| `[SerializeField]` on ViewModel | Unity serialisation dependency | Plain property; configure via constructor |
 | `FindObjectOfType<>` anywhere | Singleton coupling | Constructor injection at composition root |
-| Static event on ViewModel | Lifecycle / test isolation breakage | Instance event or `IObservable<T>` |
+| `static` state on ViewModels (mutable field or event) | Breaks test isolation; shared state leaks between test runs | Instance state or instance event; inject shared state via constructor |
 | `viewModel.Property = x` from View code | Bypasses command layer | `ICommand` binding |
 | `Thread.Sleep` / `WaitForSeconds` in ViewModel | Blocks UI thread or Unity-bound | `Task.Delay` + `CancellationToken` |
 | `event EventHandler` on ViewModel as substitute for `ICommand` | Circumvents binding contract | `ICommand` |
-| `static` mutable state on ViewModels | Breaks test isolation | Instance state; inject shared state via constructor |
 
 ---
 
@@ -509,9 +609,9 @@ select new {
 
 ## 13. References
 
-- [ADR-0002 — Client–server transport](../D2-Architecture/client-server-transport.md)
-- [D4 — File-tab worked example](../D4-worked-examples/ex1-file-tab/)
-- [D4 — Debug-tab worked example](../D4-worked-examples/ex2-debug-tab/)
+- [ADR-0002 — Client–server transport](../D2-Architecture/architecture.md#adr-0002--clientserver-transport-json-rpc-over-named-pipes--grpc)
+- [D4 — File-tab worked example](../D4-worked-examples/README.md#example-1--file-tab)
+- [D4 — Debug-tab worked example](../D4-worked-examples/README.md#example-2--debug-tab)
 - [D5 — ViewModel unit tests](../D5-testing/viewmodel-unit-tests.md)
 - [D5 — UI Toolkit page-object pattern](../D5-testing/ui-toolkit.md)
 - [Integration risk register](../../../team-alpha/integration-risk-register.md) — R01 (Sub-team 1 gateway contract), R04 (Sub-team 4 VR menus)

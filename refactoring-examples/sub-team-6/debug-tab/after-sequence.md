@@ -6,11 +6,11 @@ Mermaid `sequenceDiagram` of the AFTER trace. ACL boundary drawn as a `box` arou
 
 ---
 
-Mermaid rendering of [`after-trace.md`](after-trace.md). Pair side-by-side with the BEFORE diagram (`uml-diagrams/before-debug-sequence-diagram.puml`) on the panel slide: every BEFORE `→ HandleLog → Queue.Enqueue → StreamWriter → StringBuilder → TMP_InputField` chain collapses into the single `LogStream.Publish → ILogObserver.OnNext` dispatch here.
+Mermaid rendering of [`after-trace.md`](after-trace.md). Pair side-by-side with the BEFORE diagram in [`before-sequence.md`](before-sequence.md) on the panel slide: every BEFORE `→ HandleLog → Queue.Enqueue → StreamWriter → StringBuilder → TMP_InputField` chain collapses into the single `LogStream.Publish → ILogObserver.OnNext` dispatch here.
 
 The ACL boundary is drawn as a `box` around the Unity-side adapters. The `DebugTabVM` and `LogStream` lifelines never send a message into the box without going through an interface.
 
-A higher-level PlantUML version (architectural overview, no line citations) lives at [`docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml`](../../../docs/sub-team-6/uml-diagrams/after-debug-sequence-diagram.puml). This Mermaid version is the code-anchored one.
+Note that the producer-side `UnityEngine.Debug` hop shown in the BEFORE diagram (`Sub → UE → App`) is omitted here — the path is unchanged in AFTER, so the diagram skips straight from `Sub → App` to keep the eye on the new ACL and Observer structure.
 
 ```mermaid
 sequenceDiagram
@@ -129,6 +129,7 @@ Suggested slide layout for the panel:
 | BEFORE callout | AFTER replacement |
 |---|---|
 | `Application.logMessageReceived += DebugLogging.HandleLog` (static-event subscription untestable) | One subscription confined to `UnityLogStreamAdapter.OnEnable` (`adapters/UnityLogStreamAdapter.cs:28-29`). The VM subscribes to `ILogStream`, not the static event. |
+| 44 unstructured `Debug.Log*` callers across the codebase (S9) — see [`log-origin-trace.md`](log-origin-trace.md) | Captured automatically via `Application.logMessageReceived` — no caller change required. A structured `ILogStream.Publish(...)` path exists in the interface (`skeleton/ILogStream.cs:13`) for new callers that want to provide `source`/`level` directly. |
 | `(string, string, LogType)` unstructured tuple | `LogEntry(Level, Message, Timestamp)` immutable record (`skeleton/ILogStream.cs:31`). |
 | Non-generic `Queue` storing `object`, unbounded | Generic `List<LogEntry>` capped at 2000 entries (`skeleton/DebugTabViewModel.cs:22, 49-50`). |
 | `StreamWriter` opened + closed per message | No file I/O on the hot path. Autosave reintroduced as a separate `ILogObserver` if needed. |
