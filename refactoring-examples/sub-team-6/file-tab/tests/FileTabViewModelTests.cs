@@ -551,6 +551,246 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsTrue(loadingRaised);
             Assert.IsFalse(vm.IsLoading);   // must be false when command finishes
         }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // Branch-coverage gate close (audit F14 follow-up, 2026-05-27).
+        //
+        // The 34 happy-path / single-error tests above leave FileTabViewModel at
+        // 68.7 % branch coverage (per ReportGenerator on the merged Cobertura).
+        // The tests below target the specific uncovered branches identified by
+        // line-level coverage:
+        //
+        //   - Constructor null-guards on the four injected services (L54-57)
+        //   - "no-op when set to same value" early returns on the two index
+        //     setters (L85, L100)
+        //   - Setters called before any image is loaded — RefreshHduHeaderAsync
+        //     and UpdateZAxisMax must short-circuit, not throw (L338, L388)
+        //   - Dispose on a VM that never opened a file (L328, L329)
+        //   - IsLoadable rule 3: NAXIS ≥ 3 but only two non-trivial axes (L161)
+        //   - BrowseMask: user cancels the dialog (L244)
+        //   - BrowseMask: replacing an existing mask disposes the old handle (L259)
+        //   - MaskAxesMatchImage: NAXIS1 and NAXIS2 mismatches (existing test
+        //     covered only NAXIS3) — all 3 short-circuit branches now exercised
+        //
+        // Together these are estimated to lift FileTabViewModel branch coverage
+        // from 68.7 % to ≥ 76 %, clearing the D5 §7 ≥ 70 % gate.
+        // ═══════════════════════════════════════════════════════════════════════
+
+        // ── Constructor null guards (L54-57) ──────────────────────────────────
+
+        [Test]
+        public void Ctor_NullFitsService_Throws()
+        {
+            Assert.Throws<ArgumentNullException>(() => new FileTabViewModel(
+                fitsService:   null!,
+                dialogService: new StubFileDialogService(),
+                volumeService: new StubVolumeService(),
+                memoryProbe:   new StubMemoryProbe()));
+        }
+
+        [Test]
+        public void Ctor_NullDialogService_Throws()
+        {
+            Assert.Throws<ArgumentNullException>(() => new FileTabViewModel(
+                fitsService:   new StubFitsService(),
+                dialogService: null!,
+                volumeService: new StubVolumeService(),
+                memoryProbe:   new StubMemoryProbe()));
+        }
+
+        [Test]
+        public void Ctor_NullVolumeService_Throws()
+        {
+            Assert.Throws<ArgumentNullException>(() => new FileTabViewModel(
+                fitsService:   new StubFitsService(),
+                dialogService: new StubFileDialogService(),
+                volumeService: null!,
+                memoryProbe:   new StubMemoryProbe()));
+        }
+
+        [Test]
+        public void Ctor_NullMemoryProbe_Throws()
+        {
+            Assert.Throws<ArgumentNullException>(() => new FileTabViewModel(
+                fitsService:   new StubFitsService(),
+                dialogService: new StubFileDialogService(),
+                volumeService: new StubVolumeService(),
+                memoryProbe:   null!));
+        }
+
+        // ── Setter no-op paths (L85, L100) ────────────────────────────────────
+
+        [Test]
+        public async Task SelectedHduIndex_SetToSameValue_DoesNotRaisePropertyChanged()
+        {
+            var (vm, fits, _, _, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D();
+            await vm.BrowseImageCommand.ExecuteAsync();
+
+            int notifications = 0;
+            vm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(IFileTabViewModel.SelectedHduIndex))
+                    notifications++;
+            };
+
+            // Set to the value it already has — the equality short-circuit must
+            // skip both the field write and the PropertyChanged fire.
+            vm.SelectedHduIndex = vm.SelectedHduIndex;
+
+            Assert.AreEqual(0, notifications);
+        }
+
+        [Test]
+        public async Task SelectedZAxisIndex_SetToSameValue_DoesNotRaisePropertyChanged()
+        {
+            var (vm, fits, _, _, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.FourAxisCube();
+            await vm.BrowseImageCommand.ExecuteAsync();
+
+            int notifications = 0;
+            vm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(IFileTabViewModel.SelectedZAxisIndex))
+                    notifications++;
+            };
+
+            vm.SelectedZAxisIndex = vm.SelectedZAxisIndex;
+
+            Assert.AreEqual(0, notifications);
+        }
+
+        // ── Setters with no image loaded (L338, L388) ─────────────────────────
+
+        [Test]
+        public void SelectedHduIndex_SetBeforeImage_NoOpAndDoesNotThrow()
+        {
+            // Without an image loaded, the SelectedHduIndex setter fires
+            // RefreshHduHeaderAsync (L336) which must short-circuit on the null
+            // image check (L338); the same setter calls UpdateZAxisMax (via the
+            // notify chain) which must also short-circuit (L388).
+            var (vm, _, _, _, _) = BuildVm();
+
+            Assert.DoesNotThrow(() => vm.SelectedHduIndex = 1);
+            Assert.IsNull(vm.HeaderText);
+            Assert.IsFalse(vm.IsLoadable);
+        }
+
+        // ── Dispose on empty VM (L328, L329) ──────────────────────────────────
+
+        [Test]
+        public void Dispose_VmWithNoOpenFiles_DoesNotThrow()
+        {
+            // The null-conditional ?.Dispose() chains in Dispose() are only
+            // exercised when both handles are null. The existing fixtures
+            // always open an image first; this test exercises the no-files
+            // disposal path.
+            var (vm, _, _, _, _) = BuildVm();
+
+            Assert.DoesNotThrow(() => vm.Dispose());
+        }
+
+        // ── IsLoadable axis-count rule (L161) ─────────────────────────────────
+
+        [Test]
+        public async Task IsLoadable_ThreeAxesButOnlyTwoNonTrivial_False()
+        {
+            // NAXIS = 3, but the third axis has size 1 — IsLoadable rule 3:
+            // "At least 3 axes must have size > 1." Exercises the branch at
+            // L161 (nonTrivialCount < 3 return false).
+            var (vm, fits, _, _, _) = BuildVm();
+            fits.NextImageResult = new FitsFileInfo
+            {
+                Handle     = new StubFitsHandle("/data/degenerate.fits"),
+                FilePath   = "/data/degenerate.fits",
+                HduList    = new[] { new HduInfo(1, "PRIMARY", "IMAGE") },
+                NAxis      = 3,
+                AxisSizes  = new Dictionary<int, long> { [1] = 512, [2] = 512, [3] = 1 },
+                HeaderText = "",
+            };
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+
+            Assert.IsFalse(vm.IsLoadable);
+        }
+
+        // ── BrowseMask edge cases (L244, L259, MaskAxesMatchImage axes 1+2) ───
+
+        [Test]
+        public async Task BrowseMask_UserCancels_LeavesStateUnchanged()
+        {
+            var (vm, fits, dialog, _, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D();
+            await vm.BrowseImageCommand.ExecuteAsync();
+
+            dialog.PathToReturn = null;   // simulate cancel
+            await vm.BrowseMaskCommand.ExecuteAsync();
+
+            Assert.IsNull(vm.MaskPath);
+            Assert.IsNull(vm.ValidationMessage);
+        }
+
+        [Test]
+        public async Task BrowseMask_ReplacesExistingMask_DisposesOldHandle()
+        {
+            var (vm, fits, dialog, _, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D();
+            var firstMask  = FitsFactory.Cube3D(path: "/data/mask1.fits");
+            var secondMask = FitsFactory.Cube3D(path: "/data/mask2.fits");
+            fits.NextMaskResult = firstMask;
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            dialog.PathToReturn = "/data/mask1.fits";
+            await vm.BrowseMaskCommand.ExecuteAsync();
+            Assert.AreEqual("/data/mask1.fits", vm.MaskPath);
+
+            // Browse a second mask — the first mask's handle must be disposed
+            // by the _currentMaskInfo?.Dispose() path at L259.
+            fits.NextMaskResult = secondMask;
+            dialog.PathToReturn = "/data/mask2.fits";
+            await vm.BrowseMaskCommand.ExecuteAsync();
+
+            Assert.AreEqual("/data/mask2.fits", vm.MaskPath);
+            Assert.IsTrue(((StubFitsHandle)firstMask.Handle).Disposed,
+                "First mask handle should have been disposed when the second mask replaced it.");
+        }
+
+        [Test]
+        public async Task BrowseMask_AxisXMismatch_RejectsMask()
+        {
+            // The existing BrowseMask_MismatchedDimensions_RejectsMask covers
+            // only one of the three short-circuit branches in
+            // MaskAxesMatchImage. This test exercises the NAXIS1 (X) mismatch
+            // branch specifically.
+            var (vm, fits, dialog, _, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D(x: 512, y: 256, z: 100);
+            fits.NextMaskResult  = FitsFactory.Cube3D(x: 256, y: 256, z: 100,   // X mismatch
+                                                     path: "/data/wrong-x.fits");
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            dialog.PathToReturn = "/data/wrong-x.fits";
+            await vm.BrowseMaskCommand.ExecuteAsync();
+
+            Assert.IsNull(vm.MaskPath);
+            StringAssert.Contains("dimensions do not match", vm.ValidationMessage ?? string.Empty);
+        }
+
+        [Test]
+        public async Task BrowseMask_AxisYMismatch_RejectsMask()
+        {
+            // The other untested MaskAxesMatchImage short-circuit branch.
+            var (vm, fits, dialog, _, _) = BuildVm();
+            fits.NextImageResult = FitsFactory.Cube3D(x: 512, y: 256, z: 100);
+            fits.NextMaskResult  = FitsFactory.Cube3D(x: 512, y: 512, z: 100,   // Y mismatch
+                                                     path: "/data/wrong-y.fits");
+
+            await vm.BrowseImageCommand.ExecuteAsync();
+            dialog.PathToReturn = "/data/wrong-y.fits";
+            await vm.BrowseMaskCommand.ExecuteAsync();
+
+            Assert.IsNull(vm.MaskPath);
+            StringAssert.Contains("dimensions do not match", vm.ValidationMessage ?? string.Empty);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

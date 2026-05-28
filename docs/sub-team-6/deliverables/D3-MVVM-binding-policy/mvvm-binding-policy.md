@@ -6,6 +6,7 @@
 - **Backlog:** ARCH-1, ARCH-9
 - **Supersedes:** ADR-009 draft (decision rationale folded in)
 - **Related:** [ADR-0002 — Client–server transport](../D2-Architecture/architecture.md#adr-0002--clientserver-transport-json-rpc-over-named-pipes--grpc)
+- **Numbering:** local `ADR-0001`..`ADR-0004` ↔ central `ADR-001`..`ADR-012` — see the cross-walk table at the top of [D2 §4](../D2-Architecture/architecture.md#4-architecture-decisions). Note especially that local `ADR-0003` ↔ central `ADR-002` (number reversal).
 
 ---
 
@@ -287,6 +288,8 @@ public sealed class FileTabViewModel : ViewModelBase
 - Surfaced to the View via a bound `ErrorMessage` (string) and a domain-typed `LastError` enum.
 - ViewModels do **not** throw out of commands — the View has no handler.
 
+**Replay and undo (cross-reference to ADR-010):** ADR-009 names commands as "reified, replayable, testable — consistent with ADR-010". Reified and testable are covered above; **replayability is owned by ADR-010** (Sub-team 4's State and Command Patterns for the Interaction System, see central registry). The desktop tab commands share the GoF `ICommand` shape with the VR-side commands by design, so a command-log observer wired at the `ICommand.Execute` boundary by Sub-team 4 will capture every desktop-tab command without any change in this ViewModel layer. **Undo** — ADR-010 makes Undo *"where applicable"*; most desktop tab commands are not naturally undoable (file open, log filter change). Where a desktop tab adds a reversible operation later (e.g. mask paint stroke) the relevant `ICommand` implementation supplies an `Undo()` method matching the ADR-010 contract. Sub-team 6 does **not** own the command-log mechanism; we own the contract that makes logging possible.
+
 ### 4.3 Collections
 
 `ObservableCollection<T>` is used for all bound lists. The Debug tab is the load test: the log stream can produce ≥ 1k entries/sec under tracing, so a bounded ring-buffer wrapper or virtualised incremental collection may be needed.
@@ -500,15 +503,17 @@ Full before/after UML and dependency graph: [`refactoring-examples/sub-team-6/de
 
 ### 8.1 CK Metric Projections (Achieved by Decomposition)
 
-| Class | WMC now | WMC target | CBO now | CBO target |
-|---|---|---|---|---|
-| CanvassDesktop (shell only) | 63 | ~15 | 47 | ~4 |
-| FileTabViewModel | — | ~12 | — | ~5 |
-| RenderingTabViewModel | — | ~8 | — | ~4 |
-| DebugTabViewModel | — | ~5 | — | ~2 |
-| FitsServiceAdapter | — | ~10 | — | ~6 |
+| Class | WMC now | WMC after | CBO now | CBO after | Source |
+|---|---|---|---|---|---|
+| CanvassDesktop (shell only) | 63 | ~15 (projected) | 47 | ~4 (projected) | projection |
+| **FileTabViewModel** | — | **27 (measured)** | — | **9 (measured)** | hand-count, Day 6 (`D4/metrics.md §2.2`) |
+| SubsetBoundsViewModel | — | 12 (measured) | — | 1 (measured) | hand-count, Day 6 |
+| FitsServiceAdapter | — | 6 (measured) | — | 5 (measured) | hand-count, Day 6 (post-gateway-rewire) |
+| **DebugTabViewModel** | — | **7 (projected)** | — | **3 (projected)** | `D4/metrics.md §3.2` |
+| GatewayLogStreamAdapter | — | 5 (projected) | — | 4 (projected) | step-3 rewire |
+| RenderingTabViewModel | — | ~8 (projected) | — | ~4 (projected) | gesture, §3.3 |
 
-All target values fall within §7.1 thresholds. Full before/after delta tables are in the D4 worked examples.
+Notes on the FileTabViewModel WMC = 27 measurement: this is hand-counted from the committed skeleton on Day 6 and is **borderline** against the ≤ 20 domain threshold from brief §7.1. The remediation path is documented in `refactoring-examples/sub-team-6/file-tab/ck-metrics.md`: extracting a `FileTabCommands` helper from the four async command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `ClearMask`) drops the count to ~22. The audit accepts the borderline value rather than masking it because §7 of the brief explicitly bans speculative numbers without evidence. All other measured values fall within §7.1 thresholds. Full before/after delta tables are in the D4 worked examples.
 
 ### 8.2 Testability
 

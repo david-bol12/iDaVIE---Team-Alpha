@@ -126,6 +126,15 @@ C4Component
 
 ## 4. Architecture Decisions
 
+**Numbering map.** This document uses 4-digit local IDs (`ADR-0001`..`ADR-0004`). The team-alpha registry at [`../../../team-alpha/ADR_Log_Improved.md`](../../../team-alpha/ADR_Log_Improved.md) uses 3-digit central IDs (`ADR-001`..`ADR-012`). Cross-walk:
+
+| Local | Central | Notes |
+|---|---|---|
+| `ADR-0001` | `ADR-009` | Sub-team-6 implementation of the MVVM-for-Desktop decision. |
+| `ADR-0002` | (extends `ADR-009`) | Wire-spec sub-decision — JSON-RPC over named pipes. No separate central ADR; the central registry's versioning note (`ADR-009`) explicitly allows additive wire-spec decisions. |
+| `ADR-0003` | `ADR-002` | **Number reversal — local `ADR-0003` ↔ central `ADR-002`.** Both are the Anti-Corruption Layer decision. |
+| `ADR-0004` | — | Sub-team-only. Unity 6 UI Toolkit as View technology. No central equivalent because the choice is desktop-shell-specific. |
+
 ### ADR-0001 — MVVM split (View / ViewModel / Service Gateway)
 
 - **Status:** accepted · **Date:** 2026-05-19 · **Backlog:** ARCH-1

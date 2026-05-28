@@ -111,9 +111,9 @@ This is the sequence that repeats for every log call site in the codebase (40+ i
 
 ## CK metrics for DebugLogging (before-state)
 
-See [`ck-metrics.md`](ck-metrics.md) for the authoritative BEFORE-state CK table — including both NOM-style and McCabe-CC-weighted WMC, and both LCOM4 and Henderson-Sellers LCOM_HS.
+See [`ck-metrics.md`](ck-metrics.md) for the authoritative BEFORE-state CK table — including both NOM-style and McCabe-CC-weighted WMC, and LCOM hs (Henderson-Sellers).
 
-> **Headline:** `DebugLogging` passes 5 of 6 CK thresholds individually. **LCOM is the one failure** (LCOM4 ≈ 3 / LCOM_HS = 0.95), reflecting the four disjoint concern clusters identified above as smell S8. The remainder of the refactoring case is **structural and testability-driven**: smell S1 (static event hook, untestable without Unity) and smell S8 (four responsibilities in one class) dominate. These prevent unit testing without Unity and prevent reuse of the log model in non-UI contexts.
+> **Headline:** `DebugLogging` passes 5 of 6 CK thresholds individually. **LCOM is the one failure** (LCOM hs = 0.95), reflecting the four disjoint concern clusters identified above as smell S8. The remainder of the refactoring case is **structural and testability-driven**: smell S1 (static event hook, untestable without Unity) and smell S8 (four responsibilities in one class) dominate. These prevent unit testing without Unity and prevent reuse of the log model in non-UI contexts.
 
 ---
 

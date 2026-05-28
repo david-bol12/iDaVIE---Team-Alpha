@@ -128,15 +128,15 @@ public class DebugTabViewModelTests
 }
 ```
 
-### 3.4 Delivered test count (Day 8 snapshot)
+### 3.4 Delivered test count (Day 8 snapshot, post-F14 follow-up)
 
 | Class | Required | **Delivered** | Evidence |
 |---|---:|---:|---|
-| `FileTabViewModel` | ≥ 5 | **34** | [`file-tab/tests/FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) |
+| `FileTabViewModel` + `SubsetBoundsViewModel` | ≥ 5 | **47** (34 happy/error path + 13 branch-coverage gate-close) | [`file-tab/tests/FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) |
 | `DebugTabViewModel` + `LogStream` | ≥ 3 | **29** | [`debug-tab/tests/DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) |
-| **Tier 1 total** | — | **63** | `dotnet test` runtime ~29 + ~17 ms — zero Unity dependency |
+| **Tier 1 total** | — | **76** | `dotnet test` runtime ~37 + ~17 ms — zero Unity dependency |
 
-Tier-2 counts (19 tests across framing, gateway double, and the two gateway-proxy adapters) are in §4.4. **Combined Tier 1 + Tier 2: 82 / 82 green, ~185 ms total.**
+Tier-2 counts (19 tests across framing, gateway double, and the two gateway-proxy adapters) are in §4.4. **Combined Tier 1 + Tier 2: 95 / 95 green, ~200 ms total.**
 
 ---
 
@@ -184,7 +184,7 @@ refactoring-examples/sub-team-6/
 | `DebugTabAdaptersTests` | — | **4** | ~29 ms |
 | **Tier 2 total** | — | **19** | ~140 ms |
 
-Combined with the 63 tier-1 tests this brings the no-Unity suite to **82 / 82 green** in under 200 ms total — a credible PR-time gate.
+Combined with the 76 tier-1 tests this brings the no-Unity suite to **95 / 95 green** in under 200 ms total — a credible PR-time gate, and the gate currently passes on every gated assembly.
 
 ---
 
@@ -244,21 +244,50 @@ SM-1 through SM-7 map directly to the five rows in the [requirements behaviour c
 
 ---
 
-## 7. Coverage Targets
+## 7. Coverage Targets and Measured Coverage
+
+### 7.1 Targets
 
 | Assembly / namespace | Branch target | Line target | Gated in CI? | Measured by |
 |---|---|---|---|---|
-| `iDaVIE.Client.ViewModel` | **≥ 70 %** | **≥ 70 %** | Yes — build fails below threshold | Coverlet + ReportGenerator |
+| `iDaVIE.Client.ViewModel` (`FileTabSkeleton`, `DebugTabSkeleton`) | **≥ 70 %** | **≥ 70 %** | Yes — build fails below threshold | Coverlet + ReportGenerator |
+| `iDaVIE.Client.Gateway` (Tier 2 surface) | tracked | tracked | No | Coverlet + ReportGenerator |
 | `iDaVIE.Client.View` (UI Toolkit) | tracked | tracked | No | Unity Test Framework + Coverlet |
 | **Overall (client slice)** | **≥ 50 %** | **≥ 50 %** | Yes | SonarQube aggregate |
 
-The View layer is tracked but not gated. Justification: UI Toolkit binding boilerplate and UXML configuration are configuration-heavy; a strict gate would inflate to noise or force testing of the framework itself. The ViewModel gate is the load-bearing metric for §7.2 and NFR-TST-1.
+The View layer and the Gateway transport (`JsonRpcPipeGateway`) are tracked but not gated. View justification: UI Toolkit binding boilerplate and UXML configuration are framework-heavy; a strict gate would force testing of the framework itself. Gateway-transport justification: `JsonRpcPipeGateway` requires a real named pipe with a Sub-team 1 server handler — see §4.3.
 
-Run coverage locally:
+### 7.2 Measured coverage (audit F14 close, 2026-05-27 Day 8)
 
-```
-dotnet test DesktopClient.Tests/ --collect:"XPlat Code Coverage"
-reportgenerator -reports:coverage.xml -targetdir:coverage-report -reporttypes:Html;Cobertura
+Full per-class numbers, the reproduction command, and the test-list that closed the branch gap live in [`coverage-report.md`](coverage-report.md). Headline:
+
+| Assembly | Line | Branch | Gate status |
+|---|---:|---:|---|
+| **DebugTabSkeleton** | **100 %** | **100 %** | ✅ both met |
+| **FileTabSkeleton** | **89.4 %** | **77.2 %** | ✅ both met (Day 8 follow-up added 13 targeted tests; branch was 67.4 % on Day 6) |
+| **iDaVIE.Client.Gateway** | 41.2 % | 41.6 % | tracked (not gated) |
+| **Aggregate** | **71.3 %** | **66.5 %** | — |
+
+**Both gated assemblies now clear the ≥ 70 % gate.** The Day-6 measurement showed FileTabSkeleton at 67.4 % branch — below the gate by 2.6 pp. The Day-8 follow-up added 13 NUnit cases against the specific uncovered branches (constructor null-guards, no-op setters, empty-VM `Dispose`, setters-before-image-load, `IsLoadable` axis-count rule, BrowseMask cancel/replace paths, NAXIS1 and NAXIS2 mismatch branches in `MaskAxesMatchImage`), lifting the assembly to 89.4 / 77.2. **Wiring the gate into CI as the Quality Guild's Day-10 task per ADR-0005 will not block any current PR.**
+
+### 7.3 Reproduce locally
+
+```pwsh
+foreach ($p in @(
+    'file-tab/tests/FileTabTests',
+    'file-tab/adapters/tests/FileTabAdaptersTests',
+    'debug-tab/tests/DebugTabTests',
+    'debug-tab/adapters/tests/DebugTabAdaptersTests',
+    'contracts/tests/GatewayContractsTests')) {
+    dotnet test "refactoring-examples/sub-team-6/$p.csproj" `
+        --collect:'XPlat Code Coverage' `
+        --results-directory $env:TEMP\cov\$($p -replace '/','_')
+}
+dotnet tool install -g dotnet-reportgenerator-globaltool   # one-off
+reportgenerator -reports:"$env:TEMP\cov\**\coverage.cobertura.xml" `
+                -targetdir:"$env:TEMP\cov-report" `
+                -reporttypes:"Html;MarkdownSummary" `
+                -classfilters:"-*Tests"
 ```
 
 ---
@@ -270,8 +299,8 @@ reportgenerator -reports:coverage.xml -targetdir:coverage-report -reporttypes:Ht
 | **NUnit 3** | ≥ 3.14 | Test runner + assertions for tiers 1 & 2 | Sub-team 6 |
 | **Moq 4** | ≥ 4.20 | Interface mocking (`IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IFitsHandle`, `ILogStream`, `ILogObserver`) | Sub-team 6 |
 | **.NET 7 SDK** (standalone) | match Unity 2021 Mono | Build + run tier 1 & 2 tests outside Unity | Sub-team 6 |
-| **Coverlet** | latest | Branch + line coverage for standalone project | Sub-team 6 |
-| **ReportGenerator** | latest | HTML + Cobertura report for CI | Sub-team 6 |
+| **Coverlet** (`coverlet.collector`) | 6.0.2 | Branch + line coverage via `dotnet test --collect:"XPlat Code Coverage"`; PackageReference on every test csproj | Sub-team 6 |
+| **ReportGenerator** | 5.5.10 | Merges Cobertura XMLs across the 5 test projects; emits `Html` / `MarkdownSummary` for the panel and CI | Sub-team 6 |
 | **Unity Test Framework** | bundled with Unity 2021.3 | Hosts tier 3 Play-Mode tests | Sub-team 6 |
 | **SonarQube Cloud** | SaaS | Aggregate coverage badge, cognitive-complexity gate | Quality Guild |
 | **NDepend** | licensed | `UnityEngine` transitive-dependency rule, CBO/RFC/LCOM metrics | Quality Guild |
@@ -319,7 +348,7 @@ Every row below points at an artefact a panel reviewer can open in this repo.
 
 | Artefact | What it shows |
 |---|---|
-| [BNCH-6 — Mocking-difficulty count](../BNCH-6.md) | Before: 205 call sites in `CanvassDesktop` that require a live Unity scene or native DLL to test. After: 0 in the ViewModel layer (205 → 0 static/Unity; 6 → 0 `FindObjectOfType`; 36 → 0 P/Invoke / `StandaloneFileBrowser`). |
+| [BNCH-6 — Mocking-difficulty count](../other/T2-baseline-benchmark/BNCH-6.md) | Before: 205 call sites in `CanvassDesktop` that require a live Unity scene or native DLL to test. After: 0 in the ViewModel layer (205 → 0 static/Unity; 6 → 0 `FindObjectOfType`; 36 → 0 P/Invoke / `StandaloneFileBrowser`). |
 | [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) | **34 NUnit tests** on `FileTabViewModel` — zero `using UnityEngine`, mocks four split service interfaces. |
 | [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) | **29 NUnit tests** on `DebugTabViewModel` + `LogStream` — zero `using UnityEngine`, `dotnet test` runtime **~17 ms**. |
 | [`contracts/tests/LengthPrefixFramingTests.cs`](../../../../refactoring-examples/sub-team-6/contracts/tests/LengthPrefixFramingTests.cs) + [`FakeGatewayTests.cs`](../../../../refactoring-examples/sub-team-6/contracts/tests/FakeGatewayTests.cs) | **11 NUnit tests** pinning the wire framing (ADR-0002 §"Framing") and the gateway double's contract. Zero Unity dependency. |
@@ -343,7 +372,7 @@ Every row below points at an artefact a panel reviewer can open in this repo.
 | ViewModel unit-test detail spec (Tier 1) | [`viewmodel-unit-tests.md`](viewmodel-unit-tests.md) |
 | Gateway and adapter test detail (Tier 2) | §4 of this document |
 | UI Toolkit page-object detail spec (Tier 3) | [`ui-toolkit.md`](ui-toolkit.md) |
-| Mocking-difficulty baseline | [`BNCH-6.md`](../BNCH-6.md) |
+| Mocking-difficulty baseline | [`BNCH-6.md`](../other/T2-baseline-benchmark/BNCH-6.md) |
 | CK metric baseline + projection | [`D4-worked-examples/metrics.md`](../D4-worked-examples/metrics.md) |
 | Testability NFRs | [`D1-requirements/requirements.md` §3 — NFR-TST-1/2/3](../D1-requirements/requirements.md) |
 | Audit close (F9 / F10 — transport has real consumer) | [`docs/sub-team-6/deliverables/adr-009-audit.md`](../adr-009-audit.md) |

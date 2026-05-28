@@ -16,7 +16,7 @@ Together with `viewmodel-unit-tests.md`, this discharges the two Software Testin
 
 | In scope | Out of scope |
 |---|---|
-| `iDaVIE.Desktop.View` panels backed by a `UIDocument` | ViewModel internals (covered by `viewmodel-unit-tests.md`) |
+| `iDaVIE.Client.View` panels backed by a `UIDocument` | ViewModel internals (covered by `viewmodel-unit-tests.md`) |
 | `FileTabPage`, `DebugTabPage` — one page object per panel, driving the real `FileTabViewModel` / `DebugTabViewModel` (the concrete classes from each AFTER skeleton) | Render, Stats, Sources tabs (no AFTER skeleton — out of D4 scope) |
 | Bindings between View and ViewModel exercised through page-object methods | Native plug-in I/O; gateway transport |
 | UI Toolkit event-driven interaction via `SendEvent` | Pixel / USS visual-diff testing |
@@ -34,9 +34,9 @@ This is a **design-only** specification. We document the pattern and a worked sn
 | **Moq 4** | ≥ 4.20 | Mocks `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `ILogStream` |
 | **Coverlet** | latest | Coverage on the View assembly (tracked, not gated — see §8) |
 
-Tests live in a Play-Mode test assembly `iDaVIE.Desktop.View.IntegrationTests` that references:
-- `iDaVIE.Desktop.View` (panels + UXML)
-- `iDaVIE.Desktop.FileTab` and `iDaVIE.Desktop.DebugTab` (real ViewModels — not mocked)
+Tests live in a Play-Mode test assembly `iDaVIE.Client.View.IntegrationTests` that references:
+- `iDaVIE.Client.View` (panels + UXML)
+- `iDaVIE.Client.ViewModel` (real ViewModels — not mocked; the AFTER skeletons under `refactoring-examples/sub-team-6/` use per-feature namespaces `iDaVIE.Desktop.FileTab` / `iDaVIE.Desktop.DebugTab` that will be re-rooted under this assembly when the production refactor lands)
 - The service interfaces (mocked at the gateway seam)
 
 The composition root is **not** invoked. Each test wires its own ViewModel from mocked services, attaches it to a fresh `UIDocument`, and constructs the page object.
@@ -159,8 +159,8 @@ For VM-driven async paths, prefer awaiting the ViewModel's notification surface 
 
 | Assembly | Branch / line target | Gated in CI? |
 |---|---|---|
-| `iDaVIE.Desktop.ViewModel` (`iDaVIE.Desktop.FileTab` + `iDaVIE.Desktop.DebugTab`) | ≥ 70 % | yes (see `viewmodel-unit-tests.md` §7) |
-| `iDaVIE.Desktop.View` | tracked | **no** |
+| `iDaVIE.Client.ViewModel` | ≥ 70 % | yes (see `viewmodel-unit-tests.md` §7) |
+| `iDaVIE.Client.View` | tracked | **no** |
 
 View-layer coverage is reported but not gated. Justification: UI Toolkit panels are configuration-heavy and their behaviour is exercised by the ViewModel tests in transitive form; a strict branch target on `View` would either inflate to noise (binding boilerplate) or push us into testing UI Toolkit itself.
 

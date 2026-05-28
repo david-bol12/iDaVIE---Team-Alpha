@@ -26,7 +26,7 @@ All source lives under [`refactoring-examples/sub-team-6/`](../../../../refactor
 | WMC | 57 | 27 (FileTabViewModel) |
 | CBO | ~32 | 9 (FileTabViewModel) |
 | RFC | ~210 | ~50 (FileTabViewModel) |
-| LCOM4 | ≥7 | 1 per class |
+| LCOM hs | ≈0.97 | ≈0 per class |
 
 ### Documentation
 
@@ -79,7 +79,7 @@ All source lives under [`refactoring-examples/sub-team-6/`](../../../../refactor
 | LOC | 255 | 382 total across 7 types |
 | WMC | 8 | 6 (DebugTabViewModel) / 8 (UnityLogStreamAdapter) |
 | CBO | ~10 | 3–7 per class (VM: 3, View: 7) |
-| LCOM4 | ~3 (disjoint) | 1 per class (cohesive) |
+| LCOM hs | ≈0.95 (incoherent) | ≈0 per class (cohesive) |
 | Test surface | 0 | 29 NUnit tests |
 
 ### Documentation
