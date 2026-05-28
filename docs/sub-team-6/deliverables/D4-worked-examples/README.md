@@ -38,7 +38,7 @@ All source lives under [`refactoring-examples/sub-team-6/`](../../../../refactor
 - [**Dependency graph**](../../../../refactoring-examples/sub-team-6/file-tab/dependency-graph.md) — Module-level DSM proving Section 4.2 compliance (Domain ↛ UnityEngine)
 - [**CK metrics**](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md) — Hand-counted deltas (WMC, DIT, NOC, CBO, RFC, LCOM) with thresholds
 - [**FileTabViewModel.cs**](../../../../refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs) — ~480-line domain class, fully testable
-- [**FileTabViewModelTests.cs**](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) — 34 NUnit tests, zero Unity dependency
+- [**FileTabViewModelTests.cs**](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) — 47 NUnit tests, zero Unity dependency
 
 ### Smells Addressed
 
@@ -50,13 +50,13 @@ All source lives under [`refactoring-examples/sub-team-6/`](../../../../refactor
 | No interface layer | Direct dependencies on concrete types | All public boundaries are interfaces (`IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IServiceGateway`); each has ≥ 1 test double |
 | Busy-wait coroutine loop | `while (!started) yield WaitForSeconds` | Event-driven `yield return StartCoroutine(_startFunc())` |
 | Direct field writes on `VolumeDataSetRenderer` | Scattered across `CanvassDesktop` | Contained inside `VolumeServiceAdapter`; eliminated at VM level |
-| Untestable without Unity | `CanvassDesktop` cannot be instantiated outside scene | 34 VM tests + 4 gateway-routed adapter tests + 11 framing / gateway-double tests, all `dotnet test`, zero `UnityEngine` |
+| Untestable without Unity | `CanvassDesktop` cannot be instantiated outside scene | 47 VM tests + 4 gateway-routed adapter tests + 11 framing / gateway-double tests, all `dotnet test`, zero `UnityEngine` |
 
 ### Compliance
 
 - **Section 4.2 (Domain independence):** ✅ ViewModel assembly + the `FitsServiceAdapter` gateway proxy build with zero `UnityEngine` references (`dotnet build` on `FileTabSkeleton.csproj` and `FileTabAdapters.csproj` both succeed in isolation).
 - **Section 4.2 (Interface + test double on every public boundary):** ✅ Five domain interfaces, every one has a Moq stub or `FakeGateway` programmation in the committed suites.
-- **Unit testability (NFR-TST-1):** 0 → **34** VM tests + **4** gateway-routed adapter tests (`FitsServiceAdapterTests`); under ~80 ms total.
+- **Unit testability (NFR-TST-1):** 0 → **47** VM tests + **4** gateway-routed adapter tests (`FitsServiceAdapterTests`); under ~80 ms total.
 - **Transport contract has a real consumer (audit close, F9):** the four adapter tests assert wire-shape — method names, params, error codes, handle disposal — directly against ADR-0002 §"Method catalogue (v1)" and §"Error model".
 - **Brief §6.6 compliance:** the worked example demonstrates *"File tab from direct native-plugin call to ViewModel command via service gateway"* verbatim.
 - **Decomposition:** 1 God class → focused classes, single responsibility each.
