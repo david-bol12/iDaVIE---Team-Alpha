@@ -30,20 +30,20 @@ Every NFR is testable: MoSCoW priority (M = must, S = should). All five ISO 2501
 
 | NFR | Sub-char | Statement | Acceptance metric (tool) | Pri | Spec |
 |---|---|---|---|---|---|
-| **NFR-MOD-1** | Modularity | View, ViewModel and Service Gateway live in separate assemblies; no circular deps | Cycle count = 0 (NDepend / DV8 DSM) | M | §4.2.2 |
+| **NFR-MOD-1** | Modularity | View, ViewModel and Service Gateway live in separate assemblies; no circular deps | Cycle count = 0 (NDepend / DV8 DSM) | M | §4.2.2; ADR-009 |
 | **NFR-MOD-2** | Modularity | CBO ≤ 14 (domain), ≤ 25 (orchestrators) | Understand | M | §7.1 |
 | **NFR-MOD-3** | Modularity | Instability I = Ce / (Ca + Ce) decreases View → ViewModel → Domain (Stable Dependencies Principle) | Per-package I (NDepend) | S | §7.2 |
 | **NFR-REU-1** | Reusability | Every public boundary is an interface with ≥ 1 test double | Coverage + NDepend CQLinq | M | §4.2.4 |
 | **NFR-REU-2** | Reusability | ISP (Interface Segregation Principle) — interfaces ≤ 7 public members | Audit table (BNCH-7) | M | §7.2 |
-| **NFR-REU-3** | Reusability | ViewModel layer has zero transitive dependency on `UnityEngine` / `SteamVR` | NDepend "no Unity refs from `ViewModel.*`" on every PR | M | §4.2.3 |
+| **NFR-REU-3** | Reusability | ViewModel layer has zero transitive dependency on `UnityEngine` / `SteamVR` | NDepend "no Unity refs from `ViewModel.*`" on every PR | M | §4.2.3; ADR-009 |
 | **NFR-ANA-1** | Analysability | WMC ≤ 20 (domain), ≤ 40 (adapter) | Understand | M | §7.1 |
 | **NFR-ANA-2** | Analysability | Cognitive complexity per method ≤ 15 (SonarQube default) | SonarQube, every PR | M | §7.2 |
 | **NFR-ANA-3** | Analysability | Duplicated lines ≤ 3 % of LOC (30-line block) | SonarQube duplication | S | §7.2 |
 | **NFR-MOF-1** | Modifiability | A new desktop tab touches ≤ 3 production files outside `Views/<TabName>/` | Walkthrough + CodeScene change-coupling | S | §7.2 |
 | **NFR-MOF-2** | Modifiability | DV8 propagation cost drops ≥ 30 % between Day 2 baseline and Day 13 projection | DV8 | M | §7 |
 | **NFR-MOF-3** | Modifiability | After-state RFC ≤ 50 and LCOM ≤ 0.5 | Understand | M | §7.1 |
-| **NFR-TST-1** | Testability | ViewModel branch + line coverage ≥ 70 %; overall ≥ 50 %; Unity-bound tracked-not-strict | SonarQube coverage | M | §7.2 |
-| **NFR-TST-2** | Testability | Mocking difficulty — static / Unity-API call count per ViewModel class = 0 | Custom NDepend rule | M | §7.2 |
+| **NFR-TST-1** | Testability | ViewModel branch + line coverage ≥ 70 %; overall ≥ 50 %; Unity-bound tracked-not-strict | SonarQube coverage | M | §7.2; ADR-009 |
+| **NFR-TST-2** | Testability | Mocking difficulty — static / Unity-API call count per ViewModel class = 0 | Custom NDepend rule | M | §7.2; ADR-009 |
 | **NFR-TST-3** | Testability | DIT ≤ 4 and NOC ≤ 5 (keep mocking surface small) | Understand | S | §7.1 |
 
 The four **§4.2 architectural non-negotiables** are enforced by this table end-to-end: no SOLID/GRASP violation without ADR (every row), no cycles (MOD-1), no Unity in domain code (REU-3), interface + test double on every public boundary (REU-1). Plug-in C ABI semver is owned by Sub-team 1; our service gateway consumes the major version it declares.
