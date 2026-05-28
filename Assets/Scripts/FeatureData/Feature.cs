@@ -44,16 +44,16 @@ namespace DataFeatures
 
         public bool StatusChanged;
 
-        public Feature(Vec3 cubeMin, Vec3 cubeMax, FeatureColor cubeColor, string name, string flag, int index, int id, string[] rawData, bool startVisible)
+        public Feature(Vec3 cornerMin, Vec3 cornerMax, FeatureColor color, string name, string flag, int index, int id, string[] rawData, bool visible)
         {
             Index = index;
             Id = id;
-            _color = cubeColor;
+            _color = color;
             Name = name;
             Flag = flag;
-            SetBounds(cubeMin, cubeMax);
+            SetBounds(cornerMin, cornerMax);
             RawData = rawData;
-            Visible = startVisible;
+            Visible = visible;
         }
 
         public void ShowAxes(bool show)
@@ -156,5 +156,10 @@ namespace DataFeatures
         {
             FeatureSetParent?.NotifyDirty(Index);
         }
+
+        // ── Service-layer API aliases ─────────────────────────────────────────
+        public bool  BoundsContains(Vec3 point) => ContainsPoint(point);
+        public float BoundsVolume()             => Volume;
+        public bool  IsOutsideVolume()          => false; // stub — volume bounds not known at domain level
     }
 }

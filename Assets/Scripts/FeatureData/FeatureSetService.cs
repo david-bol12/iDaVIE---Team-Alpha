@@ -253,7 +253,7 @@ namespace DataFeatures
             feature.Selected = true;
             SelectedFeature  = feature;
 
-            if (feature.ParentSet?.SetType == FeatureSetType.Mask)
+            if (feature.FeatureSetParent?.SetType == FeatureSetType.Mask)
                 MaskFeatureSelected?.Invoke();
         }
 
@@ -339,16 +339,9 @@ namespace DataFeatures
             bool[]                                   columnsMask,
             bool                                     excludeExternal)
         {
-            // Column-mapping logic mirrors FeatureSetRenderer.SpawnFeaturesFromTable.
-            // This is a skeleton — the full implementation follows the same row-by-row
-            // pattern but operates on plain C# objects instead of Unity transforms.
-            for (int row = 0; row < table.RowCount; row++)
-            {
-                var feature = FeatureFactory.FromTableRow(table, row, mapping, columnsMask, set.Color);
-                if (feature == null) continue;
-                if (excludeExternal && feature.IsOutsideVolume()) continue;
-                set.Add(feature);
-            }
+            // Stub — row-by-row feature construction will be wired once a
+            // FeatureFactory is available. See FeatureSetRenderer.SpawnFeaturesFromTable
+            // for the existing Unity-coupled equivalent to port from.
         }
     }
 
