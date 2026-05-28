@@ -3,7 +3,7 @@
 
 ---
 
-## WEEK 1 (May 20-24, 2026) - BACKLOG ✅
+## WEEK 1 (May 18-22, 2026) - BACKLOG ✅
 
 ### Roles
 - **Scrum Master:** Cathal
@@ -13,15 +13,14 @@
 
 ---
 
-### Monday, May 20 - Standup
+### Monday, May 18 - Standup
 
 **Present:** Cathal, Damien, Chris, Ciallian
 
 **Damien (Tech Lead)**
 - ✅ Completed: Set up development environment for sprint
 - 🔄 In Progress: Review architecture documentation with team
-- ⏳ Blocked: Waiting on API credentials from PO
-- 📅 Today: Begin core feature implementation
+- 📅 Today: Begin core feature planning
 
 **Cathal (Scrum Master)**
 - ✅ Completed: Created sprint backlog items
@@ -29,8 +28,7 @@
 - 📅 Today: Facilitate team alignment session
 
 **Chris (Quality Champion)**
-- ✅ Completed: Reviewed test strategy document
-- 🔄 In Progress: Setting up QA environments
+- 🔄 In Progress: Setting up QA environments and began creating test strategy document
 - 📅 Today: Create automated test framework
 
 **Ciallian (PO Liaison)**
@@ -42,7 +40,7 @@
 
 ---
 
-### Tuesday, May 21 - Standup
+### Tuesday, May 19 - Standup
 
 **Present:** Cathal, Damien, Chris, Ciallian
 
@@ -70,7 +68,7 @@
 
 ---
 
-### Wednesday, May 22 - Standup
+### Wednesday, May 20 - Standup
 
 **Present:** Cathal, Damien, Chris, Ciallian
 
@@ -99,7 +97,7 @@
 
 ---
 
-### Thursday, May 23 - Standup
+### Thursday, May 21 - Standup
 
 **Present:** Cathal, Damien, Chris, Ciallian
 
@@ -127,7 +125,7 @@
 
 ---
 
-### Friday, May 24 - Standup
+### Friday, May 22 - Standup
 
 **Present:** Cathal, Damien, Chris, Ciallian
 
@@ -156,7 +154,7 @@
 
 ---
 
-## WEEK 2 (May 27-31, 2026) - CURRENT WEEK 🔄
+## WEEK 2 (May 25-29, 2026) - CURRENT WEEK 🔄
 
 ### Roles
 - **Scrum Master:** Damien
@@ -166,7 +164,7 @@
 
 ---
 
-### Monday, May 27 - Standup
+### Monday, May 25 - Standup
 
 **Present:** Damien, Cathal, Ciallian, Chris
 
@@ -194,7 +192,7 @@
 
 ---
 
-### Tuesday, May 28 - Standup
+### Tuesday, May 26 - Standup
 
 **Present:** Damien, Cathal, Ciallian, Chris
 
@@ -222,7 +220,7 @@
 
 ---
 
-### Wednesday, May 29 - Standup
+### Wednesday, May 27 - Standup
 
 **Present:** Damien, Cathal, Ciallian, Chris
 
@@ -251,7 +249,7 @@
 
 ---
 
-### Thursday, May 30 - Standup
+### Thursday, May 28 - Standup
 
 **Present:** Damien, Cathal, Ciallian, Chris
 
@@ -280,7 +278,7 @@
 
 ---
 
-### Friday, May 31 - Standup
+### Friday, May 29 - Standup
 
 **Present:** Damien, Cathal, Ciallian, Chris
 
@@ -309,7 +307,7 @@
 
 ---
 
-## WEEK 3 (June 3-7, 2026) - NEXT WEEK 📋
+## WEEK 3 (June 1-5, 2026) - NEXT WEEK 📋
 
 ### Roles
 - **Scrum Master:** Ciallian
@@ -319,7 +317,7 @@
 
 ---
 
-### Monday, June 3 - Standup (TEMPLATE)
+### Monday, June 1 - Standup (TEMPLATE)
 
 **Present:** Ciallian, Chris, Cathal, Damien
 
@@ -348,7 +346,7 @@
 
 ---
 
-### Tuesday, June 4 - Standup (TEMPLATE)
+### Tuesday, June 2 - Standup (TEMPLATE)
 
 **Present:** Ciallian, Chris, Cathal, Damien
 
@@ -376,7 +374,7 @@
 
 ---
 
-### Wednesday, June 5 - Standup (TEMPLATE)
+### Wednesday, June 3 - Standup (TEMPLATE)
 
 **Present:** Ciallian, Chris, Cathal, Damien
 
@@ -405,7 +403,7 @@
 
 ---
 
-### Thursday, June 6 - Standup (TEMPLATE)
+### Thursday, June 4 - Standup (TEMPLATE)
 
 **Present:** Ciallian, Chris, Cathal, Damien
 
@@ -433,7 +431,7 @@
 
 ---
 
-### Friday, June 7 - Standup (TEMPLATE)
+### Friday, June 5 - Standup (TEMPLATE)
 
 **Present:** Ciallian, Chris, Cathal, Damien
 
