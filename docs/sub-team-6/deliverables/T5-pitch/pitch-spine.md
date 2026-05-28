@@ -106,7 +106,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 - **DIP.** A `MonoBehaviour` is not constructible outside the Unity engine; therefore no unit test can be written against it; therefore copy-paste bugs in its methods cannot be caught.
 
 **Evidence:**
-- `docs/sub-team-6/deliverables/other/D9-ck-baseline/SonarQube Baseline report.md` Rank 3 — `DesktopPaintController.UpdateMaxValue(float value) { minVal = value; }` at line 306.
+- `docs/sub-team-6/archived/SonarQube Baseline report.md` Rank 3 — `DesktopPaintController.UpdateMaxValue(float value) { minVal = value; }` at line 306.
 - `SK_BNCH.md` page 7 — the bug is in a class with **WMC 57, CBO 21, LCOM 0.940**, and zero unit tests exist for it (NFR-TST-1 coverage = 0% on this class).
 
 **Speaker note:** "the cost of being unable to write a unit test is in the tree, today. Line 306 of `DesktopPaintController`: a method called `UpdateMaxValue` assigns to `minVal`. The class is 1 558 lines; the bug is undetectable by reading. It would be detectable by any of the three unit tests we will write for the equivalent `FileTabViewModel`."
@@ -135,8 +135,8 @@ We map every architectural choice back to one of these. The panel cannot disagre
 - **Long-term roadmap drivers (§6.6 — Python console, workspace persistence).** Translated into requirements as ARQ-1 and ARQ-2 in `requirements.md` §4.
 
 **Evidence:**
-- `docs/sub-team-6/architecture.md` §3 — C4 Level 1 placeholder (PlantUML at `diagrams/c4-context.puml` [EVIDENCE-GAP-2.1a]).
-- `docs/sub-team-6/requirements.md` §4 — ARQ-1, ARQ-2.
+- `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` §3 — C4 Level 1 placeholder (PlantUML at `diagrams/c4-context.puml` [EVIDENCE-GAP-2.1a]).
+- `docs/sub-team-6/deliverables/D1-requirements/requirements.md` §4 — ARQ-1, ARQ-2.
 - `Assignment-Docs/iDaVIE_Refactoring_Assignment_FINAL_1.md` §4.1 — client–server style.
 
 **Speaker note:** "the desktop tab is one client. The VR scene is another. The Python console will be a third. The persistence layer reads state from all three. Any design that hardcodes 'desktop' into the kernel breaks the assignment's roadmap (§6.6). The boundary between client and kernel is therefore a contract, not a method call."
@@ -338,13 +338,13 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 **Evidence:**
 - `D4-worked-examples/ex1-file-tab/after-class-diagram.puml`.
 - `D4-worked-examples/ex1-file-tab/after-dependency-graph.puml`.
-- `mvvm-binding-policy.md` §9.1 — File tab walkthrough [EVIDENCE-GAP-3.2a, the `_TODO` in §9.1].
+- `mvvm-binding-policy.md` §3.1 — File tab walkthrough [EVIDENCE-GAP-3.2a, the `_TODO` in §3.1].
 
 **Speaker note:** "the View knows about a ViewModel property called `SelectedDataset`. The ViewModel knows about an `IFileService` method called `OpenAsync(path)`. Neither knows that under the interface lies a P/Invoke call into a C plug-in. Each layer can be tested in isolation."
 
 **Risk if challenged — "this is just plain dependency injection — what does MVVM add?":** MVVM is DI plus *binding semantics* (`INotifyPropertyChanged` + `ICommand`). DI alone would still require the View to imperatively pull from the ViewModel. The binding contract is what makes the View declarative.
 
-**[EVIDENCE-GAP-3.2a]** `mvvm-binding-policy.md` §9.1 walkthrough fully written, citing skeleton file paths. Owner: TL. Due: Day 7.
+**[EVIDENCE-GAP-3.2a]** `mvvm-binding-policy.md` §3.1 walkthrough fully written, citing skeleton file paths. Owner: TL. Due: Day 7.
 
 ---
 
@@ -556,13 +556,13 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 
 **Evidence:**
 - `refactoring-examples/sub-team-6/debug-tab/skeleton/`.
-- `mvvm-binding-policy.md` §9.2 — Debug tab walkthrough [EVIDENCE-GAP-4.5, the `_TODO`].
+- `mvvm-binding-policy.md` §3.2 — Debug tab walkthrough [EVIDENCE-GAP-4.5, the `_TODO`].
 
 **Speaker note:** "two patterns, one architecture. The SOLID matrix shows the differential — OCP and Polymorphism do real work in Debug that File tab does not exercise. If we only had one worked example, we could not claim the architecture is general."
 
 **Risk if challenged — "do you actually need *two* worked examples?":** the assignment requires it (§6.6). The deeper reason: a single example proves only that the pattern fits one problem. Two examples with different forces prove the architecture is not bespoke.
 
-**[EVIDENCE-GAP-4.5]** `mvvm-binding-policy.md` §9.2 walkthrough fully written. Owner: TL. Due: Day 7.
+**[EVIDENCE-GAP-4.5]** `mvvm-binding-policy.md` §3.2 walkthrough fully written. Owner: TL. Due: Day 7.
 
 ---
 
@@ -854,7 +854,7 @@ Ranked by pitch-day visibility. Each gap names an artefact, an owner, and a due 
 | 4 | NDepend rules wired into CI (cycles, no-Unity-in-VM, no-static-singleton) | `tools/ndepend/rules.cqlinq` | Quality Guild | Day 10 | 2.5, 6.2 |
 | 5 | Concern map text-source (replace `.png`) | `docs/sub-team-6/concern-map.puml` or `.mmd` | TL | Day 7 | 2.6 |
 | 6 | ADR-0003 (ACL + Unity 6 UI Toolkit migration) | `docs/sub-team-6/adrs/0003-acl-uitk-migration.md` | TL | Day 8 | 2.7, 5.4 |
-| 7 | `mvvm-binding-policy.md` §9.1 + §9.2 walkthroughs filled | `…/D3-MVVM-binding-policy/mvvm-binding-policy.md` | TL | Day 7 | 3.2, 4.5 |
+| 7 | `mvvm-binding-policy.md` §3.1 + §3.2 walkthroughs filled | `…/D3-MVVM-binding-policy/mvvm-binding-policy.md` | TL | Day 7 | 3.2, 4.5 |
 | 8 | Before- and after-sequence diagrams for file-tab | `…/D4-worked-examples/ex1-file-tab/*-sequence-diagram.puml` | TL | Day 8 | 3.3 |
 | 9 | Debug-tab before-state UML | `…/D4-worked-examples/ex2-debug-tab/before-*.puml` | TL | Day 8 | 4.1 |
 | 10 | BNCH-6 mocking-difficulty + BNCH-7 ISP audit tables | `docs/sub-team-6/metrics/bnch-6.md`, `bnch-7.md` | Quality Champion | Day 9 | 5.2 |
@@ -1078,13 +1078,13 @@ Phrases to bank-avoid in Q&A. Each has been a known anti-signal in past assessme
 
 - ADR-0001 — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` (§4)
 - ADR-0002 — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` (§4)
-- D1 Requirements — `docs/sub-team-6/requirements.md`
-- D2 Architecture — `docs/sub-team-6/architecture.md`
+- D1 Requirements — `docs/sub-team-6/deliverables/D1-requirements/requirements.md`
+- D2 Architecture — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md`
 - D3 MVVM Binding Policy — `docs/sub-team-6/deliverables/D3-MVVM-binding-policy/mvvm-binding-policy.md`
 - D4 File-tab worked example — `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/`
 - D4 Debug-tab skeleton — `refactoring-examples/sub-team-6/debug-tab/skeleton/`
-- D5 Test strategy — `docs/sub-team-6/test-strategy.md`
-- D9 CK baseline — `docs/sub-team-6/deliverables/other/D9-ck-baseline/SK_BNCH.md`
-- D9 SonarQube baseline — `docs/sub-team-6/deliverables/other/D9-ck-baseline/SonarQube Baseline report.md`
+- D5 Test strategy — `docs/sub-team-6/deliverables/D5-testing/test-strategy.md`
+- D9 CK baseline — `docs/sub-team-6/archived/SK_BNCH.md`
+- D9 SonarQube baseline — `docs/sub-team-6/archived/SonarQube Baseline report.md`
 - Deliverables checklist — `docs/sub-team-6/deliverables/deliverables-checklist.md`
 - Assignment spec — `Assignment-Docs/iDaVIE_Refactoring_Assignment_FINAL_1.md`
