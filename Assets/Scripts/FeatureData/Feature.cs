@@ -19,10 +19,12 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
+using iDaVIE.Domain.Feature;
+
 namespace DataFeatures
 {
     // Feature is the basic unit of marking up the volume
-    public partial class Feature
+    public partial class Feature : IFeature
     {
         public bool Temporary;
         public string Comment;
