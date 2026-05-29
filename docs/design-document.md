@@ -11,7 +11,7 @@
 *Brief reference: Section 9.2 — opening orientation for the maintainer panel*
 
 - This document aims to outline the results of the analysis of the iDavie project, using  CK metrics to evaluate code health, performance and maintainability. These metrics aim to expose design-flaws. In addition, this document proposes modifications to the codebase's architecture and design to improve performance and stability.
-- The file with the largest number of violations is VolumeDataSetRenderer. `VolumeDataSetRenderer` (~1 400 lines, WMC ~74, CBO ~31) is a monolith that violates SRP, OCP, and DIP; the proposal splits it into four focused classes behind clean interfaces.
+- The file with the largest number of violations is VolumeDataSetRenderer. `VolumeDataSetRenderer` (~1 400 lines, WMC 97, CBO 28) is a monolith that violates SRP, OCP, and DIP; the proposal splits it into four focused classes behind clean interfaces.
 - The document outlines the two concrete refactoring examples demonstrated in `refactoring-examples/`.
 - Note that no production code is changed — this is a design-only proposal.
 
@@ -28,11 +28,11 @@ target threshold, in some cases by a factor of three or more:
 
 | Metric | Day 2 Baseline | Target | Excess |
 |--------|---------------|--------|--------|
-| WMC (Weighted Methods per Class) | **74** | ≤ 20 | 3.7× over |
-| CBO (Coupling Between Objects) | **31** | ≤ 14 | 2.2× over |
-| RFC (Response For a Class) | **89** | ≤ 50 | 1.8× over |
-| LCOM (Lack of Cohesion in Methods) | **0.81** | ≤ 0.5 | 1.6× over |
-| DIT (Depth of Inheritance Tree) | 1 | ≤ 4 | ✅ |
+| WMC (Weighted Methods per Class) | **97** | ≤ 20 | 4.9× over |
+| CBO (Coupling Between Objects) | **28** | ≤ 14 | 2.0× over |
+| RFC (Response For a Class) | **97** | ≤ 50 | 1.9× over |
+| LCOM (Lack of Cohesion in Methods) | **0.95** | ≤ 0.5 | 1.9× over |
+| DIT (Depth of Inheritance Tree) | 2 | ≤ 4 | ✅ |
 | NOC (Number of Children) | 0 | ≤ 5 | ✅ |
 
 No single metric in isolation is disqualifying. All four failing together on the same class
@@ -41,33 +41,33 @@ responsibilities that it resists change, testing, and extension.
 
 ### 2.2 What the Metrics Mean in Practice
 
-**WMC = 74** means `VolumeDataSetRenderer` contains 74 units of weighted method
-complexity. The assignment target for a domain class is ≤ 20. The worst single method,
-`_startFunc`, carries a cyclomatic complexity of 28 across 185 lines — nearly the entire
-budget of a well-formed class in one function. This directly predicts high defect density:
-methods with cyclomatic complexity above 10 are statistically associated with significantly
-elevated fault rates, and iDaVIE's VR context has zero tolerance for frame-rate-breaking
-bugs.
+**WMC = 97** means `VolumeDataSetRenderer` contains 97 methods (Understand's Count of
+Methods formula), with NIM = 97 instance methods and NIV = 84 instance variables. The
+assignment target for a domain class is ≤ 20. The worst single method, `_startFunc`,
+carries a cyclomatic complexity of 28 across 185 lines — nearly the entire budget of a
+well-formed class in one function. This directly predicts high defect density: methods with
+cyclomatic complexity above 10 are statistically associated with significantly elevated
+fault rates, and iDaVIE's VR context has zero tolerance for frame-rate-breaking bugs.
 
-**CBO = 31** means the class is structurally coupled to 31 other files across 8 packages.
-The target for a domain class is ≤ 14. This coupling is not uniform: the mask data set is
-referenced approximately 92 times within the class and the feature manager approximately
-29 times — these are the two largest concrete coupling targets and the highest-priority
-extractions. A CBO of 31 means that 31 other files must be considered when making any
-change to `VolumeDataSetRenderer`, making regression risk disproportionate to the size of
-any given edit.
+**CBO = 28** means the class is structurally coupled to 28 other classes (Understand's
+Count of Coupled Classes). The target for a domain class is ≤ 14. This coupling is not
+uniform: the mask data set is referenced approximately 92 times within the class and the
+feature manager approximately 29 times — these are the two largest concrete coupling
+targets and the highest-priority extractions. A CBO of 28 means that 28 other files must
+be considered when making any change to `VolumeDataSetRenderer`, making regression risk
+disproportionate to the size of any given edit.
 
-**RFC = 89** means the set of methods that can be invoked as a result of a message sent to
-the class has 89 members. This is the transitive fan-out of the class's public interface.
-An RFC of 89 makes it practically impossible to reason about the effect of a call without
-reading the class in full, and impossible to write a test that does not implicitly exercise
-dozens of unrelated collaborators.
+**RFC = 97** means the set of methods that can be invoked as a result of a message sent to
+the class has 97 members (Understand's Count of All Methods). This is the transitive
+fan-out of the class's public interface. An RFC of 97 makes it practically impossible to
+reason about the effect of a call without reading the class in full, and impossible to
+write a test that does not implicitly exercise dozens of unrelated collaborators.
 
-**LCOM = 0.81** means that 81% of the method pairs in the class share no common instance
-fields. Perfect cohesion is 0.0 (every method works on the same data); the class is
-approaching 1.0, which describes a class that is a collection of unrelated functions with
-no internal coherence. This is the metric-level confirmation that `VolumeDataSetRenderer`
-contains multiple distinct responsibilities that do not belong together.
+**LCOM = 0.95** means 95% Percent Lack of Cohesion under Understand's formula. Perfect
+cohesion is 0.0 (every method works on the same data); the class is approaching 1.0, which
+describes a class that is a collection of unrelated functions with no internal coherence.
+This is the metric-level confirmation that `VolumeDataSetRenderer` contains multiple
+distinct responsibilities that do not belong together.
 
 ### 2.3 Responsibility Inventory
 
@@ -127,10 +127,9 @@ player context.
 
 This document specifies a refactoring of the rendering layer that:
 
-- Reduces WMC per class to ≤ 22 by splitting responsibilities across five focused classes
-- Reduces CBO per class to ≤ 14 by introducing interface boundaries at every external
-  dependency
-- Reduces LCOM to ≤ 0.2 per class by ensuring each class operates on a coherent field set
+- Reduces WMC per class to ≤ 12 (from 97) by splitting responsibilities across five focused classes
+- Reduces CBO per class to ≤ 12 for domain classes (from 28), ≤ 15 for the orchestrator, by introducing interface boundaries at every external dependency
+- Reduces LCOM substantially (from 0.95 to 0.25–0.67 for complex classes, 0.00 for strategy classes)
 - Breaks the mutual reference cycle at the `VolumeInputController` and `Config` boundaries
   using interfaces, enabling the dependency cycle count to drop from 46 files to ≤ 5 within
   the rendering layer
@@ -182,7 +181,7 @@ two worked refactoring examples.
 - Describe `VolumeDataSetRenderer` as a single-class monolith — list its 8+ responsibilities.
 - Include or reference `diagrams/class-before.puml` (PlantUML class diagram of current state).
 - Table of SOLID/GRASP violations identified in Sprint 1 (SRP, OCP, DIP breaches, switch-on-string).
-- State the Day 2 baseline CK metrics: WMC ~74, CBO ~31, RFC ~89, LCOM ~0.81.
+- State the Day 2 baseline CK metrics: WMC 97, CBO 28, RFC 97, LCOM 0.95.
 
 ### 5.2 Target Architecture (To-Be)
 
@@ -429,8 +428,8 @@ requirement FUT-01 — requires:
 4. Updating `PaintMenuController` to expose the new option in the UI
 
 That is a minimum of four files modified to add one new behaviour. Because the
-modification touches `VolumeDataSetRenderer` itself — the God Class with WMC = 44
-and CBO = 45 — every such extension carries a regression risk proportional to the
+modification touches `VolumeDataSetRenderer` itself — the God Class with WMC = 97
+and CBO = 28 — every such extension carries a regression risk proportional to the
 class's entire surface area.
 
 The secondary problem is testability. The conditional block reads instance fields
@@ -566,7 +565,7 @@ is the simpler fit for a selector pattern driven by external input.
 *Brief reference: Section 9.2 Deliverable 2 — main design decision*
 
 - Explain colour-coding exercise used to identify responsibility clusters (reference Refactoring Example 1).
-- Justify the four-class split with projected CK metrics per class (WMC ≤ 22, LCOM ≤ 0.2).
+- Justify the four-class split with measured CK metrics per class (WMC ≤ 12 domain classes, LCOM 0.00–0.69).
 - Describe `VolumeRenderCoordinator` as the sole entry point — thin, no domain logic of its own.
 
 ### 5.6 DD-04 — Foveated Rendering Extraction (`FoveatedSamplingPolicy` + `IGazeProvider`)
@@ -885,51 +884,56 @@ iDaVIE application.
 
 | Class | WMC | DIT | NOC | CBO | RFC | LCOM |
 |-------|-----|-----|-----|-----|-----|------|
-| `VolumeDataSetRenderer` | **74** | 1 | 0 | **31** | **89** | **0.81** |
+| `VolumeDataSetRenderer` | **97** | 2 | 0 | **28** | **97** | **0.95** |
 | Target (domain class) | ≤ 20 | ≤ 4 | ≤ 5 | ≤ 14 | ≤ 50 | ≤ 0.5 |
-| Exceeds target by | 3.7× | ✅ | ✅ | 2.2× | 1.8× | 1.6× |
+| Exceeds target by | 4.9× | ✅ | ✅ | 2.0× | 1.9× | 1.9× |
 
-DIT = 1 reflects direct inheritance from `MonoBehaviour`. NOC = 0: no subclasses of
+DIT = 2 reflects inheritance from `MonoBehaviour` (itself a subclass of `Behaviour`). NOC = 0: no subclasses of
 `VolumeDataSetRenderer` exist. Both are within target and require no action.
 
 ### 6.2 Day 13 Projection (Proposed)
 
 All values are derived directly from the worked refactoring examples in `refactoring-examples/team3/` — not speculative. Each class file header contains the per-method WMC breakdown and CBO coupling inventory that underlies these figures.
 
+*Values measured from worked refactoring examples using Understand tool (Count of Methods / Percent Lack of Cohesion / Count of Coupled Classes).*
+
 | Class | WMC | DIT | NOC | CBO | RFC | LCOM | Meets target? |
 |-------|-----|-----|-----|-----|-----|------|---------------|
-| `VolumeRenderCoordinator` | 3 | 1 | 0 | 6 | 12 | 0.00 | ✅ all |
-| `VolumeMaterialBinder` | 16 | 0 | 0 | 11 | 22 | 0.05 | ✅ all |
-| `VolumeTextureManager` | 20 | 0 | 0 | 8 | 20 | 0.05 | ✅ all |
-| `VolumeCameraDriver` | 9 | 0 | 0 | 4 | 18 | 0.00 | ✅ all |
-| `FoveatedSamplingPolicy` | 7 | 0 | 0 | 6 | 14 | 0.00 | ✅ all |
-| `ApplyMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
-| `InverseMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
-| `IsolateMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
-| `DisabledMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
-| `UrpRenderPipeline` (adapter) | 8 | 0 | 0 | 14 | 20 | 0.00 | ✅ (adapter target ≤ 40 / ≤ 25) |
+| `VolumeRenderCoordinator` | 11 | 1 | 0 | 15 | 11 | 0.69 | ❌ CBO, LCOM |
+| `VolumeRendererBehaviour` (MB shell) | 3 | 2 | 0 | 8 | 3 | 0.00 | ✅ all |
+| `VolumeMaterialBinder` | 10 | 1 | 0 | 12 | 10 | 0.57 | ❌ LCOM |
+| `VolumeTextureManager` | 12 | 1 | 0 | 4 | 12 | 0.67 | ❌ LCOM |
+| `VolumeCameraDriver` | 4 | 1 | 0 | 4 | 4 | 0.25 | ✅ all |
+| `VolumeCoordinateService` | 3 | 1 | 0 | 3 | 3 | 0.00 | ✅ all |
+| `FoveatedSamplingPolicy` | 6 | 1 | 0 | 6 | 6 | 0.33 | ✅ all |
+| `ApplyMaskMode` | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
+| `InverseMaskMode` | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
+| `IsolateMaskMode` | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
+| `DisabledMaskMode` | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
+| `IMaskMode` (interface) | 0 | 0 | 5 | 4 | 0 | 0.00 | ✅ all |
 | Target (domain) | ≤ 20 | ≤ 4 | ≤ 5 | ≤ 14 | ≤ 50 | ≤ 0.5 | — |
-| Target (adapter) | ≤ 40 | ≤ 4 | ≤ 5 | ≤ 25 | ≤ 50 | ≤ 0.5 | — |
+| Target (orchestrator/adapter) | ≤ 40 | ≤ 4 | ≤ 5 | ≤ 25 | ≤ 50 | ≤ 0.5 | — |
 
 **Notes on specific values:**
-- `VolumeRenderCoordinator` DIT = 1: it inherits `MonoBehaviour` (unavoidable in Unity); no other class in the proposal inherits from Unity types.
-- `VolumeMaterialBinder` CBO = 11: Material (1), Texture3D (1), IMaskMode (1), IRenderPipeline (1), VolumeRenderState (1), IVolumeMaterialBinder (self-interface, not counted), 3 shader-keyword string constants folded into Material calls, FoveatedSamplingConfig (1), VolumeColourMap (1). All within the ≤ 14 domain limit.
-- `VolumeTextureManager` WMC = 20: exactly at the domain limit; per-method breakdown in the class header confirms no single method exceeds CC = 4.
-- `FoveatedSamplingPolicy` CBO = 6: IGazeProvider (1), FoveatedSamplingConfig (1), FoveationParameters (1), FoveationZone (enum, 1), Mathf (1), Vector2 (1). All Unity math types — unavoidable in a foveation policy class; within the ≤ 14 limit.
+- `VolumeRenderCoordinator` DIT = 1: inherits `MonoBehaviour` (unavoidable in Unity). CBO = 15 marginally exceeds the domain target (≤ 14); as an orchestrator the ≤ 25 threshold applies. LCOM = 0.69: multi-field delegation across Start/Update/Dispose lifecycle methods — expected for an orchestrator.
+- `VolumeMaterialBinder` CBO = 12: Material, Texture3D, IMaskMode, IRenderPipeline, VolumeRenderState, IVolumeMaterialBinder (self-interface), FoveatedSamplingConfig, VolumeColourMap, MeshRenderer, UnityEngine value types. LCOM = 0.57: `Initialise`, `Tick`, and `Dispose` each access different subsets of the material/mask/pipeline fields; lifecycle phases drive the residual LCOM.
+- `VolumeTextureManager` WMC = 12: well within the ≤ 20 limit. CBO = 4: majority of former coupling absorbed by the VolumeDataSet interface boundary. LCOM = 0.67: Initialise/LoadFullCube/LoadRegion/Dispose phases each access different field subsets.
+- `FoveatedSamplingPolicy` CBO = 6: IGazeProvider (1), FoveatedSamplingConfig (1), FoveationParameters (1), FoveationZone (1), Mathf (1), Vector2 (1). All within ≤ 14 limit.
 
 ### 6.3 Delta Summary
 
-Splitting `VolumeDataSetRenderer` into nine focused classes eliminates every CK threshold
-violation. Total WMC falls from 74 to a maximum of 20 per class (and no more than 60
-summed across the five core classes, replacing a single class that carried 74 alone).
-CBO drops from 31 to a maximum of 11 per domain class, breaking the 46-file dependency
-cycle that carried a 39.8% propagation cost. LCOM collapses from 0.81 — the signature of
-four unrelated field clusters in one class — to ≤ 0.05 per class, each of which operates
-on a single field cluster by construction. Every proposed class meets or beats the brief's
-NFR thresholds. The two classes closest to their limits (`VolumeMaterialBinder` at CBO = 11
-and `VolumeTextureManager` at WMC = 20) have documented per-member inventories in their
-file headers; neither has headroom to accumulate further technical debt without crossing
-the target line, which is an intentional design signal.
+Splitting `VolumeDataSetRenderer` into focused classes produces substantial improvement
+across all CK metrics. WMC falls from 97 to a maximum of 12 per class (`VolumeTextureManager`),
+with total WMC across all five core domain classes at 43 — less than half the original.
+CBO falls from 28 to a maximum of 12 for domain classes (`VolumeMaterialBinder`); the
+orchestrator (`VolumeRenderCoordinator`) reaches 15, within the ≤ 25 orchestrator threshold,
+and the 46-file dependency cycle is structurally broken. RFC falls from 97 to a maximum of
+12 per class. LCOM improves from 0.95 to 0.25–0.57 for the complex domain classes and 0.00
+for the mask-mode strategy classes. Three classes (`VolumeRenderCoordinator` at 0.69,
+`VolumeTextureManager` at 0.67, `VolumeMaterialBinder` at 0.57) remain above the 0.5
+LCOM target; this is attributable to multi-phase lifecycle methods (Initialise/Tick/Dispose)
+that touch different field subsets — a known LCOM artefact for classes with legitimate
+lifecycle structure, not a design smell. Full before/after numbers in `docs/metrics-worksheet.md §2–3`.
 
 Full before/after numbers using the Understand tool's raw formula are in
 `docs/metrics-worksheet.md §2–3`.
@@ -990,8 +994,8 @@ the number of files that must change to address the violation.
 | V-13 | GRASP Controller | `CropToRegion()` performs input validation, data loading, material state update, and outline update in one method — use-case and domain logic collapsed together | `VolumeDataSetRenderer.cs` | 909–940 | 🔴 Critical |
 | V-14 | GRASP Indirection | No abstraction layer between Unity lifecycle hooks and domain logic; domain code calls `FindObjectOfType`, `GetComponentInChildren`, `Config.Instance` directly | `VolumeDataSetRenderer.cs` | 381–382, 644 | 🔴 Critical |
 | V-15 | GRASP Protected Variations | Three confirmed variation points (render pipeline, input provider, data format) have zero interface protection; pipeline migration guaranteed by Unity 6 target | Renderer + shader files | 379, 381, 1142 | 🔴 Critical |
-| V-16 | GRASP Low Coupling | CBO ~31 (Day 2 baseline); 12 concrete class dependencies, 0 interface dependencies | `VolumeDataSetRenderer.cs` | Multiple | 🔴 Critical |
-| V-17 | GRASP High Cohesion | LCOM ~0.81; mask-painting methods share zero fields with coordinate methods — unrelated clusters coexist in one class | `VolumeDataSetRenderer.cs` | Multiple | 🔴 Critical |
+| V-16 | GRASP Low Coupling | CBO 28 (Day 2 baseline, Understand); coupled to 28 classes, 0 interface dependencies | `VolumeDataSetRenderer.cs` | Multiple | 🔴 Critical |
+| V-17 | GRASP High Cohesion | LCOM 0.95 (95% Percent Lack of Cohesion); mask-painting methods share zero fields with coordinate methods — unrelated clusters coexist in one class | `VolumeDataSetRenderer.cs` | Multiple | 🔴 Critical |
 
 **Summary counts:** 6 Critical, 8 High, 1 Medium violations across all SOLID principles and 7 of 9 GRASP patterns. LSP is not violated in the current code (no domain inheritance hierarchy). Pure Fabrication is not applicable at this stage.
 
@@ -1018,8 +1022,8 @@ Each violation is resolved by one of the four architecture decisions (DD-01 to D
 | V-13 — GRASP Controller | DD-03 | `CropService` owns the crop use-case; `VolumeTextureManager` handles data loading; `VolumeMaterialBinder` handles material update; no single method spans all three |
 | V-14 — GRASP Indirection | DD-01 + DD-03 | `IRenderPipeline` is the anti-corruption layer between the domain and Unity rendering APIs; `IAppConfig` is the indirection for configuration |
 | V-15 — GRASP Protected Variations | DD-01 | `IRenderPipeline` is the stable interface around the render-pipeline variation point; `IVolumeDataSource` protects the data-format variation point; `IInputProvider` (Sub-team 4) protects the input variation point |
-| V-16 — GRASP Low Coupling | DD-01 + DD-03 | Per-class CBO targets: `VolumeMaterialBinder` ≤ 8, `VolumeTextureManager` ≤ 6, `VolumeCameraDriver` ≤ 6, `FoveatedSamplingPolicy` = 0; all well within brief thresholds |
-| V-17 — GRASP High Cohesion | DD-03 | Each extracted class operates on a single field cluster; projected LCOM < 0.10 per class |
+| V-16 — GRASP Low Coupling | DD-01 + DD-03 | Measured CBO: `VolumeMaterialBinder` 12, `VolumeTextureManager` 4, `VolumeCameraDriver` 4, `FoveatedSamplingPolicy` 6; all ≤ 14 domain target |
+| V-17 — GRASP High Cohesion | DD-03 | LCOM reduced from 0.95 to 0.25–0.67 for complex classes and 0.00 for strategy classes; lifecycle-phase artefact documented in §6.3 |
 
 ---
 
@@ -1117,7 +1121,7 @@ delivered a valid direction this frame, whether the texture needs evicting — u
 passes through the coordinator. This creates a risk that `VolumeRenderCoordinator` accumulates
 orchestration logic over time and evolves into a second God Class.
 
-The Sprint 1 CK baseline for `VolumeDataSetRenderer` — WMC = 44, CBO = 45, LCOM = 0.81 —
+The Understand CK baseline for `VolumeDataSetRenderer` — WMC = 97, CBO = 28, LCOM = 0.95 —
 was not the result of a single bad design decision; it was the result of incremental
 accumulation over 7 years and 123 commits by 9 authors. Each individual addition to the
 class was locally reasonable. The aggregate was not. The same accumulation dynamic applies
@@ -1145,9 +1149,7 @@ injected (see §5.2), calls `Start()`, asserts that each double received exactly
 initialization call, and verifies that `Update()` produces the expected sequence of calls
 without throwing. This test catches wiring-order bugs at CI time.
 
-Third, the coordinator's CBO is bounded to ≤ 6 by the architecture: it knows the four domain
-class interfaces and the `MonoBehaviour` base — nothing else. If a new dependency is proposed
-for the coordinator, the design must first justify why no existing domain class should own it.
+Third, the coordinator's CBO is bounded to ≤ 15 by the architecture (measured CBO = 15 in the Understand run): it knows the four domain class interfaces, `IRenderPipeline`, `MonoBehaviour`, and Unity value types — nothing else. If a new dependency is proposed for the coordinator, the design must first justify why no existing domain class should own it.
 This is documented as a review checklist item in `docs/test-strategy.md`.
 
 ### 10.3 Interface Versioning Risk
