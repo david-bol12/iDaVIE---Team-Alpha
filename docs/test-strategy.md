@@ -1,156 +1,132 @@
 # Sub-team 3: Rendering Engine — Test Strategy
 **Team Alpha | Cache Me If You Can**  
-*Brief reference: Section 6.3 Software Testing + Section 9.2 Deliverable 4*  
-*Target length: 2–4 pages*
+*Brief reference: Section 6.3 Software Testing + Section 9.2 Deliverable 4*
 
 ---
 
 ## 1. Overview
 
-This document describes how the rendering layer is tested in the proposed architecture.
-A key goal of the refactoring is to **improve testability** — currently most rendering
-logic is untestable without a full Unity runtime due to direct URP/HDRP dependencies.
+The central goal of the refactoring is to make rendering logic **independently testable** without a running Unity scene, GPU, or VR hardware. The two worked examples produce 60+ concrete NUnit tests that demonstrate this is achievable today.
+
+Test files:
+- `refactoring-examples/team3/tests/Example1_RendererSplitTests.cs` — renderer split
+- `refactoring-examples/team3/tests/Example2_MaskModeTests.cs` — mask mode strategy
 
 ---
 
-## 2. Test Types
+## 2. Test Tiers
 
-### 2.1 Edit-Mode Unit Tests (Pure C# — no Unity required)
+### Tier 1 — Pure NUnit (no Unity runtime)
 
-**What:** Tests for all classes that do not depend on Unity types.  
-**Framework:** Unity Test Framework in EditMode, or plain NUnit.  
-**Scope:**
-- `IMaskMode` implementations (`ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode`)
-- `FoveatedSamplingPolicy` (with `MockGazeProvider` injected)
-- Memory budget calculations in `VolumeTextureManager`
-- Camera matrix calculations in `VolumeCameraDriver` (if extractable from Unity)
+All logic tests that do not touch `Material`, `Renderer`, or player-loop APIs. Safe in headless CI (no Unity Editor licence required).
 
-**Why possible after refactoring:** `IRenderPipeline` abstraction means domain classes
-no longer import `UnityEngine.Rendering.Universal`. Mock implementations can be injected.
+Covers:
+- `FoveatedSamplingPolicy` — `ComputeParameters`, `ComputeMipBias`, `IsGazeAvailable`
+- `FoveationParameters.Uniform()` — fallback struct factory
+- `FoveatedSamplingConfig.Default` — Inspector-constant regression guard
+- `VolumeCoordinateService` — `WorldToObjectSpace`, `ObjectToNormalisedVolume`, `ExtractFrustumPlanes`
+- `StubCameraDriver` — `ComputeFrame`, `SetProjectionMode` round-trip
+- `ShaderKeyword` properties on all `IMaskMode` implementations
 
-**Example:**
-```csharp
-[Test]
-public void InverseMaskMode_SetsCorrectShaderKeyword() {
-    var mode = new InverseMaskMode();
-    Assert.AreEqual("_MASK_INVERSE", mode.ShaderKeyword);
-}
+### Tier 2 — Unity Edit Mode (Material required, no player loop)
 
-[Test]
-public void FoveatedPolicy_HighSampleRate_WhenGazeAtCentre() {
-    var gaze = new MockGazeProvider { GazeFocusPoint = new Vector2(0.5f, 0.5f) };
-    var policy = new FoveatedSamplingPolicy(gaze);
-    float rate = policy.GetSampleRate();
-    Assert.GreaterOrEqual(rate, 0.8f);
-}
-```
+Tests that call `Material.EnableKeyword` / `Material.GetFloat`. These run in the Unity Test Runner's Edit Mode; they do **not** need a running game or GPU.
+
+Covers:
+- `Apply()` mutual-exclusion invariant for `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode`
+- `_MaskAlpha` uniform values (1.0 for Apply/Inverse, 0.15 for Isolate)
+- `DisabledMaskMode` — Null Object safety (`Apply(mat, null)` never throws, all keywords off, idempotent)
+- `StrategySubstitutabilityTests` — LSP round-robin over six mode switches
 
 ---
 
-### 2.2 Play-Mode Tests (Unity runtime required)
+## 3. What the Tests Prove
 
-**What:** Tests that require Unity to be running — rendering behaviour, frame timing, integration.  
-**Framework:** Unity Test Framework in PlayMode.  
-**Scope:**
-- Frame rate test: renderer must sustain ≥ 90 fps on reference test machine
-- Mask mode switching: changing `IMaskMode` must take effect within one frame
-- Texture upload: `VolumeTextureManager` must upload and bind a test volume correctly
-- Memory budget: loading over-budget volume must trigger eviction, not crash
+### Example 1 — VolumeDataSetRenderer Split
 
-**Example:**
-```csharp
-[UnityTest]
-public IEnumerator Renderer_SustainsNinetyFps_WithDefaultVolume() {
-    // Load test volume, warm up 30 frames, measure average over 60 frames
-    yield return LoadTestVolume("synthetic_368mb.fits");
-    yield return new WaitForSeconds(0.5f);  // warm-up
-    
-    float totalTime = 0f;
-    for (int i = 0; i < 60; i++) {
-        yield return null;
-        totalTime += Time.deltaTime;
-    }
-    float avgFrameTime = totalTime / 60f;
-    Assert.Less(avgFrameTime, 1f / 90f, "Frame time exceeded 90fps budget");
-}
-```
+The monolithic `VolumeDataSetRenderer.Update()` block (before/ lines 1139–1165) could only be executed by booting Unity with a scene and a connected HMD. After the split:
+
+| Class | Can now be tested because |
+|---|---|
+| `FoveatedSamplingPolicy` | Depends on `IGazeProvider` interface; `StubGazeProvider` injects any gaze state |
+| `VolumeCoordinateService` | Pure `static` math; no `Transform` dependency, no `MonoBehaviour` |
+| `StubCameraDriver` | Implements `IVolumeCameraDriver`; test double returns controllable `CameraFrameState` |
+
+Critical test: `ComputeParameters_GazeUnavailable_BothStepCountsEqualMaxSteps` — this directly mirrors the `else`-branch of the before/ code (lines 1163–1165) that previously had no test coverage.
+
+### Example 2 — Mask Mode Strategy
+
+The before/ switch statement was a single block that could only be exercised through a live render. After the Strategy pattern:
+
+- Each `IMaskMode` class is tested in isolation.
+- The mutual-exclusion invariant (exactly one keyword active) is enforced per-class and verified by an exhaustive six-step transition sequence.
+- `IsolateMaskMode._MaskAlpha = 0.15` has a dedicated regression test — the only active mode that differs from 1.0.
+- `DisabledMaskMode` (Null Object) makes the "no mask loaded" state explicit and testable; previously there was an implicit null check inside the God Class.
 
 ---
 
-### 2.3 Golden-Image Regression Tests
+## 4. Stub and Mock Strategy
 
-**What:** Reference PNG renders for each mask mode × colour map combination.
-Any future change that shifts pixel values beyond threshold fails the test.  
-**Framework:** Custom Unity Test Framework extension using `Texture2D.LoadImage` comparison.  
-**Scope:** 3 mask modes × 5 colour maps = 15 reference renders (minimum).
+| Dependency | Before (untestable) | After (stub used in tests) |
+|---|---|---|
+| Eye-tracking SDK | Direct `SteamVR_Action_Vector2` call | `StubGazeProvider` implements `IGazeProvider` |
+| Unity `Camera` | Direct `Camera.main` access | `StubCameraDriver` implements `IVolumeCameraDriver` |
+| URP/HDRP adapter | Direct `UniversalRenderPipeline` import | `NullRenderPipeline` / `StubRenderPipeline` implements `IRenderPipeline` |
+| Sub-team 2 data | Not injectable | Synthetic `RawVolumeData` passed directly to `VolumeTextureManager` |
 
-**How it works:**
-1. On first run: render scene → save as `golden/apply_viridis.png`
-2. On subsequent runs: render scene → pixel-diff against reference → fail if delta > threshold
-3. Threshold: max 1-bit difference per channel (allows minor float precision variation)
-
-**Value:** Catches silent visual regressions from shader changes, colour map tweaks, or
-refactoring errors that don't break logic tests but do change what the astronomer sees.
+Naming convention: `Stub*` for test doubles with configurable state; `Null*` for no-op implementations.
 
 ---
 
-## 3. What We Are NOT Testing (and Why)
+## 5. What Is Not Tested Here (and Why)
 
-| Area | Reason not tested |
-|------|------------------|
-| GPU shader compilation on all target hardware | CI hardware constraints; covered by integration test on reference machine |
-| Sub-team 4's gaze tracking SDK | Out of our scope; we test with `MockGazeProvider` |
-| FITS data loading | Sub-team 2's responsibility; we use a synthetic `RawVolumeData` in tests |
-| Pitch rendering quality at full resolution | Manual review at sprint performance budget review |
-
----
-
-## 4. Mocking Strategy
-
-### The Problem Before Refactoring
-`VolumeDataSetRenderer` directly calls `UnityEngine.Rendering.Universal` APIs.
-You cannot mock these in edit-mode tests — they require a GPU context.
-
-### The Solution After Refactoring
-
-| Real dependency | Replaced with | Used in |
-|----------------|---------------|---------|
-| `URPAdapter` | `MockRenderPipeline` | All edit-mode tests |
-| Eye-tracking SDK | `MockGazeProvider` | FoveatedSamplingPolicy tests |
-| Sub-team 2 data loader | `MockVolumeDataSource` | VolumeTextureManager tests |
-
-All mocks implement the same interface as the real class — this is enforced by
-the architecture constraint that every API boundary must be expressed as an interface.
+| Area | Reason |
+|---|---|
+| GPU shader compilation | Hardware-bound; covered by integration test on reference machine |
+| `VolumeMaterialBinder.Tick()` full pipeline | Requires live `Material` bound to a real shader; play-mode scope |
+| Frame rate (90 fps invariant) | Play-mode `[UnityTest]`, requires player loop |
+| Sub-team 4 gaze SDK | Out of scope; `StubGazeProvider` substitutes until interface is finalised |
+| FITS loading | Sub-team 2's responsibility |
 
 ---
 
-## 5. Coverage Targets
+## 6. Short-Term Impact on the Codebase (Sprint 2–3)
 
-Per brief Section 7.2 (Testability metrics):
-
-| Scope | Target | Note |
-|-------|--------|------|
-| Domain logic (mask modes, foveation, camera math) | ≥ 70% branch/line coverage | Edit-mode testable |
-| Adapter classes (URPAdapter, HDRPAdapter) | ≥ 50% overall | Unity-bound; tracked but not in strict target |
-| Play-mode integration tests | Scenario-based (no % target) | Key user flows covered |
-| Golden-image suite | 15 renders minimum | All mask × colourmap combos |
-
-CI gate: branch/line coverage below 70% on domain classes **blocks merge** from Day 10.
+1. **Every new class in the split must have a corresponding test fixture** before its design is considered final. The test file is part of the design deliverable.
+2. `FoveatedSamplingConfig.Default` tests serve as a **regression lock** on the Inspector defaults extracted from the before/ code. Any accidental value change will fail immediately.
+3. The `ShaderKeyword` tests are a **contract test** between the C# strategy classes and the HLSL `#pragma multi_compile` declarations. A typo in either place fails a test before a render is ever attempted.
 
 ---
 
-## 6. CI Integration
+## 7. Long-Term Impact on the Codebase
 
-- All edit-mode tests run on every PR via GitHub Actions (no Unity licence required for edit-mode)
-- Play-mode tests run nightly on the reference test machine
-- Golden-image suite runs on every PR that touches shader files
-- Coverage report posted as PR comment (Quality Guild owns the pipeline)
+1. **New mask modes cost one class and one test fixture.** The before/ switch required modifying `VolumeDataSetRenderer`. The after/ design means adding `SilhouetteMaskMode` or `HeatmapMaskMode` is a zero-change-to-existing-code operation — the test structure mirrors this directly.
+2. **IRenderPipeline boundary enables headless CI for all domain logic.** No Unity Editor licence is needed for Tier 1 tests, which covers the entire mathematical core of the renderer. This scales as the team grows.
+3. **`VolumeCoordinateService` tests are a safety net for future shader-side coordinate changes.** If `ObjectToNormalisedVolume` or `ExtractFrustumPlanes` is modified during a URP migration, the pure-math tests catch regressions before any render is needed.
+4. **`StubCameraDriver` enables future `VolumeCameraDriver` changes to be verified without a live camera.** Camera matrix logic (clip planes, VP matrix, AIP toggle) is tested independently of the Unity Camera component.
 
 ---
 
-## 7. Dependency on Other Sub-teams
+## 8. CI Integration
 
-| Dependency | Impact on our tests | Mitigation |
-|-----------|-------------------|------------|
-| `IGazeProvider` from Sub-team 4 | `FoveatedSamplingPolicy` tests need it | `MockGazeProvider` stub used until real interface is finalised |
-| `RawVolumeData` from Sub-team 2 | `VolumeTextureManager` tests need it | Synthetic in-memory struct used in tests |
+- Tier 1 tests: run on every PR via GitHub Actions (headless, no Unity licence required)
+- Tier 2 (Edit Mode) tests: run on every PR where a Unity Editor is available on the runner
+- Play-mode integration tests: nightly on reference machine
+- Coverage gate: ≥ 70% branch/line coverage on domain classes blocks merge from Day 10 (brief §7.2)
+
+---
+
+## 9. Coverage Summary
+
+| Class | Tier | Methods covered |
+|---|---|---|
+| `FoveatedSamplingPolicy` | 1 | `ComputeParameters`, `ComputeMipBias`, `IsGazeAvailable` |
+| `FoveationParameters` | 1 | `Uniform()` |
+| `FoveatedSamplingConfig` | 1 | Constructor, all 6 default constants |
+| `VolumeCoordinateService` | 1 | `WorldToObjectSpace`, `ObjectToNormalisedVolume`, `ExtractFrustumPlanes` |
+| `StubCameraDriver` | 1 | `ComputeFrame`, `SetProjectionMode` |
+| `ApplyMaskMode` | 1 + 2 | `ShaderKeyword`, `Apply` |
+| `InverseMaskMode` | 1 + 2 | `ShaderKeyword`, `Apply` |
+| `IsolateMaskMode` | 1 + 2 | `ShaderKeyword`, `Apply` |
+| `DisabledMaskMode` | 1 + 2 | `ShaderKeyword`, `Apply` (idempotence, null-safety) |
+| `NullMaskMode` | 1 | `ShaderKeyword` (sentinel check) |
