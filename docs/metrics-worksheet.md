@@ -56,10 +56,11 @@
 
 ## Section 2: Day 13 Projected (After Refactoring)
 
-*These values are projected based on the worked refactoring examples.*
-*Every number must be traceable to a specific design decision in the design document.*
+*These values are projected based on the worked refactoring examples completed in Sprint 2.*
+*Every number is traceable to a `[CBO]`/`[WMC]`/`[LCOM]` annotation in the corresponding after/ source file.*
+*Design doc cross-references are given in the "Justification" column.*
 
-### New Classes (proposed)
+> **Measurement note:** Section 1 uses raw Understand tool output (different LCOM scale — higher raw integers). Section 2 uses the Chidamber & Kemerer definitions as specified in the brief: WMC = sum of cyclomatic complexity per method; LCOM = Henderson-Sellers normalised 0–1 (lower is more cohesive). The Day 2 CK-equivalent baseline for VolumeDataSetRenderer is WMC = 44, CBO = 45, RFC ≈ 89, LCOM ≈ 0.81 (from `diagrams/class-before.puml`).
 
 *All values derived from inline CK annotations in `refactoring-examples/team3/` after/ class headers (S2-E1-09, S2-E2-05). Understand tool formula used throughout for consistency with Section 1.*
 
@@ -121,5 +122,5 @@
 
 | Check | Before | After |
 |-------|--------|-------|
-| Circular dependencies in rendering namespace | — | 0 (required) |
-| Architecture violations (rendering core importing URP types) | — | 0 (required) |
+| Circular dependencies in rendering namespace | Present — `VolumeDataSetRenderer` ↔ `VolumeDataSet` mutual reference (Ce + Ca counted in CBO = 45) | 0 — domain classes depend on interfaces only; no class in `iDaVIE.Rendering` imports another concrete domain class |
+| Architecture violations (rendering core importing URP types) | 3 violations — `Graphics.DrawProceduralNow`, `OnRenderObject`, `Shader.EnableKeyword` (global) | 0 — all pipeline calls routed through `IRenderPipeline`; only `UrpRenderPipeline` in the adapter assembly imports `UnityEngine.Rendering.Universal` |

@@ -1,33 +1,42 @@
-# Refactoring Example 1 — VolumeDataSetRenderer Split
-**Team Alpha | Sub-team 3 — Rendering Engine ("Cache Me If You Can")**  
-*Brief reference: §9.2 Sub-team deliverable 3 — worked refactoring example with CK metrics*
+# Refactoring Example 1: VolumeDataSetRenderer Four-Class Split
+**Team Alpha | Cache Me If You Can — Sub-team 3**  
+*Brief reference: §9.2 Sub-team deliverable 3 — worked refactoring example with CK metrics; Section 6.3 Software Construction — SRP, DIP, ISP, GRASP*
 
 ---
 
 ## What This Example Shows
 
-`VolumeDataSetRenderer` is a 1,403-line MonoBehaviour God Class with nine distinct responsibilities and Day-2 CK metrics that breach every brief threshold. This example demonstrates how the Single Responsibility Principle, Dependency Inversion Principle, and GRASP Low Coupling / High Cohesion patterns decompose it into four focused classes behind a thin coordinator shell, with each resulting class meeting all brief CK targets.
+`VolumeDataSetRenderer` is a 1,402-line monolith with eight distinct responsibility clusters crammed into one class. This example demonstrates how to break it into four focused classes using the Single Responsibility Principle (SRP), backed by interfaces that satisfy the Dependency Inversion Principle (DIP) and Interface Segregation Principle (ISP).
+
+The four extracted classes:
+
+| New Class | Single Responsibility |
+|-----------|----------------------|
+| `VolumeMaterialBinder` | Shader keyword management, material property binding, colour-map application |
+| `VolumeTextureManager` | 3D texture creation, GPU upload, memory-budget enforcement, cropped-region management |
+| `VolumeCameraDriver` | Camera matrix extraction, clip-plane computation, coordinate conversion, projection mode |
+| `FoveatedSamplingPolicy` | Per-frame foveation decisions: sample rates, LOD bias, reprojection mask, HMD-absent fallback |
+
+A thin `VolumeRenderCoordinator` (pure C# orchestrator) + `VolumeRendererBehaviour` (MonoBehaviour shell ≤ 30 lines) replace the monolith's Unity lifecycle. The coordinator has no domain logic of its own — it drives the per-frame loop by delegating to the four injected interfaces.
 
 ---
 
-## Before: The God Class
+## Before: The Monolith
 
-**File:** `before/VolumeDataSetRenderer.cs` (annotated — do not modify)  
-**Source:** `Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs` in the iDaVIE repository
+See `before/VolumeDataSetRenderer.cs` — the full original source with 20+ inline violation markers.
 
-### Nine Responsibilities in One Class
+### The Problem
 
-| # | Responsibility | Lines (approx.) |
-|---|---------------|-----------------|
-| 1 | Shader / material property management | 1124–1226 |
-| 2 | 3D texture upload + memory budgeting | 479–497, 665–682 |
-| 3 | Camera matrix + clip-plane computation | 713, 739, 857 |
-| 4 | Foveated rendering decisions | 1139–1165 |
-| 5 | Region selection + crop | 1005–1054 |
-| 6 | Cursor / voxel painting | 639–698 |
-| 7 | Moment-map control | 521 |
-| 8 | FITS mask file I/O | 1290–1373 |
-| 9 | Unity lifecycle wiring | 358–543 |
+The class has eight responsibility clusters in one 1,402-line file:
+
+1. **FITS texture upload** — allocates `Texture3D`, enforces 368 MB budget
+2. **Shader / material binding** — 20+ shader property IDs pushed to GPU each frame
+3. **Mask modes** — if/else chain on `MaskMode` enum, 3 branches calling `EnableKeyword` directly
+4. **Mask I/O** — native plugin calls, file-path logic, UI toasts — all in `SaveMask()`
+5. **Coordinate conversion** — `transform.InverseTransformPoint` calls in domain math (DIP violation)
+6. **Cursor / outline management** — data lookup, outline update, paint trigger mixed in one method
+7. **Foveated rendering** — sample-rate decisions interleaved with material binding
+8. **Unity lifecycle** — `Start`, `Update`, `OnDestroy` mixed with domain logic
 
 ### Before CK Metrics (Day 2 Baseline — Understand tool)
 
@@ -55,17 +64,24 @@ Additional problems:
 
 ## After: Four Focused Classes
 
-**Files:** `after/` directory
+See `after/` for fully annotated implementations.
 
-### Class Responsibilities
+### The Solution
 
-| New Class | Single Responsibility | Interface |
-|-----------|----------------------|-----------|
-| `VolumeRenderCoordinator` | Unity lifecycle + coordinator shell only; zero domain logic | — (thin MonoBehaviour) |
-| `VolumeMaterialBinder` | Shader keyword management, material property binding, colour-map application | `IVolumeMaterialBinder` |
-| `VolumeTextureManager` | 3D texture upload, memory-budget enforcement, downsample factor computation | `IVolumeTextureManager` |
-| `VolumeCameraDriver` | Camera-matrix extraction, clip-plane computation, projection mode | `IVolumeCameraDriver` (stub) |
-| `FoveatedSamplingPolicy` | Ray-march step count and mip-bias decisions from gaze data | — (concrete class, pure C#) |
+Each responsibility cluster is assigned to exactly one class. The coordinator re-composes the four domain classes each frame without containing any logic of its own:
+
+```
+VolumeRendererBehaviour  (MonoBehaviour shell — adapter layer only, ≤ 30 lines)
+    │
+    └── VolumeRenderCoordinator  (pure C# orchestrator — no domain logic)
+            │
+            ├── IVolumeMaterialBinder      →  VolumeMaterialBinder
+            ├── IVolumeTextureManager      →  VolumeTextureManager
+            ├── IVolumeCameraDriver        →  VolumeCameraDriver
+            └── IFoveatedSamplingPolicy    →  FoveatedSamplingPolicy
+```
+
+`VolumeRenderCoordinator` never calls `new` on a concrete domain type — every collaborator is injected at construction time by `VolumeRendererBehaviour.Start()` (the composition root).
 
 ### After CK Metrics (Understand tool — measured from worked examples)
 
@@ -93,7 +109,7 @@ Additional problems:
 
 ---
 
-## SOLID / GRASP Principles Demonstrated
+## SOLID/GRASP Analysis
 
 | Principle | Violation in Before | Fix in After |
 |-----------|--------------------|-----------------------------------------|
@@ -128,43 +144,17 @@ VolumeRenderCoordinator  ←── owns ──► VolumeMaterialBinder
 
 ---
 
-## Test Strategy — What Becomes Testable
+## Test Impact
 
-| Before | After |
-|--------|-------|
-| Testing `SetMaskMode()` required instantiating all 1,403 lines and all dependencies | `VolumeMaterialBinder` unit-testable: inject `NullRenderPipeline` + `NullMaskMode` |
-| Testing foveation required a running HMD and SteamVR | `FoveatedSamplingPolicy` testable: inject `StubGazeProvider` (centred gaze or unavailable) |
-| No edit-mode tests possible | All four classes testable in Unity Test Runner edit mode, no GPU required |
+| Test type | Before | After |
+|-----------|--------|-------|
+| Unit test domain coordinate math | ❌ Requires live `Transform` in a running scene | ✅ `VolumeCoordinateService` takes `Matrix4x4`; pure NUnit, no Unity context needed |
+| Unit test material binding | ❌ Requires `Material` asset + `Shader.EnableKeyword` (GPU) | ✅ Inject `NullRenderPipeline`; verify keyword calls without GPU |
+| Unit test texture budget enforcement | ❌ Requires `Texture3D` allocation (GPU) | ✅ Inject `StubVolumeDataSource`; budget logic is pure integer arithmetic |
+| Unit test foveated zone selection | ❌ Requires HMD hardware (`SteamVR.Init`) | ✅ Inject `StubGazeProvider`; zone selection is pure float arithmetic |
+| Integration test full frame | ❌ Full Unity player required | ⚠️ `VolumeRendererBehaviour` still requires player; coordinator is testable in edit mode with all stubs injected |
 
-Example test enabled by the extraction:
-
-```csharp
-[Test]
-public void FoveatedPolicy_GazeUnavailable_ReturnsUniformFallback()
-{
-    var policy = new FoveatedSamplingPolicy(
-        new StubGazeProvider(gazeAvailable: false),
-        FoveatedSamplingConfig.Default);
-
-    FoveationParameters p = policy.ComputeParameters();
-
-    Assert.IsFalse(p.FoveationActive);
-    Assert.AreEqual(FoveatedSamplingConfig.Default.MaxSteps, p.StepsLow);
-    Assert.AreEqual(FoveatedSamplingConfig.Default.MaxSteps, p.StepsHigh);
-}
-```
-
----
-
-## Known Invariants Preserved
-
-| Invariant | How it is preserved |
-|-----------|---------------------|
-| ≥ 90 fps frame rate | Shader step counts unchanged; CPU-side dispatch is O(1); no per-frame heap allocation |
-| 4 GB `Texture3D` ceiling | Single enforcement point in `VolumeTextureManager` — no other class allocates textures |
-| 368 MB default memory budget | `VolumeTextureConfig.Default.MemoryBudgetMb = 368L`; passed at construction, immutable |
-| Nearest-neighbour filtering | `VolumeTextureConfig.Default.FilterMode = FilterMode.Point`; no other class sets filter mode |
-| Foveated rendering support | `FoveatedSamplingPolicy` + `IGazeProvider` — improved: auto-detects HMD absence rather than relying on Inspector checkbox |
+Test doubles: `NullRenderPipeline` (`stubs/NullRenderPipeline.cs`), `StubGazeProvider` (`after/FoveatedSamplingPolicy.cs`), `StubCameraDriver` (`after/VolumeCameraDriver.cs`).
 
 ---
 
@@ -176,20 +166,3 @@ public void FoveatedPolicy_GazeUnavailable_ReturnsUniformFallback()
 | `IGazeProvider` GazeFocusPoint coord space not confirmed | Sub-team 4 interface delivery (task S2-CO08) |
 
 See `PROGRESS.md` blockers table for current status.
-
----
-
-## File Index
-
-| File | Description |
-|------|-------------|
-| `before/VolumeDataSetRenderer.cs` | Full original source annotated with 20+ violation markers |
-| `after/VolumeMaterialBinder.cs` | Shader / material property management |
-| `after/VolumeTextureManager.cs` | 3D texture upload and memory-budget enforcement |
-| `after/VolumeCameraDriver.cs` | Camera-matrix extraction and coordinate transforms |
-| `after/FoveatedSamplingPolicy.cs` | Foveated rendering step-count computation |
-| `after/Rationale/VolumeMaterialBinder-decisions.md` | Extended design rationale notes |
-| `after/Rationale/VolumeTextureManager-decisions.md` | Extended design rationale notes |
-| `../stubs/IRenderPipeline.cs` | Interface stub + `NullRenderPipeline` test double |
-| `../stubs/UrpRenderPipeline.cs` | URP adapter stub |
-| `../stubs/HdrpRenderPipeline.cs` | HDRP adapter stub |

@@ -61,7 +61,7 @@ switch (_maskMode) {
 
 ### Before CK Impact (mask-related code within VolumeDataSetRenderer)
 
-The switch block is not a standalone class — it lives inside `VolumeDataSetRenderer`, which as a whole measured:
+*Figures for the whole class — mask code cannot be isolated in CK tool output because it lives inside a monolith.*
 
 | Metric | VolumeDataSetRenderer (Day 2) | Brief Target | Status |
 |--------|------------------------------|-------------|--------|
