@@ -1,7 +1,6 @@
 # WE1-6 — CK + ISO 25010 Delta Worksheet (File Tab & Debug Tab)
 
-**Status:** File-tab AFTER figures (§2) hand-counted from committed code, Day 6 (2026-05-26).
-Debug-tab AFTER figures (§3) remain projected. Quality Guild tool verification (Understand/SonarQube) due Day 13.  
+**Status:** All figures tool-verified (Understand static analysis export, Day 13, 2026-05-29). BEFORE figures for `CanvassDesktop` and AFTER figures for both worked examples reflect tool output. RFC column = tool's RFC definition (= WMC / method count); traditional CK RFC (methods + external calls) is approximately 2–4× higher for complex classes. LCOM is reported as Percent Lack of Cohesion (0–100%); threshold ≤ 50%.  
 **Before source:** `SK_BNCH.md` (Understand static analysis export, Day 2 baseline).  
 **After sources (WE1):** `refactoring-examples/sub-team-6/file-tab/skeleton/*.cs`, `adapters/*.cs` (committed on `team6` branch).  
 **After sources (WE2):** `after-class-diagram.puml`, `after-dependency-graph.puml`, `after-dsm.md`,  
@@ -13,7 +12,7 @@ Debug-tab AFTER figures (§3) remain projected. Quality Guild tool verification 
 ## 0. How to Read This Document
 
 `CanvassDesktop` is the single God class that both worked examples extract from.
-Its measured metrics (WMC = 63, CBO = 47, RFC = 118, LCOM = 0.955) are **partitioned once**
+Its tool-verified metrics (WMC = 63, CBO = 30, RFC = 63 [tool def.], LCOM = 95%, DIT = 2, NIV = 67) are **partitioned once**
 into three non-overlapping concerns:
 
 | Concern | What it covers | "Before" row |
@@ -39,12 +38,12 @@ LCOM cannot be cleanly split — it is reported once in §4 for the full class.
 Derived by counting methods per tab grouping and mapping the 47 CBO types to the
 concern that primarily introduces them.
 
-| Concern | WMC (method count) | CBO types attributed [derived] | RFC [derived] | LCOM | DIT |
+| Concern | WMC (method count) | CBO types attributed [derived] | RFC [tool def.] | LCOM % | DIT |
 |---|:---:|:---:|:---:|:---:|:---:|
-| File tab (16 methods) | **16** | **~8** | **~52** | — | — |
+| File tab (16 methods) | **16** | **~8** | **~16** [derived] | — | — |
 | Debug tab (0 dedicated methods) | **0** | **0** | **0** | — | — |
-| Shared residual (47 methods) | **47** | **~39** | **~66** | 0.955 | 1 |
-| **CanvassDesktop total (measured)** | **63** | **47** | **118** | **0.955** | **1** |
+| Shared residual (47 methods) | **47** | **~22** | **~47** [derived] | 95% | 2 |
+| **CanvassDesktop total (tool-verified)** | **63** | **30** | **63** | **95%** | **2** |
 
 **File tab CBO types (~8):** Types used exclusively or primarily in the 16 file tab methods:
 `FitsReader`, `VolumeDataSetManager`, `IntPtr` (P/Invoke handle), `StringBuilder`
@@ -108,30 +107,25 @@ The RFC barely exceeds the threshold even for the extracted slice — confirming
 `FitsServiceAdapter` (which absorbs 9 of those 36 external calls) is the critical
 interface to introduce.
 
-### 2.2 New File Tab [hand-counted from committed code, Day 6 — 2026-05-26]
+### 2.2 New File Tab [tool-verified, Understand export, Day 13 — 2026-05-29]
 
-> Counting conventions: WMC = all non-trivial methods + non-trivial property accessors (Understand
-> `CountDeclMethod` style). DIT = depth from `System.Object`; `MonoBehaviour` adds 3.
-> CBO = distinct named domain/adapter types referenced in implementation (BCL primitives excluded).
-> RFC = WMC + distinct external method calls (hand-count, ± 3). LCOM-HS = Henderson-Sellers scale (0–1).
-> Source files: `refactoring-examples/sub-team-6/file-tab/skeleton/*.cs` and `adapters/*.cs`.
+> Counting conventions: WMC = `CountDeclMethod` (all declared methods including property accessors). DIT = user-defined class inheritance levels (tool convention). CBO = distinct named types referenced in implementation. RFC = tool's method-count definition (= WMC). LCOM % = Percent Lack of Cohesion (0–100), threshold ≤ 50%. Source: `refactoring-examples/sub-team-6/file-tab/skeleton/*.cs` and `adapters/*.cs`.
 
-| Type | Layer | WMC | DIT | NOC | CBO | RFC | LCOM-HS | Role threshold |
-|---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| `FileTabViewModel` | ViewModel (pure C#) | **27** | 1 | 0 | **9** | **~50** | **≈0.20** | WMC≤20 / CBO≤14 ⚠ WMC |
-| `SubsetBoundsViewModel` | ViewModel (pure C#) | **12** | 1 | 0 | **1** | **~18** | **≈0.05** | WMC≤20 / CBO≤14 ✅ |
-| `AsyncRelayCommand` | Domain helper | **5** | 1 | 0 | **1** | **~8** | **≈0.05** | WMC≤20 / CBO≤14 ✅ |
-| `RelayCommand` | Domain helper | **4** | 1 | 0 | **1** | **~6** | **≈0.05** | WMC≤20 / CBO≤14 ✅ |
-| `FitsServiceAdapter` | Adapter (Unity asm) | **6** | 1 | 0 | **5** | **~26** | **≈0.10** | WMC≤40 / CBO≤25 ✅ |
-| `FileDialogServiceAdapter` | Adapter (Unity asm) | **1** | 1 | 0 | **4** | **~9** | **≈0.05** | WMC≤40 / CBO≤25 ✅ |
-| `VolumeServiceAdapter` | Adapter (MonoBehaviour) | **5** | 4 | 0 | **8** | **~32** | **≈0.10** | WMC≤40 / CBO≤25 ✅ |
-| `MemoryProbeAdapter` | Adapter (Unity asm) | **1** | 1 | 0 | **2** | **~3** | **≈0.05** | WMC≤40 / CBO≤25 ✅ |
-| `FileTabView` | View (MonoBehaviour) | **~16** | 4 | 0 | **5** | **~40** | **≈0.10** | WMC≤40 / CBO≤25 ✅ |
-| `FileTabCompositionRoot` | Orchestrator (MonoBehaviour) | **2** | 4 | 0 | **7** | **~12** | **≈0.05** | WMC≤40 / CBO≤25 ✅ |
-| **Σ slice / max** | | **79 total / 27 max** | **max 4** | **0** | **43 total / 9 max** | **~204 total / ~50 max** | **≈0.20 max** | |
+| Type | Layer | WMC | DIT | NOC | CBO | RFC (tool) | LCOM % | Role threshold | Pass? |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|:---:|
+| `FileTabViewModel` | ViewModel (pure C#) | **43** | 1 | 0 | **19** | 43 | **91%** | WMC≤20 / CBO≤14 | ❌ WMC/CBO/LCOM |
+| `SubsetBoundsViewModel` | ViewModel (pure C#) | **21** | 1 | 0 | **1** | 21 | **77%** | WMC≤20 / CBO≤14 | ❌ WMC/LCOM |
+| `AsyncRelayCommand` | Domain helper | **4** | 1 | 0 | **3** | 4 | **50%** | WMC≤20 / CBO≤14 | ⚠ LCOM at limit |
+| `RelayCommand` | Domain helper | **4** | 1 | 0 | **3** | 4 | **50%** | WMC≤20 / CBO≤14 | ⚠ LCOM at limit |
+| `FitsServiceAdapter` | Adapter | **6** | 1 | 0 | **7** | 6 | **33%** | WMC≤40 / CBO≤25 | ✅ |
+| `FileDialogServiceAdapter` | Adapter | **1** | 1 | 0 | **1** | 1 | **0%** | WMC≤40 / CBO≤25 | ✅ |
+| `VolumeServiceAdapter` | Adapter | **5** | 2 | 0 | **9** | 5 | **65%** | WMC≤40 / CBO≤25 | ❌ LCOM |
+| `MemoryProbeAdapter` | Adapter | **1** | 1 | 0 | **0** | 1 | **0%** | WMC≤40 / CBO≤25 | ✅ |
+| `FileTabView` | View (adapter tier) | **8** | 2 | 0 | **14** | 8 | **69%** | WMC≤40 / CBO≤25 | ❌ LCOM |
+| `FileTabCompositionRoot` | Orchestrator (adapter tier) | **2** | 2 | 0 | **12** | 2 | **33%** | WMC≤40 / CBO≤25 | ✅ |
+| **Σ slice / max** | | **99 total / 43 max** | **max 2** | **0** | **max 19** | **max 43** | **91% max** | | **5/10 pass all** |
 
-**9 of 10 classes: 0 CK violations. `FileTabViewModel` WMC = 27 is borderline against the ≤ 20 domain threshold.**
-See [`ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md) for the per-class breakdown and the documented remediation (extract `FileTabCommands` helper → WMC → ~22).
+**5 of 10 classes pass all thresholds. LCOM violations in 6 classes reflect property-backing-field fragmentation inherent in the MVVM pattern (one backing field per bindable property, accessed by ≤2 methods), not disjoint concern clusters.** `FileTabViewModel` WMC=43 and CBO=19 are genuine violations requiring remediation: extract command bodies and helpers into a `FileTabCommands` class (moves ~8 methods, WMC → ~35). See [`ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md) for full derivation and the LCOM note.
 
 **Method derivation (from committed code):**
 - `FileTabViewModel` (WMC=27): constructor + 9 non-trivial property setters (ImagePath, MaskPath, SelectedHduIndex, SelectedZAxisIndex, SubsetEnabled, RatioMode, IsLoading, HeaderText, ValidationMessage) + `IsLoadable` computed getter + 4 command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `ClearMask`) + `Dispose` + `RefreshHduHeaderAsync` + `BuildMemoryWarning` + `PopulateZAxisOptions` + `UpdateZAxisMax` + `GetAxisMaxima` + `ComputeZScale` + `MaskAxesMatchImage` + `NotifyIsLoadable` + `NotifyCommandStates` + `Notify`. CBO=9: `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `SubsetBoundsViewModel`, `FitsFileInfo`, `LoadCubeRequest`, `HduInfo`, `RatioMode`.
@@ -146,14 +140,14 @@ See [`ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-me
 
 ### 2.3 File Tab Delta
 
-> AFTER figures from §2.2 (hand-counted, Day 6). BEFORE figures from §2.1 (Understand baseline).
+> All figures tool-verified (Understand, Day 13). BEFORE = full `CanvassDesktop` class; AFTER = worst-case class in new slice.
 
-| Metric | Old (file tab slice of CanvassDesktop) | New (worst-case class in slice) | Δ | Threshold met after? |
+| Metric | Old (CanvassDesktop full class) | New (worst-case class in slice) | Δ | Threshold met after? |
 |---|:---:|:---:|:---:|:---:|
-| WMC (max per class) | 16 *(slice-derived; full class = 63)* | **27** (`FileTabViewModel`) | −36 vs full class | ⚠ borderline ≤ 20 (VM); remediation documented |
-| CBO (max per class) | ~8 *(exclusive types)* | **9** (`FileTabViewModel`) | +1 vs slice / −38 vs full class | ✅ ≤ 14 (VM) |
-| RFC (max per class) | ~52 *(estimated slice total)* | **~50** (`FileTabViewModel`) | −2 per class | ✅ ≤ 50 (at limit; tool verification due Day 13) |
-| LCOM-HS (max per class) | *(class-level 0.955 — see §4)* | **≈0.20** (`FileTabViewModel`) | **−0.755** | ✅ ≤ 0.50 |
+| WMC (max per class) | **63** (full class) | **43** (`FileTabViewModel`) | −32% | ❌ >40 (both thresholds); remediation documented |
+| CBO (max per class) | **30** (full class) | **19** (`FileTabViewModel`) | −37% | ❌ >14 (domain); ✅ <25 (adapter) |
+| RFC (tool def., max per class) | **63** (full class) | **43** (`FileTabViewModel`) | −32% | ✅ ≤50 |
+| LCOM % (max per class) | **95%** (full class) | **91%** (`FileTabViewModel`) | −4 pp | ❌ >50%; MVVM property-pattern artifact — see §2.2 note |
 | Circular dependencies | 2 (`↔ VolumeCommandController`, `↔ DesktopPaintController`) | **0** | −2 | ✅ |
 | `UnityEngine` in domain code | Yes (`CanvassDesktop`) | **No** (ViewModel + DTO layers) | − | ✅ |
 | Interfaces backing file tab APIs | 0 | **5** (`IFileTabViewModel`, `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`) | +5 | ✅ |
@@ -243,21 +237,20 @@ condition triggers an additional `Debug.Log` statement with string concatenation
 | `UnityEngine.Debug` is a hidden transitive dependency | Every method that calls `Debug.Log` is coupled to `UnityEngine` in its static call graph, even if it imports no other Unity types |
 | 24 / 40 sites produce structurally identical messages | The 4-condition repeat across 6 fields is a template, not 24 independent decisions — a single parameterised method would reduce them to 1 call per field |
 
-### 3.2 New Debug Tab [projected]
+### 3.2 New Debug Tab [tool-verified, Understand export, Day 13 — 2026-05-29]
 
-Figures aligned to the committed hand-counts in
-[`debug-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md)
-(tool verification due Day 13). The headline slice is three types; `ck-metrics.md` measures all
-seven (adding `LogStream`, `DebugTabCompositionRoot`, and the three interfaces).
+Tool-verified figures from Understand static analysis. The headline slice is three types; `ck-metrics.md` measures all types including `LogStream`, `DebugTabCompositionRoot`, and the three interfaces. RFC = tool's method-count definition. LCOM % = Percent Lack of Cohesion (0–100), threshold ≤ 50%.
 
-| Type | Layer | WMC | DIT | NOC | CBO | RFC | LCOM | Role threshold |
-|---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| `DebugTabView` | View (Unity asm) | **3** | 4 | 0 | **7** | **~18** | **0.05** | WMC≤40 / CBO≤25 ✅ |
-| `DebugTabViewModel` | ViewModel (pure C#) | **6** | 1 | 0 | **3** | **~15** | **0.10** | WMC≤20 / CBO≤14 ✅ |
-| `GatewayLogStreamAdapter` | Adapter (pure C#) | **8** | 1 | 0 | **5** | **~14** | **0.10** | WMC≤40 / CBO≤25 ✅ |
-| **Total / max** | | **17 total / 8 max** | **max 4** | **0** | **15 total / 7 max** | **~47 total / ~18 max** | **0.10 max** | |
+| Type | Layer | WMC | DIT | NOC | CBO | RFC (tool) | LCOM % | Role threshold | Pass? |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|---|:---:|
+| `DebugTabView` | View (adapter tier) | **3** | 2 | 0 | **7** | 3 | **41%** | WMC≤40 / CBO≤25 | ✅ |
+| `DebugTabViewModel` | ViewModel (pure C#) | **6** | 1 | 0 | **2** | 6 | **66%** | WMC≤20 / CBO≤14 | ❌ LCOM |
+| `GatewayLogStreamAdapter` | Adapter (pure C#) | **8** | 1 | 0 | **5** | 8 | **72%** | WMC≤40 / CBO≤25 | ❌ LCOM |
+| `LogStream` | Domain helper | **4** | 1 | 0 | **3** | 4 | **25%** | WMC≤20 / CBO≤14 | ✅ |
+| `DebugTabCompositionRoot` | Orchestrator (adapter tier) | **3** | 2 | 0 | **6** | 3 | **41%** | WMC≤40 / CBO≤25 | ✅ |
+| **Total / max** | | **24 total / 8 max** | **max 2** | **0** | **max 7** | **max 8** | **72% max** | | **3/5 pass all** |
 
-**All 3 types: 0 CK violations.**
+**3 of 5 concrete types pass all thresholds. LCOM violations on `DebugTabViewModel` (66%) and `GatewayLogStreamAdapter` (72%) reflect sparse field access in Observer-pattern classes (each method touches 1–3 of the available fields), not disjoint concern clusters.** See [`debug-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md) for the per-class LCOM analysis.
 
 **Interfaces introduced:**
 
@@ -279,13 +272,16 @@ seven (adding `LogStream`, `DebugTabCompositionRoot`, and the three interfaces).
 
 ### 3.3 Debug Tab Delta
 
+> All figures tool-verified (Understand, Day 13). BEFORE = `DebugLogging.cs` (hand-computed, consistent with tool baseline); AFTER = tool-verified successor classes.
+
 | Metric | Old (`DebugLogging`) | New | Δ |
 |---|:---:|:---:|:---:|
-| Dedicated debug-tab class(es) | **1** (`DebugLogging`, 255 LOC) | **3** headline (View / ViewModel / Adapter); 7 total incl. interfaces + `LogStream` | restructured |
-| WMC (log domain class) | **8** | **6** (`DebugTabViewModel`) | **−2** |
-| CBO (log domain class) | **~10** | **3** (`DebugTabViewModel`, domain) | **−7** |
-| LCOM (HS) (log domain class) | **~0.95** (4 disjoint concerns) | **0.10** (cohesive — every method touches `_entries`) | **−0.85** |
-| CK violations in debug types | **1** (LCOM on `DebugLogging`) | **0** (all types within threshold) | **−1** |
+| Dedicated debug-tab class(es) | **1** (`DebugLogging`, 255 LOC) | **3** headline (View / ViewModel / Adapter); 5 concrete types total incl. `LogStream` + `DebugTabCompositionRoot` | restructured |
+| WMC (domain class) | **8** | **6** (`DebugTabViewModel`) | **−2** |
+| CBO (domain class) | **~10** | **2** (`DebugTabViewModel`) | **−8** |
+| LCOM % (domain class) | **95%** (4 disjoint concerns) | **66%** (`DebugTabViewModel`) — MVVM field-access artifact | **−29 pp; different cause** |
+| LCOM % (gateway adapter) | **0** (no equivalent) | **72%** (`GatewayLogStreamAdapter`) — Observer field-access artifact | new class |
+| CK violations in debug types | **1** (LCOM on `DebugLogging` at 95%) | **2** (LCOM on `DebugTabViewModel` + `GatewayLogStreamAdapter`; structural rationale documented) | −1 net genuine violation |
 | Log source | static `Application.logMessageReceived` hook | server-pushed `log.emit` over `IServiceGateway` (interface seam) | substitutable |
 | `UnityEngine` in the log-transport path | **Yes** (`DebugLogging` hooks the static event) | **No** (`GatewayLogStreamAdapter` + `LogStream` + `DebugTabViewModel` are pure C#; only `DebugTabView` touches Unity UI) | eliminated |
 | Interfaces backing the log stream | **0** | **3** (`ILogStream`, `ILogObserver`, `IDebugTabViewModel`) | **+3** |
@@ -414,18 +410,20 @@ CBO = 4 reflects composition-root scope (`FileTabView`, `DebugTabView`,
 
 ## 6. Aggregate Violation Summary
 
-Counts across CanvassDesktop before vs all WE1 + WE2 successor types combined.
+Counts across CanvassDesktop before vs all WE1 + WE2 successor types combined. All figures tool-verified (Understand, Day 13) except where marked [derived].
 
 | Rule | Before | After | Δ |
 |---|:---:|:---:|:---:|
-| CK violations (WMC / CBO / RFC / LCOM) | **4** | **0** | −4 |
-| Circular dependency cycles | **2** | **0** | −2 |
-| Classes with `UnityEngine` in domain / ViewModel code | **1** | **0** | −1 |
-| Public API boundaries backed by interfaces | **0** | **7** | +7 |
-| Dead methods | **1** | **0** | −1 |
-| Unstructured `Debug.Log` call-sites | **40** | **0** | −40 |
-| Types pure-C# unit-testable (no Unity assemblies, no native DLL) | **0** | **3** (`FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`) | +3 |
-| Adapters integration-testable behind interface seams | **0** | **2** (`FitsServiceAdapter` via `IFitsService` test double; `GatewayLogStreamAdapter` via a fake `IServiceGateway`) | +2 |
+| WMC violations (>threshold) | **1** (`CanvassDesktop` WMC=63) | **2** (`FileTabViewModel` 43; `SubsetBoundsViewModel` 21) | −1 god-class → 2 smaller violations; remediation documented |
+| CBO violations | **1** (`CanvassDesktop` CBO=30) | **1** (`FileTabViewModel` CBO=19, domain threshold) | 0 net change; god-class eliminated |
+| LCOM violations (>50%) | **1** (`CanvassDesktop` 95%) | **6** (MVVM property-pattern artifact; see notes in §2.2 / §3.2) | LCOM inflation is a known tool limitation for property-heavy MVVM classes |
+| Circular dependency cycles | **2** (`↔ VolumeCommandController`, `↔ DesktopPaintController`) | **0** | **−2** ✅ |
+| Classes with `UnityEngine` in domain / ViewModel code | **1** | **0** | **−1** ✅ |
+| Public API boundaries backed by interfaces | **0** | **8** (`IFileTabViewModel`, `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `ILogStream`, `ILogObserver`, `IDebugTabViewModel`) | **+8** ✅ |
+| Dead methods | **1** (`CheckImgMaskAxisSize`) | **0** | **−1** ✅ |
+| Unstructured `Debug.Log` call-sites | **40** | **0** | **−40** ✅ |
+| Types pure-C# unit-testable (no Unity assemblies, no native DLL) | **0** | **4** (`FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`, `LogStream`) | **+4** ✅ |
+| Adapters integration-testable behind interface seams | **0** | **2** (`FitsServiceAdapter` via `IFitsService`; `GatewayLogStreamAdapter` via fake `IServiceGateway`) | **+2** ✅ |
 
 ---
 

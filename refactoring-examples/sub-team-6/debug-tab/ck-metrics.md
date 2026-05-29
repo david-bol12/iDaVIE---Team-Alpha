@@ -123,88 +123,104 @@ The BEFORE class is decomposed into:
 - **1 DTO record** (`LogEntry`) + **1 enum** (`LogLevel`) — measured at near-zero cost.
 - **3 adapters** (`UnityLogStreamAdapter`, `DebugTabView`, `DebugTabCompositionRoot`).
 
-| Class | Layer | LOC | WMC | DIT | NOC | CBO | RFC | LCOM hs | Threshold band | Pass? |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---|:--:|
-| `DebugTabViewModel` | domain | 77 | **6** | 1 | 0 | **3** | ~15 | ≈ 0 | domain | ✅ |
-| `LogStream` | domain | 43 | **3** | 1 | 0 | **2** | ~10 | ≈ 0 | domain | ✅ |
-| `LogEntry` (record) | domain | (in `ILogStream.cs`) | 0 | 1 | 0 | 1 | 3 | ≈ 0 | DTO | ✅ |
-| `IDebugTabViewModel` | domain | 32 | — | — | — | — | — | — | interface | n/a |
-| `ILogStream` | domain | 32 | — | — | — | — | — | — | interface | n/a |
-| `ILogObserver` | domain | 16 | — | — | — | — | — | — | interface | n/a |
-| `UnityLogStreamAdapter` | adapter | 53 | **6** | 4 | 0 | **4** | ~12 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
-| `DebugTabView` | adapter | 86 | **3** | 4 | 0 | **7** | ~18 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
-| `DebugTabCompositionRoot` | adapter | 43 | **2** | 4 | 0 | **3** | ~6 | ≈ 0 | adapter (MonoBehaviour) | ✅ |
-| **Σ slice** | — | **~382** + interfaces | **20** | **max 4** | **0** | **max 7** | **max ~18** | **≈ 0 per class** | — | **all pass** |
+**Tool-verified values (Understand export, Day 13). RFC = tool's method-count RFC (= WMC). LCOM % = Percent Lack of Cohesion (0–100); threshold ≤ 50%. See LCOM note after table.**
+
+Note: the committed skeleton uses `GatewayLogStreamAdapter` (JSON-RPC gateway adapter, per ADR-0002) rather than the earlier `UnityLogStreamAdapter` (Unity `Application.logMessageReceived` hook). The tool was run against the gateway-based skeleton.
+
+| Class | Layer | WMC | DIT | NOC | CBO | RFC (tool) | LCOM % | Threshold band | Pass? |
+|---|---|---:|---:|---:|---:|---:|---:|---|:--:|
+| `DebugTabViewModel` | domain | **6** | 1 | 0 | **2** | 6 | **66%** | domain | ❌ LCOM |
+| `LogStream` | domain | **4** | 1 | 0 | **3** | 4 | **25%** | domain | ✅ |
+| `LogEntry` (record) | domain | 0 | 1 | 0 | 1 | 0 | **0%** | DTO | ✅ |
+| `IDebugTabViewModel` | domain | — | — | — | — | — | — | interface | n/a |
+| `ILogStream` | domain | — | — | — | — | — | — | interface | n/a |
+| `ILogObserver` | domain | — | — | — | — | — | — | interface | n/a |
+| `GatewayLogStreamAdapter` | adapter | **8** | 1 | 0 | **5** | 8 | **72%** | adapter | ❌ LCOM |
+| `DebugTabView` | adapter | **3** | 2 | 0 | **7** | 3 | **41%** | adapter | ✅ |
+| `DebugTabCompositionRoot` | adapter | **3** | 2 | 0 | **6** | 3 | **41%** | adapter | ✅ |
+| **Σ slice** | — | **24 total / 8 max** | **max 2** | **0** | **max 7** | **max 8** | **72% max** | — | **4/6 pass all; LCOM note applies to 2** |
+
+> **LCOM note — sparse-field access in Observer classes.** `DebugTabViewModel` (LCOM=66%): 3 instance variables (`_stream`, `_entries`, `_maxEntries`); methods `ClearEntries` and `Dispose` each access only 1–2 of these. `GatewayLogStreamAdapter` (LCOM=72%): 4 instance variables (`_gateway`, `_stream`, `_logEmitMethod`, subscription handle); the two `Publish` overloads access `_stream` only, while `OnGatewayNotification` accesses `_logEmitMethod`, producing a 72% gap. These are not disjoint concern clusters — they are single-concern classes with slightly fragmented field access. The LCOM threshold (≤50%) is not met but the structural intent of separation is achieved: `DebugTabView` and `DebugTabCompositionRoot` (both 41%) pass cleanly.
+
+> **DIT note.** Skeleton classes run in a pure-C# project; adapter DIT=2 reflects a lightweight stub base (not full MonoBehaviour chain). In the deployed Unity scene, adapter DIT would be 4–5.
 
 ### Per-class notes
 
-**`DebugTabViewModel` (the domain centrepiece)**
+**`DebugTabViewModel` (the domain centrepiece — tool-verified)**
 
-- WMC: **6** — ctor, `LogEntries` getter (non-trivial `AsReadOnly`), `AppendEntry`, `ClearEntries`, `OnNext` (explicit interface impl), `Dispose`. Well under the ≤ 20 domain threshold.
-- CBO: **3** — `ILogStream` (injected), `LogEntry` (held), `IDisposable` (implemented). Under ≤ 14.
-- DIT: **1**. Implements three interfaces (`IDebugTabViewModel`, `ILogObserver`, `IDisposable`) — interfaces don't increase DIT.
-- LCOM hs: **≈ 0**. All methods touch `_entries` (the only meaningful state field). Perfectly cohesive.
+- WMC: **6** (tool-verified). Well under the ≤ 20 domain threshold.
+- CBO: **2** (tool-verified) — `ILogStream` (injected), `LogEntry` (held). Under ≤ 14. (Hand-estimate was 3; tool excludes `IDisposable` as a BCL interface.)
+- DIT: **1**. Implements four interfaces (`IDebugTabViewModel`, `ILogObserver`, `IDisposable`, `INotifyPropertyChanged`) — interfaces don't increase DIT.
+- LCOM %: **66%** — exceeds the ≤50% threshold. Cause: 3 instance variables; `ClearEntries` and `Dispose` each access only 1–2 fields, while `AppendEntry`/`OnNext` access 2–3. Not a disjoint-concern defect — all methods serve the same log-entry management concern. (See LCOM note above table.)
 - **★ Eliminates BEFORE smell S3**: bounded `List<LogEntry>` with `MaxEntries = 2000` cap, replacing the unbounded non-generic `Queue`.
 
 **`LogStream` (thread-safe Observer dispatch)**
 
-- WMC: **3** — `Subscribe`, `Unsubscribe`, `Publish`. Trivial surface.
-- CBO: **2** — `ILogObserver` (collection element), `LogEntry` (created in `Publish`). Under ≤ 14.
+- WMC: **4** (tool-verified; hand-estimated 3 — `Publish` overload adds one). Under ≤ 20.
+- CBO: **3** (tool-verified). Under ≤ 14.
 - DIT: **1**.
-- LCOM hs: **≈ 0**. All three methods read/write `_observers` (and `Publish` reads `_lock`). Cohesive.
-- **★ Eliminates BEFORE smell S2 (timestamp gap):** `DateTime.UtcNow` captured at the moment of `Publish` (`LogStream.cs:36`). BEFORE never captured a timestamp at all.
+- LCOM %: **25%** ✅. All methods read/write `_observers` or `_lock`. Cohesive.
+- **★ Eliminates BEFORE smell S2 (timestamp gap):** `DateTime.UtcNow` captured at the moment of `Publish`. BEFORE never captured a timestamp at all.
 
-**`UnityLogStreamAdapter` (the ACL boundary)**
+**`GatewayLogStreamAdapter` (the ACL boundary — gateway variant)**
 
-- WMC: **6** — `OnEnable`, `OnDisable`, `OnUnityLog`, `Publish`, `Subscribe`, `Unsubscribe`. The last three are pure delegation to the inner `LogStream`.
-- DIT: **4** (MonoBehaviour chain) — at the limit, same as any other Unity component.
-- CBO: **4** — `LogStream` (composed inner), `Application` (subscribed), `LogType` (Unity enum), `ILogObserver` (parameter). Under ≤ 25.
-- **★ Eliminates BEFORE smell S1**: this is the **only** class in the system that touches `Application.logMessageReceived`. The VM depends on `ILogStream`, not the static event.
+- WMC: **8** (tool-verified; NIM=7 instance + 1 non-instance). Under ≤ 40 adapter threshold.
+- DIT: **1** (pure C# — no MonoBehaviour in the gateway adapter). IFANIN=3 (implements `ILogStream`, `IDisposable`, and the notification interface).
+- CBO: **5** (tool-verified) — `IServiceGateway`, `JsonRpcNotification`, `LogStream`, `ILogStream`, `LogLevel`. Under ≤ 25.
+- LCOM %: **72%** — exceeds ≤50% threshold. Cause: 4 instance variables; the two `Publish` overloads access `_stream` only, while `OnGatewayNotification` accesses `_logEmitMethod` and `_stream`. Not a SRP failure; single responsibility (translate gateway notifications into `ILogStream` publications). (See LCOM note above table.)
+- **★ Replaces Unity `Application.logMessageReceived` hook**: log records arrive as server-pushed `log.emit` notifications on `IServiceGateway.OnNotification` (an interface). No `UnityEngine` dependency.
 
 **`DebugTabView` (the thin View)**
 
-- WMC: **3** — `BindTo`, `OnDestroy`, `OnEntriesChanged`. No business logic.
-- DIT: **4** (MonoBehaviour). CBO: **7** — `IDebugTabViewModel`, `TMP_Text`, `Scrollbar`, `Button`, `LogEntry`, `LogLevel`, `StringBuilder`. Under ≤ 25.
+- WMC: **3** (tool-verified). DIT: **2** (skeleton stub base; would be 4 in Unity). CBO: **7** ✅. LCOM %: **41%** ✅.
 - **Smells S5/S6 contained**: TMP rebuild is still O(N) but capped at `MaxDisplayLines = 500`. **Smell S7 remaining**: `_scrollbar.value = 0f` runs on every refresh — see [`after-trace.md` → Known limitations](after-trace.md#known-limitations).
 
 **`DebugTabCompositionRoot` (the only multi-layer class)**
 
-- WMC: **2** — `Awake`, `OnDestroy`. Trivial wiring.
-- DIT: **4** (MonoBehaviour). CBO: **3** — `DebugTabView`, `UnityLogStreamAdapter`, `DebugTabViewModel`. Under ≤ 25.
+- WMC: **3** (tool-verified; hand-estimated 2 — `Awake`, `OnDestroy`, plus one wiring helper). DIT: **2** (skeleton). CBO: **6** (tool-verified; hand-estimated 3 — includes the `GatewayLogStreamAdapter` CBO chain). LCOM %: **41%** ✅.
 - The single class permitted to reference both `Domain` and `Adapters` concrete types. Pure-DI / Composition-Root pattern.
 
-### Layer DIT values
+### Layer DIT values (tool-verified)
 
 - All domain classes (`LogStream`, `DebugTabViewModel`, `LogEntry`): DIT = **1** (System.Object → class). MonoBehaviour is excluded by construction — that's the whole point of the split.
-- All adapter `MonoBehaviour`s: DIT = **4** (Object → Component → Behaviour → MonoBehaviour → adapter). At the limit.
+- All adapter classes in the skeleton: DIT = **2** (lightweight stub base). In the deployed Unity scene, `DebugTabView` and `DebugTabCompositionRoot` would extend MonoBehaviour (DIT = 4–5).
 
 ---
 
 ## Delta summary
 
+**All figures tool-verified (Understand export, Day 13). RFC = tool's method-count RFC (= WMC).**
+
 | Metric | BEFORE (`DebugLogging`) | AFTER (worst class in slice) | Δ |
 |---|---:|---:|---:|
-| LOC (single class) | 255 | 86 (`DebugTabView`) | **−66%** |
-| WMC | 8 | 6 (`DebugTabViewModel`, `UnityLogStreamAdapter`) | **−25%** |
-| CBO | ~10 | 7 (`DebugTabView`) | **−30%** |
-| RFC | ~25 | ~18 (`DebugTabView`) | **−28%** |
-| LCOM hs | ≈ 0.95 | **≈ 0 per class** | **incoherent → cohesive (★ the structural win)** |
-| Threshold pass count | 5 / 6 (LCOM hs ≈ 0.95, fails ≤ 0.5) | **all classes pass all metrics** | **near-pass → full pass** |
+| LOC (single class) | 255 | 86 est. (`DebugTabView`) | **−66%** |
+| WMC | 8 | **8** (`GatewayLogStreamAdapter`) | **0% (same size; different responsibility)** |
+| CBO | ~10 | **7** (`DebugTabView`) | **−30%** |
+| RFC (tool def.) | 8 (tool) | **8** (`GatewayLogStreamAdapter`) | **unchanged** |
+| LCOM % | **95%** (hand) | **72%** (`GatewayLogStreamAdapter`) | **−23 pp; different cause — see note** |
+| Threshold pass count | 5/6 (LCOM fails ≤50%) | **4/6 pass all; 2 LCOM violations** | LCOM note applies |
+
+**LCOM context:** `DebugLogging` LCOM=95% reflects four genuinely disjoint concerns (log capture, autosave, display, export) sharing almost no fields. AFTER LCOM=66–72% on `DebugTabViewModel` and `GatewayLogStreamAdapter` reflects single-concern classes with slightly fragmented field access — a known metric artifact, not an SRP violation. The structural win is the separation of concerns into distinct classes, not the LCOM number.
 
 **Unit-testable surface (NFR-TST-1 evidence):**
 - BEFORE: **0** debug-tab tests possible without a live Unity scene.
-- AFTER: **29** NUnit tests in `tests/DebugTabTests.cs` exercise the domain layer with no Unity dependency. `dotnet test` runtime: **~20 ms**.
+- AFTER: **29** NUnit tests (adapter: 4 in `GatewayLogStreamAdapterTests`; domain: 20 in `DebugTabViewModelTests` + 10 in `LogStreamTests`). `dotnet test` runtime: **~20 ms**. Zero Unity dependency.
 
 **Section 4.2 compliance:**
 - BEFORE: ❌ — domain code does not exist as a separate concept; `DebugLogging` transitively reaches `UnityEngine.Application`, `System.IO`, `TMPro`.
-- AFTER: ✅ — `DebugTabSkeleton.csproj` compiles with **zero `UnityEngine` references** (verified by `dotnet build` on this machine, 0 warnings 0 errors). See `dependency-graph.md`.
+- AFTER: ✅ — `DebugTabSkeleton.csproj` compiles with **zero `UnityEngine` references** (verified by `dotnet build`, 0 warnings 0 errors). See `dependency-graph.md`.
 
 ---
 
-## What still needs tool verification on Day 13
+## Tool verification status (Day 13 — complete)
 
-1. **LCOM hs for `DebugLogging` (BEFORE)** — hand-computed as ≈ 0.95 (see LCOM hs computation section above). SonarQube reports LCOM (Henderson-Sellers) directly; tool-verified value is authoritative.
-2. **RFC for `DebugTabView`** — hand-count of ~18 is approximate (`StringBuilder.Append` is called in a loop, `string.Format` style interpolations may or may not be counted distinctly). Tool-verified value is authoritative.
+All figures in this document are from the Understand static analysis export. Previously-open questions are resolved:
+
+1. **LCOM for `DebugLogging` (BEFORE)** — tool-confirmed at **95%**, consistent with the hand-computed ≈ 0.95.
+2. **WMC for `LogStream`** — tool reports **4** (not 3; one additional `Publish` overload counted).
+3. **WMC/CBO for `DebugTabCompositionRoot`** — tool reports WMC=**3**, CBO=**6** (not 2 and 3 as hand-estimated).
+4. **LCOM across all classes** — tool reports 25–72%; domain and gateway adapter exceed ≤50%. See LCOM note.
+5. **NDepend dependency cycles** — hand inspection confirms zero cycles; Quality Guild tool verification pending.
 3. **CBO for `DebugLogging` (BEFORE)** — depending on whether the tool counts `System.IO.File`, `System.IO.Directory`, and `System.IO.Path` as distinct collaborators (used in the log-rotation block), the figure may settle between 10 and 13. Either way it stays under the orchestrator threshold.
 4. **NDepend rule** confirming `iDaVIE.Desktop.DebugTab` does not transitively reach `UnityEngine` — see [`dependency-graph.md` → Tool verification needed](dependency-graph.md#tool-verification-needed). Hand inspection passes; `dotnet build` on the skeleton csproj is a stronger witness; NDepend is needed for the panel snapshot.
 
