@@ -99,6 +99,30 @@
 
 ---
 
+## 2026-05-26 (Day 7 — Tue) — Sprint 2 Day 2
+
+**Present:** 
+**Present:** Jimmy, Con, Rory, Mark
+
+| Person | Yesterday | Today | Blockers |
+|---|---|---|---|
+| | | | |
+| | | | |
+| | | | |
+| | | | |
+| Jimmy | Updated Kanban | Ensure brief fits the Kanban board; overseeing the slides | None |
+| Con | Updated file tab example to be in scope; updated supporting documentation for file tab; brought debug up to par with file tab | Reading through sequence and phasing documentation; reading through worked examples | None |
+| Rory | Worked on slides deck | Continuing slides deck | None |
+| Mark | CodeScene + metrics | Set up NDepend; update main testing doc | NDepend errors |
+
+**Decisions:**
+- _(decisions made in stand-up)_
+
+**Raised at 09:15 cross-sub-team stand-up:**
+- _(items the SM took up)_
+
+---
+
 ## 2026-05-27 (Day 8 — Wed) — Sprint 2 Day 3
 
 **Present:** Jimmy, Con, Rory, Mark
@@ -121,17 +145,17 @@
 
 ## 2026-05-28 (Day 9 — Thu) — Sprint 2 Day 4 — Worked examples 2/2 complete; SOLID/GRASP audit
 
-**Present:** 
+**Present:** Jimmy, Con, Rory, Mark
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Jimmy | Continued Kanban oversight; contributed to the slides | Reorganised the Kanban board and worked on the slides | None |
+| Con | Finalised outstanding documentation; worked on the requirements document | Organised a mock interview | None |
+| Rory | Continued work on the slides deck | Worked on the slides | None |
+| Mark | Finalised outstanding documentation; worked on the architecture document | Finished the majority of the documentation | None |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- Realised the sub-team and team interviews had been confused; had to re-think the interview approach
 
 **Raised at 09:15 cross-sub-team stand-up:**
 - _(items the SM took up)_
@@ -140,14 +164,14 @@
 
 ## 2026-05-29 (Day 10 — Fri) — Sprint 2 Day 5 — Sprint 2 review + retrospective; mid-assessment iDaVIE-team visit
 
-**Present:** 
+**Present:** Jimmy, Con, Rory, Mark
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Jimmy | Reorganised the Kanban board and worked on the slides | Finished giving instructions and completed the Kanban board | None |
+| Con | Organised a mock interview | Working on Q&A documents supporting the interview | None |
+| Rory | Worked on the slides | Helped with supporting documents | None |
+| Mark | Finished the majority of the documentation | Working on Q&A documents supporting the interview | None |
 
 **Decisions:**
 - _(decisions made in stand-up)_
