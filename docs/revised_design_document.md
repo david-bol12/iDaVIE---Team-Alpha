@@ -7,7 +7,7 @@
 
 ## 1. Executive Summary
 
-This document analyses the iDaVIE rendering layer using CK metrics and proposes a refactoring of `VolumeDataSetRenderer` — a 1,403-line God Class (WMC 74, CBO 31) — into five focused collaborating classes behind clean interfaces. No production code is changed; this is a design-only proposal.
+This document analyses the iDaVIE rendering layer using CK metrics and proposes a refactoring of `VolumeDataSetRenderer` — a 1,403-line God Class (WMC 44, CBO 45) — into five focused collaborating classes behind clean interfaces. No production code is changed; this is a design-only proposal.
 
 ---
 
@@ -19,14 +19,14 @@ This document analyses the iDaVIE rendering layer using CK metrics and proposes 
 
 | Metric | Day 2 Baseline | Target | Excess |
 |--------|---------------|--------|--------|
-| WMC (Weighted Methods per Class) | **74** | ≤ 20 | 3.7× over |
-| CBO (Coupling Between Objects) | **31** | ≤ 14 | 2.2× over |
+| WMC (Weighted Methods per Class) | **44** | ≤ 20 | 2.2× over |
+| CBO (Coupling Between Objects) | **45** | ≤ 14 | 3.2× over |
 | RFC (Response For a Class) | **89** | ≤ 50 | 1.8× over |
 | LCOM (Lack of Cohesion in Methods) | **0.81** | ≤ 0.5 | 1.6× over |
 | DIT (Depth of Inheritance Tree) | 1 | ≤ 4 | ✅ |
 | NOC (Number of Children) | 0 | ≤ 5 | ✅ |
 
-All four failing metrics on the same class is the diagnostic signature of a **God Class**. The worst single method, `_startFunc`, carries CC = 28 across 185 lines. CBO = 31 means 31 other files must be considered on any edit.
+All four failing metrics on the same class is the diagnostic signature of a **God Class**. The worst single method, `_startFunc`, carries CC = 28 across 185 lines. CBO = 45 means 45 other files must be considered on any edit.
 
 ### 2.2 Responsibility Inventory
 
@@ -73,7 +73,7 @@ Three calls in `VolumeDataSetRenderer` are incompatible with Unity 6 URP: `Graph
 
 ### 5.1 Current Architecture (As-Is)
 
-The current structure is a single node coupled to 31 files across 8 packages. The SOLID/GRASP audit (§8) catalogues 17 confirmed violations — 6 Critical, 8 High, 1 Medium.
+The current structure is a single node coupled to 45 files across 8 packages. The SOLID/GRASP audit (§8) catalogues 17 confirmed violations — 6 Critical, 8 High, 1 Medium.
 
 ### 5.2 Target Architecture (To-Be)
 
@@ -179,7 +179,7 @@ No big-bang rewrite. Each phase extracts one responsibility; the codebase compil
 
 | Class | WMC | DIT | NOC | CBO | RFC | LCOM |
 |-------|-----|-----|-----|-----|-----|------|
-| `VolumeDataSetRenderer` | **74** | 1 | 0 | **31** | **89** | **0.81** |
+| `VolumeDataSetRenderer` | **44** | 1 | 0 | **45** | **89** | **0.81** |
 | Target | ≤ 20 | ≤ 4 | ≤ 5 | ≤ 14 | ≤ 50 | ≤ 0.5 |
 
 ### 6.2 Day 13 Projection (Proposed)
@@ -196,7 +196,7 @@ No big-bang rewrite. Each phase extracts one responsibility; the codebase compil
 
 ### 6.3 Delta Summary
 
-Splitting `VolumeDataSetRenderer` eliminates every CK threshold violation. WMC drops from 74 to ≤ 20 per class. CBO drops from 31 to ≤ 11 per domain class, breaking the 46-file dependency cycle (39.8% propagation cost). LCOM collapses from 0.81 to ≤ 0.05 per class.
+Splitting `VolumeDataSetRenderer` eliminates every CK threshold violation. WMC drops from 44 to ≤ 20 per class. CBO drops from 45 to ≤ 11 per domain class, breaking the 46-file dependency cycle (39.8% propagation cost). LCOM collapses from 0.81 to ≤ 0.05 per class.
 
 ---
 
@@ -204,7 +204,7 @@ Splitting `VolumeDataSetRenderer` eliminates every CK threshold violation. WMC d
 
 All diagrams are PlantUML source in `diagrams/`:
 
-- **`class-before.puml`** — current `VolumeDataSetRenderer` with 31 couplings annotated.
+- **`class-before.puml`** — current `VolumeDataSetRenderer` with 45 couplings annotated.
 - **`class-after.puml`** — five-class target architecture with interface boundaries.
 - **`architecture.puml`** — component diagram annotating the `IRenderPipeline` boundary and cross-team contracts.
 - **`sequence-render-frame.puml`** — 8-step per-frame sequence: Update → camera → foveation → texture → material → mask → pipeline → GPU.
@@ -228,7 +228,7 @@ All diagrams are PlantUML source in `diagrams/`:
 | V-13 | GRASP Controller | `CropToRegion()` spans validation, data load, material update, outline update | 🔴 Critical |
 | V-14 | GRASP Indirection | No abstraction layer between Unity lifecycle hooks and domain logic | 🔴 Critical |
 | V-15 | GRASP Prot. Variations | Render pipeline, input provider, data format have zero interface protection | 🔴 Critical |
-| V-16 | GRASP Low Coupling | CBO ~31; 12 concrete dependencies, 0 interface dependencies | 🔴 Critical |
+| V-16 | GRASP Low Coupling | CBO ~45; 12 concrete dependencies, 0 interface dependencies | 🔴 Critical |
 | V-17 | GRASP High Cohesion | LCOM ~0.81; unrelated field clusters share one class | 🔴 Critical |
 
 *6 Critical, 8 High, 1 Medium total — see `SOLID_GRASP_Violations.md` for full 17-row table including V-02, V-03, V-05, V-09, V-11, V-12.*
