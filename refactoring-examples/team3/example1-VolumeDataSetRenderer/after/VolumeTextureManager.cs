@@ -2,7 +2,7 @@
 // AFTER FILE — Sub-team 3 Refactoring Example 1
 // VolumeTextureManager.cs
 //
-// Extracted from: VolumeDataSetRenderer.cs (1,402 lines, WMC ~74, CBO ~31)
+// Extracted from: VolumeDataSetRenderer.cs (1,402 lines, WMC 97, CBO 28)
 // This file: ONE class, ONE responsibility — 3D texture creation, upload,
 //            memory-budget enforcement, downsample factor computation, and
 //            cropped-region management.
@@ -20,20 +20,21 @@
 //                   map update) in one 35-line method. VolumeTextureManager owns
 //                   only the data-loading concern. The coordinator re-composes
 //                   the other three via separate injected collaborators.
-//   ✅ V-16  GRASP Low Coupling — projected CBO ≤ 8 vs. original CBO ~31.
+//   ✅ V-16  GRASP Low Coupling — CBO 4 (Understand) vs. original CBO 28.
 //   ✅ V-17  GRASP High Cohesion — every method and field in this class is about
-//                   3D texture lifecycle; LCOM ~ 0.05.
+//                   3D texture lifecycle; LCOM 0.67 (lifecycle phases).
 //
-// PROJECTED CK METRICS (Day 13 snapshot):
-//   WMC  ~ 15  (target ≤ 20 domain)    — see per-method breakdown at bottom
-//   CBO  ≤  8  (target ≤ 14 domain)    — see [CBO] annotations per field/method
-//   RFC  ≤ 20  (target ≤ 50)
-//   LCOM ~ 0.05 (target ≤ 0.5)         — all methods touch _dataSet, _dataTexture, or _config
-//   DIT  = 0   (target ≤ 4)            — implements interface; no class inheritance
+// MEASURED CK METRICS (Understand tool):
+//   WMC  = 12  (target ≤ 20 domain)    — 12 instance methods   NIM=12, NIV=14
+//   CBO  =  4  (target ≤ 14 domain)    — see [CBO] annotations per field/method
+//   RFC  = 12  (target ≤ 50)
+//   LCOM = 0.67 (target ≤ 0.5)        ⚠ — Initialise/Load/Dispose phases touch
+//                                          different field subsets; lifecycle artefact
+//   DIT  = 1   (target ≤ 4)            — implements interface (IFANIN=2)
 //   NOC  = 0   (target ≤ 5)            — sealed; no children
 //
-// BEFORE CK METRICS (from VolumeDataSetRenderer Day 2 baseline):
-//   WMC  ~ 74 | CBO ~ 31 | RFC ~ 89 | LCOM ~ 0.81
+// BEFORE CK METRICS (VolumeDataSetRenderer — Understand tool):
+//   WMC 97 | CBO 28 | RFC 97 | LCOM 0.95
 //
 // Annotation legend (mirrored from before/VolumeDataSetRenderer.cs):
 //   [FIXED]    Violation resolved by this design
@@ -605,46 +606,30 @@ namespace iDaVIE.Rendering
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // CK METRICS SUMMARY — VolumeTextureManager (projected Day 13)
+    // CK METRICS SUMMARY — VolumeTextureManager (Understand tool — measured)
     //
-    // WMC = 15
-    //   Constructor            → 1
-    //   Initialise             → 2  (mask null check)
-    //   LoadFullCube           → 3  (mask null check + IsFullResolution branch)
-    //   LoadRegion             → 3  (mask null check + log branch)
-    //   GenerateDownsampled    → 3  (FactorOverride if/else = 2 branches + base)
-    //   CurrentDataTexture     → 1
-    //   CurrentMaskTexture     → 1
-    //   IsCropped              → 1
-    //   IsFullResolution       → 1
-    //   CurrentCropMin         → 1  (read-only property, no branch)
-    //   CurrentCropMax         → 1  (read-only property, no branch)
-    //   Dispose                → 2  (two null guards)
-    //                      Total: 20  ✅ target ≤ 20 (exactly at limit)
+    // WMC = 12   NIM = 12   NIV = 14                              ✅ target ≤ 20
     //
-    // NOTE: if WMC = 19 is judged too close to the limit in the metrics
-    // worksheet, CurrentCropMin and CurrentCropMax can be replaced by a single
-    // CurrentCropBounds property returning a BoundsInt (WMC -= 1). Flagged here
-    // for the Day 13 review pass.
+    // CBO = 4                                                     ✅ target ≤ 14 domain
+    //   Understand reports 4 coupled classes. The majority of former VDSR coupling
+    //   is absorbed by the VolumeDataSet/RawVolumeData interface boundary.
     //
-    // CBO = 8 (estimated)
-    //   #1  UnityEngine (Texture3D, FilterMode, Vector3Int, Mathf, Object)
-    //   #2  VolumeDataSet (PLACEHOLDER — drops to RawVolumeData after ST2 handoff)
-    //   #3  VolumeTextureConfig (our value struct — counted as 1 edge)
-    //   #4  IVolumeTextureManager (our interface — counts as 1 edge on the class)
-    //   Net distinct coupling edges: ≤ 8  ✅ target ≤ 14 domain
+    // RFC = 12                                                    ✅ target ≤ 50
     //
-    // RFC  ≤ 20  (interface methods + GenerateVolumeTexture calls)  ✅ ≤ 50
-    // LCOM ~ 0.05  (all methods access _dataSet, _dataTexture, or _config)  ✅ ≤ 0.5
-    // DIT = 0  (implements interface; no class inheritance)  ✅ ≤ 4
-    // NOC = 0  (sealed)  ✅ ≤ 5
+    // LCOM = 0.67  (67% Percent Lack of Cohesion)                ⚠ target ≤ 0.5
+    //   Initialise / LoadFullCube / LoadRegion / Dispose each access different
+    //   field subsets; lifecycle-phase artefact. Direction of improvement (0.95→0.67)
+    //   is significant.
     //
-    // BEFORE (VolumeDataSetRenderer):
-    //   WMC ~74 | CBO ~31 | RFC ~89 | LCOM ~0.81
+    // DIT = 1  (IFANIN = 2)                                       ✅ ≤ 4
+    // NOC = 0  (sealed)                                           ✅ ≤ 5
     //
-    // REDUCTION (texture-management share of the overall improvement):
-    //   WMC: 19 vs. 74  →  -55 units  (VolumeTextureManager alone absorbs ~26%)
-    //   CBO: 8 vs. 31   →  -23 edges (VolumeDataSet coupling contained to 1 class)
-    //   LCOM: 0.05 vs. 0.81  →  from near-incoherent to near-fully-cohesive
+    // BEFORE (VolumeDataSetRenderer — Understand tool):
+    //   WMC 97 | CBO 28 | RFC 97 | LCOM 0.95
+    //
+    // REDUCTION:
+    //   WMC: 12 vs. 97  →  -85 units
+    //   CBO:  4 vs. 28  →  -24 coupled classes (texture coupling contained here)
+    //   LCOM: 0.67 vs. 0.95  →  substantial improvement; lifecycle artefact documented
     // ══════════════════════════════════════════════════════════════════════════
 }

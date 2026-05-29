@@ -2,7 +2,7 @@
 // AFTER FILE — Sub-team 3 Refactoring Example 1
 // VolumeMaterialBinder.cs
 //
-// Extracted from: VolumeDataSetRenderer.cs (1,402 lines, WMC ~74, CBO ~31)
+// Extracted from: VolumeDataSetRenderer.cs (1,402 lines, WMC 97, CBO 28)
 // This file: ONE class, ONE responsibility — shader keyword management,
 //            material property binding, and colour-map application.
 //
@@ -19,20 +19,21 @@
 //                   logic and Unity pipeline APIs; domain code is isolated.
 //   ✅ V-15  GRASP Protected Variations — pipeline keyword calls go through
 //                   IRenderPipeline; the variation point is protected.
-//   ✅ V-16  GRASP Low Coupling — projected CBO ≤ 11 vs. original CBO ~31.
+//   ✅ V-16  GRASP Low Coupling — CBO 12 (Understand) vs. original CBO 28.
 //   ✅ V-17  GRASP High Cohesion — every method and field in this class
-//                   is about shader/material state; LCOM ~ 0.05.
+//                   is about shader/material state; LCOM 0.57 (lifecycle phases).
 //
-// PROJECTED CK METRICS (Day 13 snapshot):
-//   WMC  ~ 16  (target ≤ 20 domain)    — 8 methods, avg cyclomatic complexity ~2
-//   CBO  ≤ 11  (target ≤ 14 domain)    — see coupling notes per field/method
-//   RFC  ≤ 22  (target ≤ 50)           — well within budget
-//   LCOM ~ 0.05 (target ≤ 0.5)         — all methods touch _material or _maskMaterial
-//   DIT  = 0   (target ≤ 4)            — no inheritance; implements interface only
+// MEASURED CK METRICS (Understand tool):
+//   WMC  = 10  (target ≤ 20 domain)    — 10 instance methods
+//   CBO  = 12  (target ≤ 14 domain)    — see coupling notes per field/method
+//   RFC  = 10  (target ≤ 50)
+//   LCOM = 0.57 (target ≤ 0.5)        ⚠ — Initialise/Tick/Dispose phases touch
+//                                          different field subsets; lifecycle artefact
+//   DIT  = 1   (target ≤ 4)            — implements interface only (IFANIN=2)
 //   NOC  = 0   (target ≤ 5)            — sealed; no children
 //
-// BEFORE CK METRICS (from VolumeDataSetRenderer Day 2 baseline):
-//   WMC  ~ 74 | CBO ~ 31 | RFC ~ 89 | LCOM ~ 0.81
+// BEFORE CK METRICS (VolumeDataSetRenderer — Understand tool):
+//   WMC 97 | CBO 28 | RFC 97 | LCOM 0.95
 //
 // Annotation legend (mirrored from before/VolumeDataSetRenderer.cs):
 //   [FIXED]  Violation resolved by this design
@@ -689,41 +690,31 @@ namespace iDaVIE.Rendering
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // CK METRICS SUMMARY — VolumeMaterialBinder (projected Day 13)
+    // CK METRICS SUMMARY — VolumeMaterialBinder (Understand tool — measured)
     //
-    // WMC = 16
-    //   Initialise             → 1
-    //   Tick                   → 5  (4 conditional branches + base)
-    //   BindDataTexture        → 1
-    //   BindMaskTexture        → 1
-    //   BindMaskCropUniforms   → 1
-    //   SetActiveMaskMode      → 1
-    //   SubmitMaskGeometry     → 3  (2 guards + base)
-    //   Dispose                → 1
-    //   ApplyToRenderer        → 1
-    //   Constructor            → 1
-    //                      Total: 16  ✅ target ≤ 20
+    // WMC = 10   NIM = 10   NIV = 4                              ✅ target ≤ 20
     //
-    // CBO = 11
-    //   #1  UnityEngine (Material, Texture3D, Color, Vector3, Vector4, Matrix4x4,
-    //                    Object, MeshRenderer, ComputeBuffer)
-    //   #2  Shader.PropertyToID    (within #1 — static only, no extra edge)
-    //   #3  IRenderPipeline        (our interface)
-    //   #4  IMaskMode              (our interface)
-    //   #5  MeshRenderer           (UnityEngine — within #1 umbrella)
-    //   Net distinct coupling edges: ≤ 11  ✅ target ≤ 14 domain
+    // CBO = 12                                                   ✅ target ≤ 14 domain
+    //   Coupled classes include: Material, Texture3D, IRenderPipeline, IMaskMode,
+    //   VolumeRenderState, IVolumeMaterialBinder, FoveatedSamplingConfig,
+    //   VolumeColourMap, MeshRenderer, and related UnityEngine value types.
     //
-    // RFC = 22  (public interface methods + SetFloat/SetInt/SetVector calls)  ✅ ≤ 50
-    // LCOM = 0.05  (all methods access _material or _maskMaterial)            ✅ ≤ 0.5
-    // DIT = 0  (implements interface; no class inheritance)                   ✅ ≤ 4
-    // NOC = 0  (sealed)                                                       ✅ ≤ 5
+    // RFC = 10                                                   ✅ target ≤ 50
     //
-    // BEFORE (VolumeDataSetRenderer):
-    //   WMC ~74 | CBO ~31 | RFC ~89 | LCOM ~0.81
+    // LCOM = 0.57  (57% Percent Lack of Cohesion)               ⚠ target ≤ 0.5
+    //   Residual LCOM reflects Initialise/Tick/Dispose lifecycle phases that
+    //   each access different field subsets — a known LCOM artefact for classes
+    //   with legitimate multi-phase structure.
     //
-    // REDUCTION (material-binding share of the overall improvement):
-    //   WMC: 16 vs. 74  →  -58 units  (VolumeMaterialBinder alone absorbs ~21%)
-    //   CBO: 11 vs. 31  →  -20 edges
-    //   LCOM: 0.05 vs. 0.81  →  from near-incoherent to near-fully-cohesive
+    // DIT = 1  (IFANIN = 2: implements interface + inherits from object)      ✅ ≤ 4
+    // NOC = 0  (sealed)                                                        ✅ ≤ 5
+    //
+    // BEFORE (VolumeDataSetRenderer — Understand tool):
+    //   WMC 97 | CBO 28 | RFC 97 | LCOM 0.95
+    //
+    // REDUCTION:
+    //   WMC: 10 vs. 97  →  -87 units
+    //   CBO: 12 vs. 28  →  -16 coupled classes
+    //   LCOM: 0.57 vs. 0.95  →  substantial improvement; lifecycle artefact documented
     // ──────────────────────────────────────────────────────────────────────────
 }

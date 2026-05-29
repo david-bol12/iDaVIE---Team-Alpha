@@ -2,7 +2,7 @@
 // AFTER FILE — Sub-team 3 Refactoring Example 1
 // VolumeCameraDriver.cs
 //
-// Extracted from: VolumeDataSetRenderer.cs (1,402 lines, WMC ~74, CBO ~31)
+// Extracted from: VolumeDataSetRenderer.cs (1,402 lines, WMC 97, CBO 28)
 // This file: ONE class + ONE pure-math helper — camera-matrix extraction,
 //            clip-plane computation, and projection mode management.
 //            VolumeCoordinateService eliminates every transform.InverseTransformPoint
@@ -31,31 +31,23 @@
 //                   between Unity's Camera/Transform API and the domain core. No
 //                   other class reads Camera.worldToCameraMatrix or
 //                   transform.localToWorldMatrix.
-//   ✅ V-16  GRASP Low Coupling  — projected CBO ≤ 4 vs. original CBO ~31.
-//   ✅ V-17  GRASP High Cohesion — every member concerns camera-state computation;
-//                   projected LCOM = 0.0.
+//   ✅ V-16  GRASP Low Coupling  — CBO 4 (Understand) vs. original CBO 28.
+//   ✅ V-17  GRASP High Cohesion — LCOM 0.25 (Understand); all members concern
+//                   camera-state computation.
 //
 // DEPENDENCY NOTE — IRenderPipeline
 // ------------------------------------
-// The design document (§5.2 Table) lists IRenderPipeline as a VolumeCameraDriver
-// collaborator. Under the "return value struct" pattern adopted here (consistent
-// with FoveatedSamplingPolicy → FoveationParameters), VolumeCameraDriver does NOT
-// hold an IRenderPipeline reference. It returns CameraFrameState to
-// VolumeRenderCoordinator, which forwards FrustumPlanes to the pipeline directly.
-// This lowers VolumeCameraDriver's CBO from the design doc target of ≤ 6 to ≤ 4
-// — a better outcome. The coordinator's CBO is unchanged (it already holds the
-// pipeline reference). Interface stub: refactoring-examples/stubs/IRenderPipeline.cs
+// VolumeCameraDriver does NOT hold an IRenderPipeline reference. It returns
+// CameraFrameState to VolumeRenderCoordinator, which forwards FrustumPlanes
+// to the pipeline directly. This keeps VolumeCameraDriver's CBO at 4.
+// Interface stub: refactoring-examples/stubs/IRenderPipeline.cs
 //
-// PROJECTED CK METRICS (Day 13 snapshot):
-//   WMC  ≤  9  (target ≤ 20 domain)    — VolumeCameraDriver 5 + VolumeCoordinateService 4
-//   CBO  ≤  4  (target ≤ 14 domain)    — see [CBO] annotations per field/method
-//   RFC  ≤ 12  (target ≤ 50)
-//   LCOM = 0.0 (target ≤ 0.5)          — all members access _camera or _aip
-//   DIT  = 0   (target ≤ 4)            — implements interface; no class inheritance
-//   NOC  = 0   (target ≤ 5)            — sealed; no children
+// MEASURED CK METRICS (Understand tool):
+//   VolumeCameraDriver:      WMC=4, DIT=1, CBO=4, RFC=4, LCOM=0.25  ✅ all targets
+//   VolumeCoordinateService: WMC=3, DIT=1, CBO=3, RFC=3, LCOM=0.00  ✅ all targets
 //
-// BEFORE CK METRICS (from VolumeDataSetRenderer Day 2 baseline):
-//   WMC  ~ 74 | CBO ~ 31 | RFC ~ 89 | LCOM ~ 0.81
+// BEFORE CK METRICS (VolumeDataSetRenderer — Understand tool):
+//   WMC 97 | CBO 28 | RFC 97 | LCOM 0.95
 //
 // Annotation legend (mirrored from before/VolumeDataSetRenderer.cs):
 //   [FIXED]    Violation resolved by this design
@@ -677,37 +669,25 @@ namespace iDaVIE.Rendering.Tests
 //     IsAverageIntensityProjection → 1
 //                              Total: 5  ✅ target ≤ 20
 //
-//   CBO ≤ 4
-//     #1  UnityEngine  (Camera, Matrix4x4, Vector4, Vector3, Transform transient)
-//     #2  Camera       (specific Component type; some CK tools count separately)
-//     #3  VolumeCoordinateService  (iDaVIE.Rendering, co-located)
-//     #4  System       (ArgumentNullException)
-//     Net distinct edges: ≤ 4  ✅ target ≤ 14 domain
+//   CBO = 4  (Understand)                                     ✅ target ≤ 14 domain
+//   RFC = 4  (Understand)                                     ✅ target ≤ 50
+//   LCOM = 0.25  (25% Percent Lack of Cohesion — Understand)  ✅ target ≤ 0.5
+//   DIT  = 1  (IFANIN=2)                                      ✅ ≤ 4
+//   NOC  = 0                                                   ✅ ≤ 5
 //
-//   RFC = 10  ✅ ≤ 50
-//   LCOM = 0.0  ✅ ≤ 0.5
-//   DIT  = 0    ✅ ≤ 4
-//   NOC  = 0    ✅ ≤ 5
-//
-// VolumeCoordinateService
-//   WMC = 4
-//     WorldToObjectSpace       → 1
-//     ObjectToNormalisedVolume → 1
-//     ExtractFrustumPlanes     → 1
-//     (implicit static ctor)   → 1
-//   CBO = 1  (UnityEngine value types — no Component or API calls)
-//   LCOM = 0.0 (static class; no instance field clusters)
+// VolumeCoordinateService (Understand)
+//   WMC = 3   CBO = 3   RFC = 3   LCOM = 0.0   NIM = 0  ✅ all targets
 //
 // Combined WMC for this file:
-//   5 (VolumeCameraDriver) + 4 (VolumeCoordinateService) = 9  ✅ ≤ 12
+//   4 (VolumeCameraDriver) + 3 (VolumeCoordinateService) = 7  ✅ ≤ 20
 //
-// BEFORE (VolumeDataSetRenderer):
-//   WMC ~74 | CBO ~31 | RFC ~89 | LCOM ~0.81
+// BEFORE (VolumeDataSetRenderer — Understand tool):
+//   WMC 97 | CBO 28 | RFC 97 | LCOM 0.95
 //
-// REDUCTION (camera-driver share of the overall improvement):
-//   WMC:  9 vs. 74  →  this file extracts ~12% of god-class WMC
-//   CBO:  4 vs. 31  →  camera concern isolated to 4 edges (was undifferentiated)
-//   LCOM: 0.0 vs. 0.81  →  from near-incoherent to perfectly cohesive
+// REDUCTION:
+//   WMC:  7 vs. 97  →  camera concern extracted with minimal complexity
+//   CBO:  4 vs. 28  →  camera coupling isolated; domain math stays pure C#
+//   LCOM: 0.25 vs. 0.95  →  from near-fully-incoherent to mostly cohesive
 //   V-10 DIP violation: ELIMINATED — transform.InverseTransformPoint removed from
 //                        all domain logic; domain math is now pure C# in
 //                        VolumeCoordinateService.

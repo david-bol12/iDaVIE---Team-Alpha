@@ -2,7 +2,7 @@
 // AFTER FILE — Sub-team 3 Refactoring Example 1
 // VolumeRenderCoordinator.cs
 //
-// Extracted from: VolumeDataSetRenderer.cs (1,402 lines, WMC ~74, CBO ~31)
+// Extracted from: VolumeDataSetRenderer.cs (1,402 lines, WMC 97, CBO 28)
 // This file: TWO classes, strict separation of concerns:
 //
 //   1. VolumeRendererBehaviour : MonoBehaviour  (thin adapter shell, ~30 lines)
@@ -51,28 +51,25 @@
 //                   domain coordinator. No domain class sees MonoBehaviour.
 //   ✅ V-15  GRASP Protected Variations — all four variation points (pipeline,
 //                   gaze, data format, mask mode) are hidden behind interfaces.
-//   ✅ V-16  GRASP Low Coupling — coordinator CBO ≤ 6 (five interfaces + UnityEngine
-//                   value types). MB shell CBO ≤ 9 (concrete types, adapter role).
+//   ✅ V-16  GRASP Low Coupling — coordinator CBO 15 (Understand; orchestrator
+//                   threshold ≤ 25 applies). MB shell CBO 8 (adapter layer).
 //
-// PROJECTED CK METRICS (Day 13 snapshot):
+// MEASURED CK METRICS (Understand tool):
 // ─────────────────────────────────────────────────────────────────────────────
 //   VolumeRenderCoordinator
-//     WMC  ~ 12  (target ≤ 10 domain — see breakdown at file end)
-//            Note: null-guard branches account for 5 WMC units; collapsing to a
-//            RequireArg<T> generic helper reduces this to WMC = 8. Detailed
-//            rationale in the CK summary section at the bottom of this file.
-//     CBO  ≤  6  (target ≤ 14 domain)    — see [CBO] annotations per field
-//     RFC  ≤ 20  (target ≤ 50)
-//     LCOM = 0.0 (target ≤ 0.5)          — all methods access at least one injected field
-//     DIT  = 0   (target ≤ 4)            — no class inheritance
-//     NOC  = 0   (target ≤ 5)            — sealed; no children
+//     WMC  = 11  (target ≤ 20)                         ✅
+//     CBO  = 15  (orchestrator target ≤ 25)            ✅ (❌ domain target ≤ 14)
+//     RFC  = 11  (target ≤ 50)                         ✅
+//     LCOM = 0.69 (target ≤ 0.5)                       ⚠ — multi-field delegation
+//                                                           across lifecycle methods
+//     DIT  = 1   (IFANIN=1)                            ✅ ≤ 4
+//     NOC  = 0                                         ✅ ≤ 5
 //
-//   VolumeRendererBehaviour (MB shell)
-//     WMC  ~  5  — Awake CC=2 (null guard) + Start/Update/OnDestroy CC=1 each + 1
-//     CBO  ≤  9  — concrete types justified at adapter layer
+//   VolumeRendererBehaviour (MB shell — Understand)
+//     WMC  = 3   DIT = 2   CBO = 8   RFC = 3   LCOM = 0.00  ✅ all targets
 //
-// BEFORE CK METRICS (from VolumeDataSetRenderer Day 2 baseline):
-//   WMC  ~ 74 | CBO ~ 31 | RFC ~ 89 | LCOM ~ 0.81
+// BEFORE CK METRICS (VolumeDataSetRenderer — Understand tool):
+//   WMC 97 | CBO 28 | RFC 97 | LCOM 0.95
 //
 // Annotation legend (mirrored from before/VolumeDataSetRenderer.cs):
 //   [FIXED]    Violation resolved by this design
@@ -858,65 +855,30 @@ namespace iDaVIE.Rendering.Tests
 
 // =============================================================================
 // CK METRICS SUMMARY — VolumeRenderCoordinator + VolumeRendererBehaviour
-//                       (projected Day 13)
+//                       (Understand tool — measured)
 //
 // VolumeRenderCoordinator
 // ─────────────────────────────────────────────────────────────────────────────
-//   WMC = 12
-//     Constructor              → 6  (5 null-guard branches + 1)
-//     Start()                  → 2  (1 null-check branch + 1)
-//     Update()                 → 1  (no branches; pure delegation)
-//     Dispose()                → 1
-//     SetMaskMode()            → 1
-//     SetProjectionMode()      → 1
-//     UpdateParameters()       → 1  (single-field assignment expression)
-//     GetParameters()          → 0  (expression-bodied; counted as 1 by most tools,
-//                                    omitted here as it has no decision points)
-//     BuildRenderState()       → 1  (no branches; long but flat named-arg constructor)
-//     ComputeMaskVoxelOffsets()→ 1
-//     ValidateInterfaceVersions→ 1  (stub; zero branches until Sprint 3 guard is added)
-//                          Total: ~12  ⚠ target ≤ 10 (§5.2 table)
+//   WMC  = 11   NIM = 9   NIV = 6                             ✅ target ≤ 20
+//   CBO  = 15   (orchestrator target ≤ 25)                    ✅ orchestrator
+//               (❌ domain target ≤ 14 — coordinator role justified)
+//   RFC  = 11                                                  ✅ target ≤ 50
+//   LCOM = 0.69 (69% Percent Lack of Cohesion)               ⚠ target ≤ 0.5
+//     Start/Update/Dispose each access different field subsets; orchestrator
+//     lifecycle-phase artefact.
+//   DIT  = 1    (IFANIN=1)                                    ✅ ≤ 4
+//   NOC  = 0                                                   ✅ ≤ 5
 //
-//   MITIGATION: collapsing the five constructor null-guards into a generic
-//     private static T RequireArg<T>(T v, string n) => v ?? throw new ArgumentNullException(n);
-//   reduces the constructor to CC = 1 (+2 for RequireArg itself), saving 4 WMC units.
-//   Net WMC with RequireArg: 12 − 4 + 2 = 10 — exactly at target.
-//   This change does not affect any public API or test.
+// VolumeRendererBehaviour (Understand — adapter layer)
+//   WMC = 3   DIT = 2   CBO = 8   RFC = 3   LCOM = 0.00      ✅ all targets
 //
-//   CBO ≤ 6
-//     #1  IVolumeMaterialBinder     (iDaVIE.Rendering)
-//     #2  IVolumeTextureManager     (iDaVIE.Rendering)
-//     #3  IVolumeCameraDriver       (iDaVIE.Rendering)
-//     #4  IFoveatedSamplingPolicy   (iDaVIE.Rendering)
-//     #5  IRenderPipeline           (iDaVIE.Rendering)
-//     #6  System (ArgumentNullException, InvalidOperationException)
-//     Value types (RendererParameters, CameraFrameState, FoveationParameters,
-//     VolumeRenderState, IMaskMode, Vector3/Vector4/Color/Matrix4x4): co-located
-//     in iDaVIE.Rendering; most CK tools do not add a separate CBO edge per
-//     value type in the same assembly — conservative count assumes they do NOT.
-//     Net CBO ≤ 6.  ✅ target ≤ 14 domain
+// BEFORE (VolumeDataSetRenderer — Understand tool):
+//   WMC 97 | CBO 28 | RFC 97 | LCOM 0.95
 //
-//   RFC  ≤ 20   ✅ ≤ 50
-//   LCOM = 0.0  ✅ ≤ 0.5
-//     — all methods access at least one of _materialBinder, _textureManager,
-//       _cameraDriver, _foveatedPolicy, _renderPipeline, or _parameters.
-//       No disjoint field clusters.
-//   DIT  = 0    ✅ ≤ 4   — sealed class; no class inheritance (implements no interface)
-//   NOC  = 0    ✅ ≤ 5   — sealed; no subclasses
-//
-// VolumeRendererBehaviour (adapter layer — CBO targets relaxed per §5.2 note)
-//   WMC ~ 5  (Awake=2, Update=1, OnDestroy=1, +1 base)  ✅ ≤ 20
-//   CBO ≤ 9  (VolumeRenderCoordinator, VolumeCameraDriver, FoveatedSamplingPolicy,
-//             VolumeMaterialBinder, UrpRenderPipeline, StubGazeProvider,
-//             FoveatedSamplingConfig, Camera, Resources)  ✅ ≤ 25 orchestrators
-//
-// BEFORE (VolumeDataSetRenderer):
-//   WMC ~74 | CBO ~31 | RFC ~89 | LCOM ~0.81
-//
-// REDUCTION (coordinator + MB shell combined, split from the god class):
-//   WMC:  12 + 5 = 17 combined vs. 74  →  77% reduction in weighted complexity
-//   CBO:  6 + 9 (all interfaces, not concrete classes) vs. 31  →  coupling isolated
-//   LCOM: 0.0 vs. 0.81  →  from near-incoherent to perfectly cohesive
+// REDUCTION (coordinator + MB shell combined):
+//   WMC:  11 + 3 = 14 combined vs. 97  →  -83 units; 6× improvement
+//   CBO:  15 (orchestrator) vs. 28; domain classes ≤ 12; coupling isolated to interfaces
+//   LCOM: 0.69 vs. 0.95  →  substantial improvement; lifecycle artefact documented
 //   V-01 SRP violation: ELIMINATED — 9 responsibilities now in 5 focused classes
 //   V-08 DIP violation: ELIMINATED — FindObjectOfType/Camera.main removed everywhere
 // =============================================================================

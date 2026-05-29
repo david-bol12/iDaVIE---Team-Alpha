@@ -53,16 +53,17 @@
 //   3. Reprojection mask       — WriteReprojectionMask()
 //   4. HMD-absent fallback     — implicit via IsGazeAvailable / FoveationParameters.Uniform()
 //
-// PROJECTED CK METRICS (Day 13 target)
+// MEASURED CK METRICS (Understand tool)
 // --------------------------------------
-//   Metric  Projected  Target        Note
-//   WMC     7          ≤ 20  ✓       4 methods + 2 properties + constructor; avg CC ~1.5
-//   CBO     6          ≤ 14  ✓       IGazeProvider, FoveatedSamplingConfig,
-//                                    FoveationParameters, FoveationZone,
-//                                    Vector2, RenderTexture
-//   LCOM    0.0        ≤ 0.5 ✓       all non-trivial members access _gazeProvider or _config
-//   DIT     0          ≤ 4   ✓       no inheritance
-//   NOC     0          ≤ 5   ✓       no children in the design
+//   Metric  Value  Target        Note
+//   WMC     6      ≤ 20  ✓       NIM=6, NIV=2
+//   CBO     6      ≤ 14  ✓       IGazeProvider, FoveatedSamplingConfig,
+//                                FoveationParameters, FoveationZone, Vector2,
+//                                and related types
+//   RFC     6      ≤ 50  ✓
+//   LCOM    0.33   ≤ 0.5 ✓       33% Percent Lack of Cohesion; all targets met
+//   DIT     1      ≤ 4   ✓       IFANIN=1
+//   NOC     0      ≤ 5   ✓       no children in the design
 //
 // =============================================================================
 
