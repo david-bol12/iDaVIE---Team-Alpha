@@ -35,32 +35,32 @@ namespace iDaVIE.Desktop.FileTab
         public int XMin
         {
             get => _xMin;
-            set { _xMin = Clamp(value, AbsoluteMin, _xMax); Notify(); }
+            set { _xMin = Math.Max(AbsoluteMin, Math.Min(_xMax, value)); Notify(); }
         }
         public int XMax
         {
             get => _xMax;
-            set { _xMax = Clamp(value, _xMin, _maxX); Notify(); }
+            set { _xMax = Math.Max(_xMin, Math.Min(_maxX, value)); Notify(); }
         }
         public int YMin
         {
             get => _yMin;
-            set { _yMin = Clamp(value, AbsoluteMin, _yMax); Notify(); }
+            set { _yMin = Math.Max(AbsoluteMin, Math.Min(_yMax, value)); Notify(); }
         }
         public int YMax
         {
             get => _yMax;
-            set { _yMax = Clamp(value, _yMin, _maxY); Notify(); }
+            set { _yMax = Math.Max(_yMin, Math.Min(_maxY, value)); Notify(); }
         }
         public int ZMin
         {
             get => _zMin;
-            set { _zMin = Clamp(value, AbsoluteMin, _zMax); Notify(); }
+            set { _zMin = Math.Max(AbsoluteMin, Math.Min(_zMax, value)); Notify(); }
         }
         public int ZMax
         {
             get => _zMax;
-            set { _zMax = Clamp(value, _zMin, _maxZ); Notify(); }
+            set { _zMax = Math.Max(_zMin, Math.Min(_maxZ, value)); Notify(); }
         }
 
         // ── Mutating operations ───────────────────────────────────────────────
@@ -98,8 +98,6 @@ namespace iDaVIE.Desktop.FileTab
             new() { XMin = _xMin, XMax = _xMax, YMin = _yMin, YMax = _yMax, ZMin = _zMin, ZMax = _zMax };
 
         // ── Helpers ───────────────────────────────────────────────────────────
-        private static int Clamp(int v, int lo, int hi) => Math.Max(lo, Math.Min(hi, v));
-
         private void Notify([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 

@@ -161,7 +161,7 @@ namespace iDaVIE.Desktop.FileTab
                 if (nonTrivialCount < 3) return false;
                 if (nonTrivialCount > 3 && _zAxisOptions.Count == 0) return false;
 
-                if (_currentMaskInfo != null && !MaskAxesMatchImage(_currentImageInfo, _currentMaskInfo))
+                if (_currentMaskInfo != null && !FitsMetadataHelper.MaskAxesMatchImage(_currentImageInfo, _currentMaskInfo))
                     return false;
 
                 return true;
@@ -212,7 +212,7 @@ namespace iDaVIE.Desktop.FileTab
                 PopulateZAxisOptions(info);
 
                 // Reset subset to full cube extents (replaces setSubsetBounds)
-                var (maxX, maxY, maxZ) = GetAxisMaxima(info);
+                var (maxX, maxY, maxZ) = FitsMetadataHelper.GetAxisMaxima(info);
                 Subset.ResetToAxisMaxima(maxX, maxY, maxZ);
                 SubsetEnabled = false;
 
@@ -249,7 +249,7 @@ namespace iDaVIE.Desktop.FileTab
             {
                 var info = await _fitsService.OpenMaskAsync(path);
 
-                if (_currentImageInfo != null && !MaskAxesMatchImage(_currentImageInfo, info))
+                if (_currentImageInfo != null && !FitsMetadataHelper.MaskAxesMatchImage(_currentImageInfo, info))
                 {
                     info.Dispose();   // mismatched mask — release its handle immediately
                     ValidationMessage = "Mask dimensions do not match the image cube.";
@@ -297,7 +297,7 @@ namespace iDaVIE.Desktop.FileTab
                     HduIndex       = _selectedHduIndex + 1,     // FITS HDU is 1-based
                     Subset         = _subsetEnabled ? Subset.ToDto() : null,
                     ZAxisSelection = _selectedZAxisIndex,
-                    ZScale         = ComputeZScale(_ratioMode, _currentImageInfo),
+                    ZScale         = FitsMetadataHelper.ComputeZScale(_ratioMode, _currentImageInfo),
                 };
                 await _volumeService.LoadCubeAsync(request, progress: new Progress<float>());
             }
@@ -398,36 +398,6 @@ namespace iDaVIE.Desktop.FileTab
                 Subset.UpdateZAxisMax((int)_currentImageInfo.AxisSizes[axisKey]);
             }
         }
-
-        private static (int maxX, int maxY, int maxZ) GetAxisMaxima(FitsFileInfo info)
-        {
-            long Get(int axis) => info.AxisSizes.TryGetValue(axis, out var v) ? v : 1;
-            return ((int)Get(1), (int)Get(2), (int)Get(3));
-        }
-
-        /// <summary>
-        /// Pure computation — replaces the inline zScale arithmetic at
-        /// CanvassDesktop.cs:1028-1039 (driven there by _ratioDropdownIndex).
-        /// Isotropic returns 1; ProportionalZ scales Z by axisZ / max(axisX, axisY).
-        /// </summary>
-        private static float ComputeZScale(RatioMode mode, FitsFileInfo? info)
-        {
-            if (mode == RatioMode.Isotropic || info is null) return 1f;
-
-            long ax(int axis) => info.AxisSizes.TryGetValue(axis, out var v) ? v : 1;
-            long xy = Math.Max(ax(1), ax(2));
-            if (xy <= 0) return 1f;
-            return (float)ax(3) / xy;
-        }
-
-        /// <summary>
-        /// Pure validation — replaces the axis-comparison logic inside
-        /// CanvassDesktop._browseMaskFile. No Unity types.
-        /// </summary>
-        private static bool MaskAxesMatchImage(FitsFileInfo image, FitsFileInfo mask) =>
-            image.AxisSizes.TryGetValue(1, out var ix) && mask.AxisSizes.TryGetValue(1, out var mx) && ix == mx &&
-            image.AxisSizes.TryGetValue(2, out var iy) && mask.AxisSizes.TryGetValue(2, out var my) && iy == my &&
-            image.AxisSizes.TryGetValue(3, out var iz) && mask.AxisSizes.TryGetValue(3, out var mz) && iz == mz;
 
         private void NotifyIsLoadable()
         {

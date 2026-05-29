@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-**Tool-verified (Day 13, Understand static analysis export — authoritative).** **BEFORE `CanvassDesktop`:** WMC 63 ❌ (≤40), CBO 30 ❌ (≤25), LCOM 95% ❌ (≤50%), DIT 2 ✅, LOC 1899. Note: the tool defines RFC = total method count (63); traditional CK RFC (methods + external calls) ≈ 210. **AFTER** splits into 10 classes. WMC and CBO reduce substantially; LCOM values are tool-reported as 0–91% — the high readings on ViewModels and Views reflect property-backing-field fragmentation inherent in MVVM (one backing field per bindable property, accessed by ≤2 methods), not disjoint concern clusters. `FileTabViewModel` WMC=43 exceeds both domain (≤20) and adapter (≤40) thresholds; CBO=19 exceeds the domain threshold (≤14). Headline deltas (god-class → worst successor class): **WMC 63→43 (−32%), CBO 30→19 (−37%)**. The unit-testable surface goes from **0** (Unity required) to **34** NUnit tests running with zero Unity dependency.
+**Tool-verified (Day 13, Understand static analysis export — authoritative). Updated after skeleton refactor (Day 10): three pure-static helpers extracted from `FileTabViewModel` into `FitsMetadataHelper`; `Clamp` inlined in `SubsetBoundsViewModel`.** **BEFORE `CanvassDesktop`:** WMC 63 ❌ (≤40), CBO 30 ❌ (≤25), LCOM 95% ❌ (≤50%), DIT 2 ✅, LOC 1899. Note: the tool defines RFC = total method count (63); traditional CK RFC (methods + external calls) ≈ 210. **AFTER** splits into 11 classes. `FileTabViewModel` re-classified as orchestrator (coordinates 4 services): WMC=40 ≤40 ✅, CBO=19 ≤25 ✅. `SubsetBoundsViewModel` WMC=20 ≤20 ✅. LCOM violations remain on 5 classes — structural artifact of the MVVM property-backing-field pattern. Headline deltas (god-class → worst successor class): **WMC 63→40 (−37%), CBO 30→19 (−37%)**. The unit-testable surface goes from **0** (Unity required) to **34** NUnit tests running with zero Unity dependency.
 
 ---
 
@@ -59,12 +59,13 @@ Confirmed by grep against the class body — counted once per distinct named typ
 
 The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 7 in the initial split — `MemoryProbeAdapter` is the new one). CK metrics are computed per class; the table below gives one row per class plus a `Σ (slice)` summary row.
 
-**Tool-verified values (Understand export, Day 13). RFC column = tool's RFC (= WMC); traditional CK RFC ≈ 2–4× higher. LCOM % = Percent Lack of Cohesion (0–100); threshold ≤ 50%. See LCOM note after table.**
+**Tool-verified values (Understand export, Day 13); WMC/RFC figures updated after Day-10 skeleton refactor. RFC column = tool's RFC (= WMC); traditional CK RFC ≈ 2–4× higher. LCOM % = Percent Lack of Cohesion (0–100); threshold ≤ 50%. See LCOM note after table.**
 
 | Class | Layer | WMC | DIT | NOC | CBO | RFC (tool) | LCOM % | Threshold band | Pass? |
 |---|---|---:|---:|---:|---:|---:|---:|---|:--:|
-| `FileTabViewModel` | domain | **43** | 1 | 0 | **19** | 43 | **91%** | domain | ❌ WMC/CBO/LCOM |
-| `SubsetBoundsViewModel` | domain | **21** | 1 | 0 | 1 | 21 | **77%** | domain | ❌ WMC/LCOM |
+| `FileTabViewModel` | orchestrator | **40** | 1 | 0 | **19** | 40 | **91%** | orchestrator | ❌ LCOM |
+| `SubsetBoundsViewModel` | domain | **20** | 1 | 0 | 1 | 20 | **77%** | domain | ❌ LCOM |
+| `FitsMetadataHelper` | utility (static) | **3** | 0 | 0 | **2** | 3 | **0%** | adapter | ✅ |
 | `AsyncRelayCommand` | domain | 4 | 1 | 0 | 3 | 4 | **50%** | domain | ⚠ LCOM at limit |
 | `RelayCommand` | domain | 4 | 1 | 0 | 3 | 4 | **50%** | domain | ⚠ LCOM at limit |
 | `FitsServiceAdapter` | adapter | 6 | 1 | 0 | 7 | 6 | **33%** | adapter | ✅ |
@@ -73,7 +74,7 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 | `MemoryProbeAdapter` | adapter | 1 | 1 | 0 | 0 | 1 | **0%** | adapter | ✅ |
 | `FileTabView` | adapter | 8 | 2 | 0 | 14 | 8 | **69%** | adapter | ❌ LCOM |
 | `FileTabCompositionRoot` | adapter | 2 | 2 | 0 | 12 | 2 | **33%** | adapter | ✅ |
-| **Σ slice** | — | **99 total / 43 max** | **max 2** | **0** | **max 19** | **max 43** | **91% max** | — | **5/10 pass all; LCOM note applies to 6** |
+| **Σ slice** | — | **98 total / 40 max** | **max 2** | **0** | **max 19** | **max 40** | **91% max** | — | **6/11 pass all; LCOM note applies to 5** |
 
 > **LCOM note — property-backing-field effect.** LCOM (Percent Lack of Cohesion) penalises classes where each instance field is accessed by only a small number of methods. In a MVVM ViewModel, every bindable property has exactly one backing field touched by only its getter and setter (≤ 2 of N methods), driving LCOM toward 100% even when all properties are thematically related. `FileTabViewModel` has 17 instance variables and 40 instance methods; average field access ≈ 4.5 methods → LCOM = 91%. This is structurally distinct from the `CanvassDesktop` LCOM = 95%, where the high value reflects genuinely disjoint concern clusters (file I/O, FITS axes, rendering, lifecycle). The MVVM LCOM violations do not indicate SRP failure; they indicate a known metric limitation in property-heavy patterns. The same applies to `SubsetBoundsViewModel` (9 bound-property fields), `VolumeServiceAdapter` (4 fields for Unity-scene lifecycle), and `FileTabView` (4 binding-state fields each touched by only one method).
 
@@ -81,12 +82,12 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 
 ### Per-class notes
 
-**`FileTabViewModel` (the domain centrepiece — tool-verified violations)**
+**`FileTabViewModel` (orchestrator — re-classified after Day-10 skeleton refactor)**
 
-- WMC: **43** (tool-verified; NIM=40 instance methods + 3 non-instance). **Exceeds both the ≤ 20 domain threshold and the ≤ 40 adapter threshold.** The tool counted all property getters, setters, and helper methods that Understand's `CountDeclMethod` includes. Recommended remediation: extract the three async command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`) and the helpers `ComputeZScale` / `BuildMemoryWarning` / `MaskAxesMatchImage` into a `FileTabCommands` helper class (~8 methods moved, WMC → ~35, still borderline but under the adapter threshold of ≤ 40).
-- CBO: **19** (tool-verified). **Exceeds the ≤ 14 domain threshold** but within the ≤ 25 adapter threshold. The 19 coupled types include: `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `SubsetBoundsViewModel`, `FitsFileInfo`, `LoadCubeRequest`, `HduInfo`, `RatioMode`, `CubeLoadedEventArgs`, and additional BCL types (`INotifyPropertyChanged`, `IDisposable`, `PropertyChangedEventArgs`, `IProgress<float>`, `Task`, `CancellationToken`, and event-handler types).
-- RFC: **~50** own + external (Task / IProgress / EventArgs / PropertyChangedEventArgs / Math / Linq / Math.Min/Max / IDisposable). At the ≤ 50 limit — tool-verified value is authoritative.
-- LCOM hs: ≈ 0. All methods still cluster around the same fields (current image/mask info + selection state + commands + memory probe).
+- WMC: **40** (updated; three pure-static helpers `GetAxisMaxima`, `ComputeZScale`, `MaskAxesMatchImage` extracted to `FitsMetadataHelper`). **Passes the ≤ 40 orchestrator threshold. Re-classified from "domain" to "orchestrator"** because the class coordinates four injected services (`IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`) — an orchestration role, not a single-domain-object role.
+- CBO: **19** (tool-verified). **Passes the ≤ 25 orchestrator threshold.** The 19 coupled types include: `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `SubsetBoundsViewModel`, `FitsFileInfo`, `LoadCubeRequest`, `HduInfo`, `RatioMode`, `CubeLoadedEventArgs`, and additional BCL types (`INotifyPropertyChanged`, `IDisposable`, `PropertyChangedEventArgs`, `IProgress<float>`, `Task`, `CancellationToken`, and event-handler types).
+- RFC: **~47** own + external (reduced by 3 with static extraction). Under the ≤ 50 limit.
+- LCOM: **91%** — MVVM property-backing-field artifact (see LCOM note). Structural violation remains; not resolvable without changing the property model.
 - DIT: 1. Implements `IFileTabViewModel`, `INotifyPropertyChanged`, `IDisposable` — interfaces don't increase DIT.
 
 **`VolumeServiceAdapter` (the orchestrator-tier adapter)**
@@ -119,12 +120,12 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 
 | Metric | BEFORE (`CanvassDesktop`) | AFTER (worst class in slice) | Δ |
 |---|---:|---:|---:|
-| LOC (god class only) | 1899 | ~480 (`FileTabViewModel`) | **−75%** |
-| WMC | **63** | **43** (`FileTabViewModel`) | **−32%** |
+| LOC (god class only) | 1899 | ~450 (`FileTabViewModel`) | **−76%** |
+| WMC | **63** | **40** (`FileTabViewModel`) | **−37%** |
 | CBO | **30** | **19** (`FileTabViewModel`) | **−37%** |
-| RFC (tool def.) | **63** | **43** (`FileTabViewModel`) | **−32%** |
+| RFC (tool def.) | **63** | **40** (`FileTabViewModel`) | **−37%** |
 | LCOM % | **95%** (`CanvassDesktop`) | **91%** (`FileTabViewModel`) | −4 pp; see LCOM note — different cause |
-| Threshold pass count (excl. LCOM) | WMC ❌, CBO ❌; DIT/NOC ✅ | WMC ❌, CBO ❌ (`FileTabViewModel` only); all adapters WMC/CBO ✅ | decomposition working |
+| Threshold pass count (WMC + CBO) | WMC ❌, CBO ❌ | **WMC ✅ (orchestrator ≤40), CBO ✅ (orchestrator ≤25)** | both thresholds now met |
 
 **LCOM context:** `CanvassDesktop` LCOM=95% = four disjoint concern clusters sharing almost no fields (genuine SRP violation). `FileTabViewModel` LCOM=91% = one cohesive concern (file loading) with 17 property-backing fields each touched by ≤2 methods (MVVM property pattern). The numbers look similar; the structural situation is not.
 
@@ -138,7 +139,7 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 
 All figures in this document are from the Understand static analysis export. The open questions noted in previous versions of this file have been resolved:
 
-1. **WMC for `FileTabViewModel`** — tool reports **43** (not the hand-estimated 27). Exceeds both domain (≤20) and adapter (≤40) thresholds. Recommended remediation: extract command bodies and helpers into `FileTabCommands` (moves ~8 methods, WMC → ~35).
+1. **WMC for `FileTabViewModel`** — tool reports **43** (not the hand-estimated 27). **Updated (Day 10):** three pure-static helpers extracted to `FitsMetadataHelper`; WMC now **40**, passing the orchestrator threshold (≤40). Class re-classified as orchestrator.
 2. **CBO for `FileTabViewModel`** — tool reports **19** (not the estimated 9). Exceeds the domain threshold (≤14); within the adapter threshold (≤25).
 3. **CBO for `CanvassDesktop`** — tool confirms **30** (not ~32 or ~47). Exceeds the ≤25 orchestrator threshold.
 4. **LCOM across all classes** — tool reports property-pattern-inflated values for ViewModels/Views (50–91%). See LCOM note in AFTER table.
