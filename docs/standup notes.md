@@ -59,13 +59,12 @@
 **Present:** Cathal, Damien, Chris, Ciallian
  
 **Cathal (Scrum Master)**
-- ✅ Completed: Sprint board set up in GitHub Projects
-- 🔄 In Progress: Scheduling ceremonies (planning, retro, review)
-- 📅 Today: Define Definition of Done with the team
+- ✅ Completed: Sprint board set up on ClickUP
+- 🔄 In Progress: Scheduling ceremonies 
   
 **Damien (Tech Lead)**
 - ✅ Completed: First pass read of `VolumeDataSetRenderer.cs`
-- 🔄 In Progress: Mapping the 4 responsibility clusters (material, texture, camera, foveation)
+- 🔄 In Progress: Mapping the 4 responsibility clusters 
 - 📅 Today: Sketch a draft "before" class diagram in PlantUML
   
 **Chris (Quality Champion)**
@@ -76,7 +75,6 @@
 **Ciallian (PO Liaison)**
 - ✅ Completed: Got reply from PO with grading rubric clarifications
 - 🔄 In Progress: Documenting acceptance criteria for the refactor
-- 📅 Today: Share rubric breakdown with team and align on priorities
  
 ---
  
@@ -115,8 +113,7 @@
   
 **Damien (Tech Lead)**
 - ✅ Completed: Created feature branch `refactor/split-volumedataset`
-- 🔄 In Progress: Extracting `MaterialBinder` class (first cut)
-- 📅 Today: Get `MaterialBinder` compiling with no behaviour change
+- 🔄 In Progress: Annotating relevant codebase
   
 **Chris (Quality Champion)**
 - ✅ Completed: "Before" metrics report finalised
@@ -134,17 +131,16 @@
 **Present:** Cathal, Damien, Chris, Ciallian
  
 **Cathal (Scrum Master)**
-- ✅ Completed: Ran first retrospective — captured "more planning, less rushing" as a Week 1 win
+- ✅ Completed: Ran first retrospective 
 - 🔄 In Progress: Sprint review prep
 - 📅 Today: Sprint review at 3 PM, hand over SM role to Damien
   
 **Damien (Tech Lead)**
-- ✅ Completed: `MaterialBinder` extracted, compiles, characterisation tests still green
+- ✅ Completed: `MaterialBinder` extracted
 - 🔄 In Progress: Starting `TextureManager` extraction
 - 📅 Today: Code-review session with Cathal before handover
   
 **Chris (Quality Champion)**
-- ✅ Completed: Characterisation test suite (12 tests, all green)
 - ✅ Completed: "Before" CK metrics table finalised
 - 📅 Today: Sprint review demo of the test harness
   
@@ -175,7 +171,7 @@
   
 **Damien (Scrum Master)**
 - ✅ Completed: Took handover from Cathal, reviewed sprint board state
-- 🔄 In Progress: Sprint 2 planning — broke remaining work into tickets per class
+- 🔄 In Progress: Sprint 2 planning and creation of Kanban
 - 📅 Today: Run sprint planning at 11, set up daily standup time
   
 **Ciallian (Quality Champion)**
@@ -184,19 +180,17 @@
 - 📅 Today: Get `MaterialBinder` unit-test coverage above 80%
   
 **Chris (PO Liaison)**
-- ✅ Completed: Collected Week 1 feedback from PO and lecturer
+- ✅ Completed: Collected Week 1 feedback from PO 
 - 🔄 In Progress: Drafting the "during refactor" section of the report
-- 📅 Today: Confirm whether we need a video demo or just the written report
- 
+   
 ---
  
 ### Tuesday, May 26 
 **Present:** Damien, Cathal, Ciallian, Chris
  
 **Cathal (Tech Lead)**
-- ✅ Completed: `TextureManager` extracted and compiling
+- ✅ Completed: `TextureManager` extracted 
 - 🔄 In Progress: Rewiring `VolumeDataSetRenderer` to delegate texture calls to the new manager
-- 📅 Today: Get characterisation tests passing with the new wiring
   
 **Damien (Scrum Master)**
 - ✅ Completed: Sprint board updated with new tickets, capacity numbers logged
@@ -209,9 +203,8 @@
 - 📅 Today: Get a first pass of texture eviction tests written
   
 **Chris (PO Liaison)**
-- ✅ Completed: Confirmed with PO: written report + 5-minute video walkthrough
-- 🔄 In Progress: Outlining the video script
-- 📅 Today: Share video script outline with team for input
+- ✅ Completed: Confirmed with PO: what is needed for presentation
+- 📅 Today: Meet with iDaVIE team to discuss any questions
  
 ---
  
@@ -220,23 +213,19 @@
  
 **Cathal (Tech Lead)**
 - ✅ Completed: `TextureManager` fully wired in, all characterisation tests green
-- 🔄 In Progress: `CameraDriver` extraction — clip planes and projection matrix logic
-- ⏳ Blocked: Found a hidden coupling — `CameraDriver` logic touches a private field on the renderer that we'll need to expose carefully
-- 📅 Today: Pair with Damien to figure out clean way to expose the field
+- 🔄 In Progress: `CameraDriver` extraction 
   
 **Damien (Scrum Master)**
 - ✅ Completed: 1:1s wrapped, no surprises
-- 🔄 In Progress: Helping Cathal unblock the `CameraDriver` coupling issue
+- 🔄 In Progress: Helping Cathal refactor 
 - 📅 Today: Pair session with Cathal at 2 PM, then update the board
   
 **Ciallian (Quality Champion)**
 - ✅ Completed: `TextureManager` unit tests at 84% coverage
-- 🔄 In Progress: Performance regression check — does delegation cost us frame time?
+- 🔄 In Progress: Performance regression check 
 - 📅 Today: Run profiler on before/after build, capture numbers for the report
   
 **Chris (PO Liaison)**
-- ✅ Completed: Video script outline approved by team
-- 🔄 In Progress: Recording draft narration for the first two extractions
 - 📅 Today: Sit in on the Damien/Cathal pair session so the demo reflects reality
  
 ---
@@ -245,40 +234,38 @@
 **Present:** Damien, Cathal, Ciallian, Chris
  
 **Cathal (Tech Lead)**
-- ✅ Completed: `CameraDriver` extracted using injected `ICameraUniformsSink` interface — coupling resolved cleanly
+- ✅ Completed: `CameraDriver` extracted 
 - 🔄 In Progress: Starting `FoveatedSampler` extraction (last class)
-- 📅 Today: Get `FoveatedSampler` extracted, leave wiring for Friday
+- 📅 Today: Get `FoveatedSampler` extracted
   
 **Damien (Scrum Master)**
 - ✅ Completed: Blocker resolved, burndown back on track
-- 🔄 In Progress: Prepping retrospective for tomorrow — gathering "what went well / what to improve"
-- 📅 Today: Send out anonymous retro form, book the room for 3 PM Friday
+- 🔄 In Progress: Prepping retrospective for tomorrow 
   
 **Ciallian (Quality Champion)**
-- ✅ Completed: Performance regression check — no measurable frame-time loss after split
+- ✅ Completed: Performance regression check 
 - ✅ Completed: `CameraDriver` unit tests at 82% coverage
 - 🔄 In Progress: Building the "after" CK metrics table
 - 📅 Today: Run Understand on the refactored branch, capture metrics
   
 **Chris (PO Liaison)**
-- ✅ Completed: Draft narration for first three classes recorded
 - 🔄 In Progress: Filling in the "after" section of the writeup
 - 📅 Today: PO walkthrough at 1 PM, capture any last requests
- 
+   
 ---
  
 ### Friday, May 29 
 **Present:** Damien, Cathal, Ciallian, Chris
  
 **Cathal (Tech Lead)**
-- ✅ Completed: `FoveatedSampler` extracted and wired in — refactor structurally complete
-- 🔄 In Progress: Final cleanup pass on the original `VolumeDataSetRenderer` (now a thin coordinator)
+- ✅ Completed: `FoveatedSampler` extracted — refactor structurally complete
+- 🔄 In Progress: Final cleanup pass on the original `VolumeDataSetRenderer` 
 - 📅 Today: Tag the refactor branch, open PR for review
   
 **Damien (Scrum Master)**
 - ✅ Completed: Sprint metrics collected, retro form responses gathered
 - 🔄 In Progress: Running sprint review at 11 and retrospective at 3
-- 📅 Today: Hand over SM role to Ciallian, brief her on what's outstanding
+- 📅 Today: Hand over SM role to Ciallian, brief him on what's outstanding
   
 **Ciallian (Quality Champion)**
 - ✅ Completed: Full characterisation + unit test suite green across all four classes
