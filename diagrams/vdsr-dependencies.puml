@@ -4,10 +4,10 @@
 ' VolumeDataSetRenderer: Class-Level Dependency Map
 ' Baseline commit: 1cd729f  |  Generated: 2026-05-25
 ' Scope: full reachable graph (Ce + 2nd-hop Ce)
-' Measured metrics: Ce=17, Ca=28, CBO=45, WMC=44, LOC=1403
+' Confirmed metrics (Understand): CBO=28, WMC=97, RFC=97, LCOM=0.95, LOC=1403
 '
 
-title VolumeDataSetRenderer — Dependency Map\n(commit 1cd729f  |  Ce=17 outgoing  |  Ca=28 incoming  |  CBO=45)
+title VolumeDataSetRenderer — Dependency Map\n(Understand tool  |  CBO=28 coupled classes  |  WMC=97  |  LCOM=0.95)
 
 skinparam linetype ortho
 skinparam defaultFontSize 11
@@ -40,7 +40,7 @@ skinparam component {
 ' ══════════════════════════════════════════════════
 package "VolumeData (namespace)" {
 
-  component "**VolumeDataSetRenderer**\n────────────────────────\nCBO = 45  (Ce=17, Ca=28)\nWMC = 44 methods  |  LOC = 1403\nWorst method: _startFunc (CC=28)\n────────────────────────\n⚠ God Class: 8+ responsibilities\n⚠ Inside 46-file dependency cycle" as VDR <<VolumeData>>
+  component "**VolumeDataSetRenderer**\n────────────────────────\nCBO = 28  (Understand)\nWMC = 97  |  RFC = 97  |  LCOM = 0.95\nLOC = 1403  |  Worst method: _startFunc (CC=28)\n────────────────────────\n⚠ God Class: 8+ responsibilities\n⚠ Inside 46-file dependency cycle" as VDR <<VolumeData>>
 
   component "VolumeDataSet\n────────────\nCBO = est.\nHolds FITS data, 3D textures,\nmask buffers, WCS frame" as VDS <<VolumeData>>
 
@@ -231,9 +231,9 @@ legend right
   | teal background      | iDaVIE utility classes                  |
   | grey background      | System.* BCL                            |
   ──────────────────────────────────────────────────
-  **CK Metrics (measured, commit 1cd729f)**
-  CBO = 45  (Ce=17 outgoing + Ca=28 incoming)
-  WMC = 44 methods  |  sum CC = 192  |  avg CC = 4.36
+  **CK Metrics (Understand tool — confirmed)**
+  CBO = 28  (Count of Coupled Classes)
+  WMC = 97  |  RFC = 97  |  LCOM = 0.95  |  DIT = 2
   Worst method: _startFunc (CC=28, 185 LOC)
   LOC = 1403  |  Comment density = 8.9%
   Public members = 152  |  Mutable public fields = 14

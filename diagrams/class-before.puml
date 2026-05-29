@@ -98,18 +98,15 @@ class VolumeDataSetRenderer {
 }
 
 note bottom of VolumeDataSetRenderer
-  <b>Measured CK Metrics (commit 1cd729f)</b>
+  <b>Confirmed CK Metrics (Understand tool)</b>
   ─────────────────────────────────────
-  WMC (method count)    = 44     target ≤ 20
-  WMC (sum cyclomatic)  = 192    avg 4.36, max 28
-  CBO                   = 45     target ≤ 14
-    Ce (outgoing)       = 17 files
-    Ca (incoming)       = 28 files
-  LOC                   = 1403
-  Public members        = 152    (14 mutable fields)
-  LCOM                  ~ 0.81*  target ≤ 0.5
-  ─────────────────────────────────────
-  * LCOM unverified — pending NDepend/Understand run
+  WMC (Count of Methods)      = 97    target ≤ 20  NIM=97 NIV=84
+  CBO (Count of Coupled Cls)  = 28    target ≤ 14
+  RFC (Count of All Methods)  = 97    target ≤ 50
+  LCOM (% Lack of Cohesion)   = 0.95  target ≤ 0.5
+  DIT (Max Inheritance Tree)  = 2     target ≤ 4
+  LOC                         = 1403
+  Public members              = 152   (14 mutable fields)
   ─────────────────────────────────────
   <b>8+ distinct responsibilities:</b>
   1. Shader / material property management

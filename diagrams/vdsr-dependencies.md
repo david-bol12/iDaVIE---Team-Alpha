@@ -1,7 +1,7 @@
 # VolumeDataSetRenderer — Dependency Map (Mermaid)
 
-> **Baseline:** commit `1cd729f` · **Ce = 17** outgoing · **Ca = 28** incoming · **CBO = 45**  
-> **Scope:** full reachable graph — VDR direct Ce (hop 1) + VolumeData-sibling Ce (hop 2)  
+> **Confirmed (Understand tool):** **CBO = 28** coupled classes · WMC = 97 · RFC = 97 · LCOM = 0.95  
+> **Scope:** full reachable graph — VDR direct dependencies + VolumeData-sibling Ce (hop 2)  
 > Canonical source: `diagrams/vdsr-dependencies.puml`
 
 ---
@@ -27,8 +27,8 @@ graph LR
   %% ─────────────────────────────────────
   VDR["VolumeDataSetRenderer
   ─────────────────
-  CBO=45 Ce=17 Ca=28
-  WMC=44 LOC=1403
+  CBO=28 WMC=97
+  RFC=97 LCOM=0.95 LOC=1403
   ⚠ God Class — 8+ responsibilities
   ⚠ Inside 46-file dependency cycle"]:::subject
 
@@ -318,11 +318,12 @@ graph LR
 
 | Metric | Measured (commit `1cd729f`) | Target (post-refactor) |
 |---|---|---|
-| WMC (method count) | **44** | ≤ 20 per class |
-| WMC (sum cyclomatic) | **192** (avg 4.36, max 28) | — |
-| CBO | **45** (Ce=17, Ca=28) | ≤ 14 domain / ≤ 25 orchestrator |
+| WMC (Count of Methods) | **97** | ≤ 20 per class |
+| CBO (Count of Coupled Classes) | **28** | ≤ 14 domain / ≤ 25 orchestrator |
+| RFC (Count of All Methods) | **97** | ≤ 50 |
+| LCOM (% Lack of Cohesion) | **0.95** | ≤ 0.5 |
+| DIT | **2** | ≤ 4 |
 | LOC | **1403** | split across 5 classes |
 | Public members | **152** (14 mutable public fields) | minimise |
-| LCOM | ~0.81 (unverified estimate) | ≤ 0.5 |
 
 > **Refactoring target:** `VolumeRenderCoordinator` (thin coordinator) + `VolumeMaterialBinder` + `VolumeTextureManager` + `VolumeCameraDriver` + `FoveatedSamplingPolicy`. Cycle broken via `IRenderPipeline` + `IGazeProvider` interfaces.
