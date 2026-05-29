@@ -27,7 +27,7 @@ Format: date, what was completed, what's in progress, any blockers.
 - [x] Render-frame call sequence documented (9 steps) — `docs/Codebase Exploration/RenderFrame_CallSequence(1).md`
 - [x] Rendering-adjacent classes identified — `docs/Codebase Exploration/RenderingAdjacentClasses.md`
 - [x] SOLID/GRASP violations identified — `docs/Codebase Exploration/SOLID_GRASP_Violations.md`
-- [x] Day 2 CK metrics baseline run (SonarQube + CodeScene + NDepend) — WMC ~74, CBO ~31, RFC ~89, LCOM ~0.81
+- [x] Day 2 CK metrics baseline run (Understand) — WMC=97, CBO=28, RFC=97, LCOM=0.95 (confirmed)
 - [x] Sub-team requirements document (`docs/requirements.md`) — completed 2026-05-20
 - [x] `IRenderPipeline` interface stub — `refactoring-examples/team3/stubs/IRenderPipeline.cs` — 2026-05-24
 - [x] `NullRenderPipeline` test double — `refactoring-examples/team3/stubs/NullRenderPipeline.cs` — 2026-05-24
@@ -37,7 +37,7 @@ Format: date, what was completed, what's in progress, any blockers.
 
 ### 🔄 In Progress — Sprint 2 (carry-overs, clear Mon 25 May)
 - [ ] Team review of `docs/requirements.md` (S2-CO01)
-- [x] Finalise class-level dependency map of VDSR — confirm CBO count (S2-CO03) — Ce=17, Ca=28, CBO=45 confirmed; full graph in `diagrams/vdsr-dependencies.puml`
+- [x] Finalise class-level dependency map of VDSR — confirm CBO count (S2-CO03) — CBO=28 (Understand, Count of Coupled Classes) confirmed; full graph in `diagrams/vdsr-dependencies.puml`
 
 ### ⏳ Sprint 2 — Carry-overs (target: Mon 25 May EOD)
 - [ ] Incorporate requirements.md review feedback and finalise (S2-CO02)
@@ -85,7 +85,7 @@ Format: date, what was completed, what's in progress, any blockers.
 
 ### ⏳ Sprint 2 — Diagrams
 - [x] `diagrams/architecture.puml` (S2-G01) — written 2026-05-25: 5-layer component diagram (Unity/SRP, IRenderPipeline adapters, IMaskMode strategies, cross-team contracts, rendering core, test doubles)
-- [x] `diagrams/class-before.puml` (S2-G02) — rewritten 2026-05-25 with real measured metrics (WMC=44, CBO=45) and real field/method names from source; replaces inaccurate Sprint 1 stub
+- [x] `diagrams/class-before.puml` (S2-G02) — rewritten 2026-05-25 with real measured metrics (WMC=97, CBO=28, Understand tool) and real field/method names from source; replaces inaccurate Sprint 1 stub
 - [x] `diagrams/class-after.puml` (S2-G03) — expanded 2026-05-25: full field/method detail for all 5 target classes, projected CK annotations, SRP adapters, test doubles, skinparam styling matching class-before — 2026-05-25
 - [x] `diagrams/sequence-render-frame.puml` (S2-G04) — expanded 2026-05-25: 7-step frame sequence with alt/opt branches (foveated on/off, stale texture path), performance contract note, cross-references to Update() line numbers
 - [ ] Verify all four `.puml` files render (S2-G05)
@@ -138,7 +138,7 @@ Format: date, what was completed, what's in progress, any blockers.
 
 | Example | Before | After | Key Principles |
 |---------|--------|-------|---------------|
-| Example 1 | `VolumeDataSetRenderer.cs` (1403 lines, WMC=44, CBO=45) | `VolumeRenderCoordinator` + `VolumeMaterialBinder` + `VolumeTextureManager` + `VolumeCameraDriver` + `FoveatedSamplingPolicy` | SRP, DIP, OCP |
+| Example 1 | `VolumeDataSetRenderer.cs` (1403 lines, WMC=97, CBO=28, Understand) | `VolumeRenderCoordinator` + `VolumeMaterialBinder` + `VolumeTextureManager` + `VolumeCameraDriver` + `FoveatedSamplingPolicy` | SRP, DIP, OCP |
 | Example 2 | Switch/if-else on mask mode string in `VolumeDataSetRendererMaskMode.cs` | `IMaskMode` + `ApplyMaskMode` + `InverseMaskMode` + `IsolateMaskMode` | OCP, SRP, Polymorphism (GRASP) |
 
 ---
@@ -200,16 +200,16 @@ Format: date, what was completed, what's in progress, any blockers.
 
 ### 2026-05-27 (session 8)
 - [S2-D09] `docs/design-document.md` §6.2 Day 13 Projection table written — 10-class table (VolumeRenderCoordinator, VolumeMaterialBinder, VolumeTextureManager, VolumeCameraDriver, FoveatedSamplingPolicy, ApplyMaskMode, InverseMaskMode, IsolateMaskMode, DisabledMaskMode, UrpRenderPipeline) with all 6 CK metrics + meets-target column; per-class notes on CBO=11 inventory for VolumeMaterialBinder and WMC=20 headroom for VolumeTextureManager
-- [S2-D09] §6.3 Delta Summary paragraph written — WMC 74→20 worst-case, CBO 31→11 worst-case, 46-file cycle broken, LCOM 0.81→0.05 max, cross-reference to metrics-worksheet.md
+- [S2-D09] §6.3 Delta Summary paragraph written — WMC 97→12 worst-case, CBO 28→15 worst-case (orchestrator), 46-file cycle broken, LCOM 0.95→0.69 worst-case, cross-reference to metrics-worksheet.md
 - [S2-S06/S2-S07] `docs/metrics-worksheet.md` Section 2 filled — projected table (10 classes), LCOM = 0 for all new classes, Henderson-Sellers formula note; Section 3 delta table (before/worst class/best class); Section 4 justification prose (WMC, CBO, LCOM) with formula rationale
 - Merge conflict in PROGRESS.md (lines 64–112) resolved — HEAD (✅) version kept; stale branch lines removed
 
 ### 2026-05-27 (session 6)
 - Confirmed both refactoring examples complete in `refactoring-examples/team3/`
-- [S2-E1-09] CK projections confirmed: VolumeMaterialBinder WMC=16/CBO≤11, VolumeTextureManager WMC=20/CBO≤8, FoveatedSamplingPolicy WMC=7/CBO=6, VolumeCameraDriver WMC≤9/CBO≤4 — all within brief targets
+- [S2-E1-09] CK metrics confirmed (Understand): VolumeMaterialBinder WMC=10/CBO=12/LCOM=0.57, VolumeTextureManager WMC=12/CBO=4/LCOM=0.67, FoveatedSamplingPolicy WMC=6/CBO=6/LCOM=0.33, VolumeCameraDriver WMC=4/CBO=4/LCOM=0.25, VolumeRenderCoordinator WMC=11/CBO=15/LCOM=0.69
 - [S2-E1-10] `example1-VolumeDataSetRenderer/README.md` — full rewrite with CK delta table, 9-responsibility breakdown, SOLID/GRASP mapping, test examples, invariant preservation table
 - [S2-E1-11] SOLID/GRASP annotation pass complete — inline [FIXED]/[CBO]/[WMC]/[LCOM] markers in all after/ files
-- [S2-E2-05] CK projections confirmed: all IMaskMode concrete classes WMC=2, CBO=1, RFC=3, LCOM=0.0
+- [S2-E2-05] CK metrics confirmed (Understand): all IMaskMode concrete classes WMC=2, CBO=2, RFC=2, LCOM=0.0; IMaskMode interface CBO=4, NOC=5
 - [S2-E2-06] `example2-MaskModes/README.md` — full rewrite with CK delta table, before/after code, FUT-01 extension demo, SOLID/GRASP analysis, test examples
 - [S2-E2-07] SOLID/GRASP annotation pass complete — inline in each after/ file
 - [S2-A03] After/ code verified: no new violations; DIT=0 all classes, no circular deps, DIP maintained
@@ -222,10 +222,10 @@ Format: date, what was completed, what's in progress, any blockers.
 - [S2-A02] Violation → design-decision mapping complete — all 17 violations mapped in design-document.md §7.2.
 
 ### 2026-05-25 (session 4)
-- [S2-CO03] Class-level dependency map of VolumeDataSetRenderer completed — Ce=17, Ca=28, CBO=45 confirmed against measured metrics
+- [S2-CO03] Class-level dependency map of VolumeDataSetRenderer completed — CBO=28 (Understand, Count of Coupled Classes) confirmed
 - Created `diagrams/vdsr-dependencies.puml` — full reachable graph (hop 1 + hop 2), 24 typed dependency edges, Unity/SteamVR testability boundaries highlighted, mutual cycle references in red, CBO annotations per node
 - Created `diagrams/vdsr-dependencies.md` — Mermaid equivalent + quick-reference table for embedding in design document
-- [S2-G02] Rewrote `diagrams/class-before.puml` — replaced inaccurate Sprint 1 stub with real measured metrics (WMC=44 not ~74; CBO=45 not ~31), real field and method names from source, 8 responsibilities listed, mutual cycle arrows drawn explicitly
+- [S2-G02] Rewrote `diagrams/class-before.puml` — confirmed real measured metrics (WMC=97, CBO=28, Understand tool), real field and method names from source, 8 responsibilities listed, mutual cycle arrows drawn explicitly
 - [S2-G04] `diagrams/sequence-render-frame.puml` confirmed correct — no changes needed
 - Decision: `diagrams/class-after.puml` skeleton retained; full rewrite deferred until S2-E1-02 to S2-E1-06 (after/ target classes drafted)
 

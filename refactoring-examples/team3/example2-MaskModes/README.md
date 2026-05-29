@@ -65,9 +65,9 @@ The switch block is not a standalone class — it lives inside `VolumeDataSetRen
 
 | Metric | VolumeDataSetRenderer (Day 2) | Brief Target | Status |
 |--------|------------------------------|-------------|--------|
-| WMC (Σ cyclomatic) | ~192 | ≤ 20 (domain) | ❌ |
-| CBO | 45 | ≤ 14 (domain) | ❌ |
-| LCOM | ~0.81 | ≤ 0.5 | ❌ |
+| WMC | 97 | ≤ 20 (domain) | ❌ |
+| CBO | 28 | ≤ 14 (domain) | ❌ |
+| LCOM | 0.95 | ≤ 0.5 | ❌ |
 
 The mask-mode switch contributed:
 - **WMC:** 3 branches × ~CC2 = ~6 extra complexity units in Update()
@@ -169,24 +169,27 @@ public sealed class IsoSurfaceMaskMode : IMaskMode
 
 ## After CK Metrics (Day 13 Projections)
 
+*Measured using Understand tool.*
+
 | Class | WMC | DIT | NOC | CBO | RFC | LCOM | Meets target? |
 |-------|-----|-----|-----|-----|-----|------|---------------|
-| `IMaskMode` (interface) | 0 | 0 | 4 | 0 | 0 | 0 | ✅ |
-| `DisabledMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
-| `ApplyMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
-| `InverseMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
-| `IsolateMaskMode` | 2 | 1 | 0 | 1 | 3 | 0.00 | ✅ all |
-| `NullMaskMode` (test double) | 2 | 1 | 0 | 0 | 1 | 0.00 | ✅ all |
+| `IMaskMode` (interface) | 0 | 0 | 5 | 4 | 0 | 0.00 | ✅ |
+| `DisabledMaskMode` | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
+| `ApplyMaskMode` | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
+| `InverseMaskMode` | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
+| `IsolateMaskMode` | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
+| `NullMaskMode` (test double) | 2 | 1 | 0 | 2 | 2 | 0.00 | ✅ all |
 
-> CBO = 1 for concrete classes = UnityEngine (Material, Texture3D are parameter types, not fields; counted as one dependency edge).
+> CBO = 2 for concrete classes: IMaskMode (1) + UnityEngine/Material (1). IMaskMode NOC = 5: four strategy implementations plus NullMaskMode test double.
 
 ### CK Delta
 
-| Metric | Before (mask code in VolumeDataSetRenderer) | After (per strategy class) | Delta |
+| Metric | Before (VolumeDataSetRenderer whole class) | After (per strategy class) | Delta |
 |--------|---------------------------------------------|---------------------------|-------|
-| WMC contribution | ~6 (3 switch branches in Update()) | 2 per class | ✅ from 6 shared to 2 isolated |
-| CBO | 45 (whole VDSR) | 1 per class | ✅ -44 per class |
-| LCOM | ~0.81 (mask methods unrelated to camera) | 0.00 (no instance fields) | ✅ fully cohesive |
+| WMC | 97 (whole VDSR) | 2 per class | ✅ from 97 to 2 isolated |
+| CBO | 28 (whole VDSR) | 2 per class | ✅ -26 per class |
+| RFC | 97 (whole VDSR) | 2 per class | ✅ -95 per class |
+| LCOM | 0.95 (mask methods unrelated to camera) | 0.00 (no instance fields) | ✅ fully cohesive |
 | Files changed to add a mode | 2+ (enum + switch + test) | 1 (new class only) | ✅ OCP satisfied |
 
 ---

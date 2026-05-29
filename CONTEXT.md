@@ -78,29 +78,23 @@ Requires: gaze direction from eye-tracking (comes from Sub-team 4's `IGazeProvid
 
 - Does everything: material, texture, camera, foveation (and region/cursor/moment-map/IO)
 - High WMC (too many methods), high CBO (depends on everything), high LCOM (unrelated methods)
-- **Metrics — estimate vs. measured (open-source pipeline, commit `1cd729f`):**
+- **Metrics — confirmed (Understand tool):**
 
-  | Metric | Estimate (old) | **Measured** | Target | Source of measurement |
-  |--------|----------------|--------------|--------|-----------------------|
-  | WMC — method count | ~74 | **44** | <= 20 | tree-sitter method decls |
-  | WMC — complexity-weighted (sum CC) | — | **192** (avg 4.36, max 28) | — | per-method cyclomatic sum |
-  | CBO — distinct coupled files | ~31 | **45** (Ca 28 + Ce 17) | <= 14 | project dependency graph |
-  | LCOM | ~0.81 | *pending* (1) | <= 0.5 | needs field-access analysis |
-  | Public members / mutable fields | — | **152 / 14** | minimise | declaration scan |
-  | Lines / comment density | — | **1,403 / 8.9%** | — | line classification |
+  | Metric | **Understand (confirmed)** | Target | Notes |
+  |--------|---------------------------|--------|-------|
+  | WMC (Count of Methods) | **97** | ≤ 20 | NIM=97, NIV=84 |
+  | CBO (Count of Coupled Classes) | **28** | ≤ 14 | Count of Coupled Classes formula |
+  | RFC (Count of All Methods) | **97** | ≤ 50 | |
+  | LCOM (Percent Lack of Cohesion) | **0.95** | ≤ 0.5 | 95% — near-fully-incoherent |
+  | DIT (Max Inheritance Tree) | **2** | ≤ 4 | MonoBehaviour → Behaviour |
+  | NOC (Count of Derived Classes) | **0** | ≤ 5 | No subclasses |
+  | Public members / mutable fields | — | **152 / 14** | minimise |
+  | Lines / comment density | — | **1,403 / 8.9%** | — |
 
-  (1) True LCOM needs per-method field-access tracking the current pipeline doesn't do;
-  NDepend or Understand would supply it. The ~0.81 figure is an unverified estimate — treat as
-  a hypothesis until a tool that computes LCOM is run.
-
-  **Revised read:** the WMC estimate over-counted (44 methods, not ~74), but **CBO is worse
-  than thought** (45 vs ~31). `VolumeDataSetRenderer` is the **2nd most depended-upon file in
-  the entire codebase** (28 files depend on it, across 8 packages) while itself depending on
-  17 files. The God-Class conclusion stands and the decoupling argument is stronger than the
-  original estimate implied. Internally, the single biggest coupling is to the mask data set
-  (referenced ~92x) and the feature manager (~29x) — concrete targets for the first
-  extraction. The worst single method is `_startFunc` (cyclomatic 28, 185 lines), followed by
-  `SaveMask` (19), `SetCursorPosition` (17), and `Update` (12).
+  These are the **authoritative** figures. All references to WMC ~74, CBO ~31/45, LCOM ~0.81
+  in earlier session notes reflected pre-Understand estimates and have been superseded.
+  The God-Class conclusion stands and is stronger: CBO=28 confirms 28 coupled classes,
+  LCOM=0.95 confirms near-total incoherence. Worst single method: `_startFunc` (CC=28, 185 lines).
 
 ### Problem 2: Direct URP/HDRP Dependency
 
@@ -321,9 +315,11 @@ at commit `1cd729f`. Reports are filed in `tests/`.
 ## Changelog
 
 - **25 May 2026 (session 2)** — Added `## Tool Versions and Setup Notes` section (S2-CO06): table of all 5 mandated tools with version, licence status, setup status, report pointer, and action items for obtaining live results before Sprint 3 freeze. Created `tests/CodeScene_Report.md` (S2-CO05): hotspot/churn report using real Git data (123 commits, 9 authors, 2019–2026), complexity metrics, co-change coupling, knowledge map, and code health estimate (~3.5/10).
-- **25 May 2026 (session 1)** — Added measured metrics from the open-source static pipeline (commit
-  `1cd729f`): replaced estimated WMC (~74 -> 44 methods, sum-CC 192) and CBO (~31 -> 45); LCOM
-  left pending. Added VDR size/coupling facts (152 public members, mask data set ~92x
+- **29 May 2026** — Replaced all estimated/preliminary CK metrics with confirmed Understand tool
+  measurements: WMC=97, CBO=28, RFC=97, LCOM=0.95, DIT=2. After-class metrics also confirmed.
+- **25 May 2026 (session 1)** — Added preliminary metrics from static pipeline (commit
+  `1cd729f`): WMC 44 methods (sum-CC 192) and CBO 45 (since superseded by Understand). LCOM
+  left pending at time. Added VDR size/coupling facts (152 public members, mask data set ~92x
   coupling, worst method `_startFunc`). Added Problem 5 (46-file dependency cycle, propagation
   cost 39.8%, abstractness 3.9%). Reconciled the design Mask-mode names with the source
   `MaskMode` enum and noted `ScalingType`/`ProjectionMode`. Flagged the URP-import claim, the

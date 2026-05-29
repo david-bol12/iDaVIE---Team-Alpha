@@ -29,18 +29,18 @@
 | 8 | FITS mask file I/O | 1290–1373 |
 | 9 | Unity lifecycle wiring | 358–543 |
 
-### Before CK Metrics (Day 2 Baseline — commit `1cd729f`)
+### Before CK Metrics (Day 2 Baseline — Understand tool)
 
 | Metric | Value | Brief Target | Status |
 |--------|-------|-------------|--------|
-| WMC (method count) | 44 | — | — |
-| WMC (Σ cyclomatic) | ~192 (avg 4.36, max 28) | ≤ 20 (domain) | ❌ |
-| CBO (total) | 45 | ≤ 14 (domain) | ❌ |
-| — Ce (outgoing) | 17 files | — | — |
-| — Ca (incoming) | 28 files | — | — |
-| RFC | ~89 | ≤ 50 | ❌ |
-| LCOM | ~0.81 | ≤ 0.5 | ❌ |
-| DIT | 1 (MonoBehaviour) | ≤ 4 | ✅ |
+| WMC | 97 | ≤ 20 (domain) | ❌ |
+| DIT | 2 | ≤ 4 | ✅ |
+| NOC | 0 | ≤ 5 | ✅ |
+| CBO | 28 | ≤ 14 (domain) | ❌ |
+| RFC | 97 | ≤ 50 | ❌ |
+| LCOM | 0.95 | ≤ 0.5 | ❌ |
+| NIM | 97 | — | — |
+| NIV | 84 | — | — |
 | LOC | 1,403 | — | — |
 
 Additional problems:
@@ -67,27 +67,29 @@ Additional problems:
 | `VolumeCameraDriver` | Camera-matrix extraction, clip-plane computation, projection mode | `IVolumeCameraDriver` (stub) |
 | `FoveatedSamplingPolicy` | Ray-march step count and mip-bias decisions from gaze data | — (concrete class, pure C#) |
 
-### After CK Metrics (Day 13 Projections)
+### After CK Metrics (Understand tool — measured from worked examples)
 
-| Class | WMC | CBO | RFC | LCOM | DIT | NOC | Meets target? |
-|-------|-----|-----|-----|------|-----|-----|---------------|
-| `VolumeRenderCoordinator` | ~3 | ~6 | ~12 | 0.0 | 1 | 0 | ✅ all |
-| `VolumeMaterialBinder` | 16 | ≤11 | ≤22 | 0.05 | 0 | 0 | ✅ all |
-| `VolumeTextureManager` | 20 | ≤8 | ≤20 | 0.05 | 0 | 0 | ✅ all |
-| `VolumeCameraDriver` | ≤9 | ≤4 | ≤18 | 0.0 | 0 | 0 | ✅ all |
-| `FoveatedSamplingPolicy` | 7 | 6 | ≤14 | 0.0 | 0 | 0 | ✅ all |
+| Class | WMC | DIT | NOC | CBO | RFC | LCOM | Meets target? |
+|-------|-----|-----|-----|-----|-----|------|---------------|
+| `VolumeRenderCoordinator` | 11 | 1 | 0 | 15 | 11 | 0.69 | ❌ CBO, LCOM |
+| `VolumeRendererBehaviour` (MB shell) | 3 | 2 | 0 | 8 | 3 | 0.00 | ✅ all |
+| `VolumeMaterialBinder` | 10 | 1 | 0 | 12 | 10 | 0.57 | ❌ LCOM |
+| `VolumeTextureManager` | 12 | 1 | 0 | 4 | 12 | 0.67 | ❌ LCOM |
+| `VolumeCameraDriver` | 4 | 1 | 0 | 4 | 4 | 0.25 | ✅ all |
+| `VolumeCoordinateService` | 3 | 1 | 0 | 3 | 3 | 0.00 | ✅ all |
+| `FoveatedSamplingPolicy` | 6 | 1 | 0 | 6 | 6 | 0.33 | ✅ all |
 
-> All CK values are projections. Day-13 measured values will be recorded in `docs/team3/metrics-worksheet.md`.
+> `VolumeRenderCoordinator` CBO = 15: marginally exceeds domain target (≤ 14); within orchestrator threshold (≤ 25). LCOM values above 0.5 reflect multi-phase lifecycle structure (Initialise / Tick / Dispose) — see `docs/metrics-worksheet.md §4` for justification.
 
 ### CK Delta Summary
 
 | Metric | Before (VDSR) | After (worst class) | Improvement |
 |--------|--------------|---------------------|-------------|
-| WMC | ~192 (total) | 20 (`VolumeTextureManager`) | ✅ -172 total; each class ≤ target |
-| CBO | 45 | ≤11 (`VolumeMaterialBinder`) | ✅ -34 max; all ≤14 target |
-| RFC | ~89 | ≤22 | ✅ -67; all well under 50 |
-| LCOM | ~0.81 | 0.05 | ✅ -0.76; all under 0.5 |
-| LOC | 1,403 | ~150–200 per class | ✅ 7× smaller per class |
+| WMC | 97 | 12 (`VolumeTextureManager`) | ✅ −85 worst-case; all ≤ 12 |
+| CBO | 28 | 15 (`VolumeRenderCoordinator`) | ✅ domain classes ≤ 12; cycle broken |
+| RFC | 97 | 12 (`VolumeTextureManager`) | ✅ −85 worst-case; all ≤ 12 |
+| LCOM | 0.95 | 0.69 (`VolumeRenderCoordinator`) | ✅ −0.26 worst-case; 0.00 for strategy classes |
+| LOC | 1,403 | ~150–250 per class | ✅ ~6–9× smaller per class |
 
 ---
 
@@ -99,8 +101,8 @@ Additional problems:
 | **OCP** | Projection mode if/else (lines 1218–1221) | `IRenderPipeline.SetPipelineKeyword` — variant hidden behind interface |
 | **ISP** | 152-member public API | `IVolumeMaterialBinder` (7 members), `IVolumeTextureManager` (6 members) |
 | **DIP** | `FindObjectOfType` (lines 381, 522); `Camera.main`; `Graphics.DrawProceduralNow` | All collaborators injected via constructor; `IRenderPipeline` abstracts SRP API |
-| **GRASP Low Coupling** | CBO = 45; in 46-file cycle | Per-class CBO ≤ 11; cycle broken by interface boundaries |
-| **GRASP High Cohesion** | LCOM = 0.81 — mask, camera, foveation, texture fields mixed | LCOM ≤ 0.05 per class — all fields serve one responsibility |
+| **GRASP Low Coupling** | CBO = 28; in 46-file cycle | Per-class CBO ≤ 12 (domain), 15 (orchestrator); cycle broken by interface boundaries |
+| **GRASP High Cohesion** | LCOM = 0.95 — mask, camera, foveation, texture fields mixed | LCOM 0.00–0.25 for focused classes; 0.57–0.69 for lifecycle-structured classes |
 | **GRASP Protected Variations** | Global `Shader.EnableKeyword` calls scattered across Update() | All pipeline-keyword calls proxied through `IRenderPipeline` |
 | **GRASP Information Expert** | Coordinator holds foveation, texture, and camera knowledge | Each class owns only its relevant data |
 
