@@ -82,25 +82,25 @@ The PlantUML source is owed by Day 8 (Gap #2 in Appendix A, owner TL). The Level
 `CanvassDesktop` resolves the button via a `transform.Find` chain, calls `StandaloneFileBrowser` directly, passes the path into `FitsReader` directly, mutates fields on `VolumeCommandController` directly, and updates ~30 UI elements imperatively. No unit test can cover any step because every dependency is a concrete type held in a `MonoBehaviour`.
 
 ### Q3.2 — "Walk me through what happens after the refactor."
-The View's `Open` button is bound to `FileTabViewModel.OpenCubeCommand`. The ViewModel calls `IFileService.OpenAsync(path)`, awaits the result, sets `SelectedDataset`. The View observes the property change via `INotifyPropertyChanged` and re-renders. The native call lives behind `FitsServiceAdapter`; the ViewModel never sees it.
+The View's `Browse` button is bound to `FileTabViewModel.BrowseImageCommand`; the `Load` button to `LoadCommand`. `BrowseImageCommand` calls `IFitsService.OpenImageAsync(path)`, awaits the result, and sets `ImagePath` (and populates `HduOptions`, `HeaderText`, `IsLoadable`). `LoadCommand` then builds a `LoadCubeRequest` and calls `IVolumeService.LoadCubeAsync`. The View observes the property changes via `INotifyPropertyChanged` and re-renders. The FITS read sits behind the `IFitsService` boundary; the ViewModel never sees the wire.
 
-### Q3.3 — "Show me where `OpenCubeCommand` is defined."
-In the skeleton at `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs`. It is an `ICommand`-implementing property; `Execute` calls `_fileService.OpenAsync` with the `SelectedPath`.
+### Q3.3 — "Show me where `BrowseImageCommand` is defined."
+In the skeleton at `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs`. It is an `IAsyncCommand` property wired in the constructor to `BrowseImageAsync`; `ExecuteAsync` calls `_fitsService.OpenImageAsync(path)` with the path returned by the file dialog.
 
 ### Q3.4 — "What if the user clicks Open twice before the first call completes?"
 `IsBusy` is set when the command begins. The command's `CanExecute` returns false while busy. UI Toolkit disables the bound button automatically. The third test in `test-strategy.md` §6 covers this contract.
 
-### Q3.5 — "The native FITS plug-in is synchronous. How can `OpenAsync` be async?"
-The adapter wraps the synchronous P/Invoke in `Task.Run`, exposing an async surface. The cost is one extra thread for the duration of the load; the benefit is the UI thread stays responsive. The ViewModel never blocks. `mvvm-binding-policy.md` §4.3.
+### Q3.5 — "The native FITS plug-in is synchronous. How can `OpenImageAsync` be async?"
+After the gateway rewire the FITS read is no longer a client-side P/Invoke. `OpenImageAsync` issues a JSON-RPC request (`file.open` → `dataset.getAxes`) over the named pipe to the server, which performs the FITS parse and returns the metadata. The call is asynchronous by nature — the pipe round-trip returns a `Task` the ViewModel awaits — so no `Task.Run`-wrapped synchronous P/Invoke is needed and the UI thread never blocks. (Phase B, the volume load, stays client-side via `VolumeServiceAdapter`.) ADR-0002 wire spec; `mvvm-binding-policy.md` §4.3.
 
 ### Q3.6 — "How do you cancel a load mid-call?"
-The `OpenAsync` signature takes a `CancellationToken`. Between native calls we poll the token; mid-native-call cancellation is not possible because the existing C plug-in does not support it. This is an inherited limitation, not one we introduce.
+The `OpenImageAsync` signature takes a `CancellationToken`. Between native calls we poll the token; mid-native-call cancellation is not possible because the existing C plug-in does not support it. This is an inherited limitation, not one we introduce.
 
 ### Q3.7 — "What about errors — the file is corrupt, the path is invalid?"
 The adapter throws a typed exception. The ViewModel catches it in the command, sets `Error` to the message, and `IsBusy` to false. The View is bound to `Error` and shows it. The command itself never propagates the exception. `mvvm-binding-policy.md` §2.3.
 
-### Q3.8 — "You projected WMC ~12 for `FileTabViewModel`. How did you compute that without a real implementation?"
-Counted from the skeleton: ~12 methods, each cyclomatic complexity 1–2 (no nested branching in the ViewModel; validation lives in `SubsetBoundsViewModel`). Sum is ~15. We rounded down to ~12 in the projection table; conservative re-derivation would land at 15, still well under threshold 20.
+### Q3.8 — "Your table lists WMC 27 for `FileTabViewModel` — that is over your ≤ 20 domain threshold. Explain."
+WMC 27, hand-counted from the committed skeleton on Day 6 (`metrics.md §2.2`), not projected. It is borderline over the ≤ 20 domain threshold and we flag it as such — we do not hide it. Documented remediation: extract a `FileTabCommands` helper for the four command bodies, dropping the ViewModel to WMC ~22. Every other class in the file-tab slice is within threshold.
 
 ### Q3.9 — "Which SOLID principle does `SubsetBoundsViewModel` exemplify?"
 SRP and GRASP Information Expert — the class owns the bounds *data*, so it owns the bounds *validation*. Plus DIP: the file ViewModel depends on the bounds ViewModel via interface, not concrete type.
@@ -113,7 +113,7 @@ Because bounds validation has its own *actor* (the data scientist tweaking subse
 ## Section 4 — Worked example: Debug tab
 
 ### Q4.1 — "What is wrong with the current Debug tab specifically?"
-It is an `OnGUI` IMGUI popup inside `CanvassDesktop`, polling static logger state every frame. There is no log *event* — only a log *snapshot* re-read at frame rate. Three independent problems: deprecated UI API, untestable, polling instead of pushing.
+`DebugLogging.cs` already subscribes to a Unity event (`Application.logMessageReceived` in `OnEnable`) — it is event-driven, not polled. The problems are structural: the hook is a *static* Unity API (untestable — no fake can replace a global engine event); entries are *unstructured* strings in a non-generic `Queue` (no level, no source, no timestamp — just `[type] : message`); and one handler also does per-message disk I/O and rebuilds the whole output `StringBuilder` (O(N)) on every line. Three real defects: static/Unity-coupled, unstructured, untestable. The fix is a typed `ILogStream`/`ILogObserver` + `LogEntry` DTO fed from the server via `log.emit`.
 
 ### Q4.2 — "Why Observer pattern here?"
 Log entries are produced by background threads at unpredictable rates and consumed by an arbitrary number of sinks (UI, file, network). Observer decouples producer rate from consumer count. GoF textbook fit.
@@ -144,10 +144,10 @@ Both examples share the same three-assembly split, the same composition root, th
 ## Section 5 — Testability + Unity 6 migration
 
 ### Q5.1 — "How many tests do you have today?"
-Zero in the new style. The skeleton is committed; the three `OpenCubeCommand` tests are owed by Day 10. That is the gate at which CI begins enforcing the coverage rule.
+Zero in the new style. The skeleton is committed; the `BrowseImage`/`Load` command tests are owed by Day 10. That is the gate at which CI begins enforcing the coverage rule.
 
 ### Q5.2 — "70 % branch + line on ViewModel — how do you guarantee that gate is hit?"
-The skeleton has ~12 methods of low cyclomatic complexity, so the path count is bounded. A small fixed test set (happy / error / cancel / threading for each command) covers the branches by construction. The number is not aspirational.
+The `FileTabViewModel` is ~27 mostly-trivial methods and property accessors (CC 1–2; `metrics.md §2.2`), so the path count is bounded. A small fixed test set (happy / error / cancel / threading for each command) covers the branches by construction — the 34 committed NUnit tests already do. The number is not aspirational.
 
 ### Q5.3 — "Why NUnit and not xUnit?"
 NUnit is the Unity Test Framework's default; using the same runner inside and outside Unity reduces our tooling surface. xUnit is technically newer; the cost of switching is greater than the value.
@@ -206,7 +206,7 @@ The shape of the gateway's notification channel — they prefer a single server-
 ## Section 7 — Summary + forward look
 
 ### Q7.1 — "If we approve this, what do you build first?"
-Composition root + `IServiceGateway` adapter + `FileTabViewModel` against the real `IFileService`. The File tab is the smallest end-to-end vertical that exercises the whole architecture. Two-week sprint, single owner.
+Composition root + `IServiceGateway` adapter + `FileTabViewModel` against the real `IFitsService`. The File tab is the smallest end-to-end vertical that exercises the whole architecture. Two-week sprint, single owner.
 
 ### Q7.2 — "How does the Python console actually use a C# ViewModel?"
 The ViewModel layer is `System.*`-only — it can be hosted in any .NET process. A Python bridge (Python.NET or a thin RPC) instantiates the same ViewModel objects. They behave identically to the Unity case because no Unity types touch them. ARQ-1 in `requirements.md` §4.
@@ -259,7 +259,7 @@ Different constraints — Unity 5, no UI Toolkit, single-client assumption. The 
 Slide 2.6 (concern map redistribution). It supports Slide 2.2; if compressed, 2.2 carries the load and 2.6 lives in the appendix. Never cut a Section 3 or 4 slide — the brief allocates 12 minutes there.
 
 ### QH.4 — "I do not believe your CK numbers. Re-derive WMC for `FileTabViewModel` live."
-~12 methods, each CC 1–2 (no nested branching, validation lives elsewhere). Sum ~15. We rounded down to 12; conservative re-derivation lands at 15, still under threshold 20.
+WMC 27, hand-counted from the committed skeleton: constructor + ~9 non-trivial property setters + 4 command bodies + the HDU/Z-axis/memory helpers + the notify methods (`metrics.md §2.2`). That is borderline **over** the ≤ 20 domain threshold — we do not hide it. Documented remediation: extract a `FileTabCommands` helper, dropping the ViewModel to WMC ~22.
 
 ### QH.5 — "Defend your worst slide."
 *(Be ready: probably Slide 2.7 if ADR-0003 has not landed yet, or Slide 1.3 if the cycle report is still pending.)* The slide is honest about the gap; the architectural argument does not depend on the missing artefact; the gap is owed by [date] with named owner.
@@ -271,7 +271,7 @@ Slide 2.6 (concern map redistribution). It supports Slide 2.2; if compressed, 2.
 Run the File tab refactor on production code, measure real CK numbers against projections, and write up the delta as the empirical wing of the proposal. Currently the numbers are skeleton-derived; an end-to-end pass would convert projection to measurement.
 
 ### QH.8 — "What is your single weakest argument?"
-The cycle-detection evidence. We claim cycles are forbidden and enforceable, but the DV8/NDepend report on our 8-class slice is owed for Day 10. Until it lands, §4.2 #2 is "suspected fail" on the before-state and "claimed pass" on the after-state — both unverified.
+The cycle-detection evidence — though it is now partly closed. As of 2026-05-28 the after-state *assembly-level* acyclicity is tool-backed: a clean `dotnet build` of all 10 pure-C# skeleton/adapter/test projects passes, and MSBuild refuses to build a cyclic `<ProjectReference>` graph, so the build itself is the proof, backed by the documented reference graph ([`../other/cycles-report.md`](../other/cycles-report.md)). What is still owed for Day 10 is (a) *class-level* DV8/NDepend confirmation on the after-state, and (b) tool confirmation of the 2 before-state cycles currently documented only by a manual DSM (BNCH-4). So §4.2 #2 is now "2 cycles identified manually, tool confirmation owed" on the before-state and "assembly-level pass (tool-backed), class-level pass projected" on the after-state — not the blanket "both unverified" it was before.
 
 ---
 

@@ -261,7 +261,7 @@ Method names are namespaced with `.`; namespaces map 1:1 to ViewModel slices.
 - **Debug tab** consumes `log.emit` notifications via `GatewayLogStreamAdapter` (server-pushed stream). Wire-shape assertions live in `refactoring-examples/sub-team-6/debug-tab/adapters/tests/GatewayLogStreamAdapterTests.cs`.
 - Pure framing and gateway-double behaviour are pinned in `refactoring-examples/sub-team-6/contracts/tests/` against ADR-0002 §"Framing" and §"Message shape".
 
-All three test projects build and run without Unity (`dotnet test`); current count is 82 / 82 green in &lt; 200 ms total.
+All three test projects build and run without Unity (`dotnet test`); current count is 95 / 95 green in &lt; 200 ms total.
 
 ---
 

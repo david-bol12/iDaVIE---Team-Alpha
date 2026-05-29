@@ -91,7 +91,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 
 **Risk if challenged — "you don't have the cycle report":** acknowledge openly; commit to Day 10. The other three non-negotiables already justify the change.
 
-**[EVIDENCE-GAP-1.3a]** DV8 / NDepend cycle report for our 8-class slice. Owner: Quality Champion. Due: Day 10 sprint review.
+**[EVIDENCE-GAP-1.3a]** DV8 / NDepend cycle report for our 8-class slice → [`../other/cycles-report.md`](../other/cycles-report.md). **Partially closed 2026-05-28:** after-state *assembly-level* acyclicity is now tool-backed (clean `dotnet build` of all 10 pure-C# projects — MSBuild rejects cyclic `<ProjectReference>` graphs) plus the documented reference graph. Still owed: class-level DV8/NDepend confirmation on the after-state and tool confirmation of the 2 manually-documented before-state cycles (BNCH-4). Owner: Quality Champion. Due: Day 10 sprint review.
 
 ---
 
@@ -106,7 +106,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 - **DIP.** A `MonoBehaviour` is not constructible outside the Unity engine; therefore no unit test can be written against it; therefore copy-paste bugs in its methods cannot be caught.
 
 **Evidence:**
-- `docs/sub-team-6/deliverables/other/D9-ck-baseline/SonarQube Baseline report.md` Rank 3 — `DesktopPaintController.UpdateMaxValue(float value) { minVal = value; }` at line 306.
+- `docs/sub-team-6/archived/SonarQube Baseline report.md` Rank 3 — `DesktopPaintController.UpdateMaxValue(float value) { minVal = value; }` at line 306.
 - `SK_BNCH.md` page 7 — the bug is in a class with **WMC 57, CBO 21, LCOM 0.940**, and zero unit tests exist for it (NFR-TST-1 coverage = 0% on this class).
 
 **Speaker note:** "the cost of being unable to write a unit test is in the tree, today. Line 306 of `DesktopPaintController`: a method called `UpdateMaxValue` assigns to `minVal`. The class is 1 558 lines; the bug is undetectable by reading. It would be detectable by any of the three unit tests we will write for the equivalent `FileTabViewModel`."
@@ -135,8 +135,8 @@ We map every architectural choice back to one of these. The panel cannot disagre
 - **Long-term roadmap drivers (§6.6 — Python console, workspace persistence).** Translated into requirements as ARQ-1 and ARQ-2 in `requirements.md` §4.
 
 **Evidence:**
-- `docs/sub-team-6/architecture.md` §3 — C4 Level 1 placeholder (PlantUML at `diagrams/c4-context.puml` [EVIDENCE-GAP-2.1a]).
-- `docs/sub-team-6/requirements.md` §4 — ARQ-1, ARQ-2.
+- `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` §3 — C4 Level 1 placeholder (PlantUML at `diagrams/c4-context.puml` [EVIDENCE-GAP-2.1a]).
+- `docs/sub-team-6/deliverables/D1-requirements/requirements.md` §4 — ARQ-1, ARQ-2.
 - `Assignment-Docs/iDaVIE_Refactoring_Assignment_FINAL_1.md` §4.1 — client–server style.
 
 **Speaker note:** "the desktop tab is one client. The VR scene is another. The Python console will be a third. The persistence layer reads state from all three. Any design that hardcodes 'desktop' into the kernel breaks the assignment's roadmap (§6.6). The boundary between client and kernel is therefore a contract, not a method call."
@@ -189,7 +189,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 
 **Evidence:**
 - `architecture.md` §6 — interface contracts list (`IServiceGateway`, `IFileTabViewModel`, `IDebugTabViewModel`, `ILogStream`, `ILogObserver`, `IPanel`).
-- `adrs/0001-mvvm-split.md` `Decision` section — "composition root replaces all `FindObjectOfType<>` singleton lookups; dependencies are explicit and mockable".
+- `D2-Architecture/architecture.md §4 (ADR-0001)` `Decision` section — "composition root replaces all `FindObjectOfType<>` singleton lookups; dependencies are explicit and mockable".
 - `mvvm-binding-policy.md` §5 — "Composition root owns instantiation".
 
 **Speaker note:** "the composition root is a single `MonoBehaviour` in the View assembly. It calls `new FitsServiceAdapter()`, `new FileTabViewModel(fits, dialog, ...)`, attaches the ViewModel to the `UIDocument`'s `userData`, and is done. There are no static singletons. There are no scene-graph lookups. There is one `new` site per type, and the test suite can replace any of them with a fake."
@@ -256,18 +256,18 @@ We map every architectural choice back to one of these. The panel cannot disagre
 **Theory anchor:**
 - **SRP (Martin).** Each unit has one *actor*: the menu actor, the panel-state actor, the file-dialog actor, the configuration actor, the threshold-maths actor.
 - **GRASP — Information Expert.** The class that *owns the data* owns the operation. Subset bounds maths moves to `SubsetBoundsViewModel` because the bounds *are* its state.
-- **Concern-map convention** (Section 10.4 — must be text-based; the existing `concern-map.png` violates that rule [EVIDENCE-GAP-2.6a]).
+- **Concern-map convention** (Section 10.4 — diagrams must be text-based; satisfied by `D2-Architecture/concern-map.puml`, which supersedes the now-archived `concern-map.png` [EVIDENCE-GAP-2.6a CLOSED]).
 
 **Evidence:**
 - `architecture.md` §7 — SRP audit placeholder.
-- `concern-map.png` exists (binary only — fix owed per Section 10.4).
+- `D2-Architecture/concern-map.puml` — text-based concern map (8 concerns → SRP homes), satisfies Section 10.4; supersedes the binary `archived/concern-map.png`.
 - After-class diagrams: `D4-worked-examples/ex1-file-tab/after-class-diagram.puml`.
 
-**Speaker note:** "the slide shows the old class as a centre node with nine concerns radiating out, and an arrow from each concern to its new home. Every arrow has a label: SRP, Information Expert, Indirection. No code is lost — what is lost is the *coincidence* of all nine concerns being in the same class."
+**Speaker note:** "the slide shows the old class as a centre node with eight concerns radiating out, and an arrow from each concern to its new home. Every arrow has a label: SRP, Information Expert, Indirection. No code is lost — what is lost is the *coincidence* of all eight concerns being in the same class."
 
 **Risk if challenged — "did you measure this redistribution didn't just move the god class somewhere else?":** yes — `after-dsm.md` and the CK projection in §3 are the numerical answer. Show the table in Slide 3.4 / 4.4.
 
-**[EVIDENCE-GAP-2.6a]** Convert `concern-map.png` to PlantUML / Mermaid source (Section 10.4 compliance). Owner: TL. Due: Day 7.
+**EVIDENCE-GAP-2.6a — CLOSED 2026-05-28.** `concern-map.png` converted to text-based PlantUML at `D2-Architecture/concern-map.puml` (Section 10.4 compliance). The binary `.png` is retired to `archived/` (history kept, no longer the live artefact). Owner: TL.
 
 ---
 
@@ -282,7 +282,7 @@ We map every architectural choice back to one of these. The panel cannot disagre
 - **Reversibility (Fowler — irreversibility as the gate for ADR-grade decisions).** A decision that costs significantly to reverse is ADR-grade. MVVM split, transport, ACL — all three pass.
 
 **Evidence:**
-- `adrs/0001-mvvm-split.md` — Status proposed, with Alternatives section covering MVP, MVU, MVC, status quo, Reactive MVVM.
+- `D2-Architecture/architecture.md §4 (ADR-0001)` — Status accepted, with Alternatives section covering MVP, MVU, MVC, status quo, Reactive MVVM.
 - `D2-Architecture/architecture.md` — ADR-0002 (§4), Alternatives covering gRPC-on-Day-1, REST, in-process.
 - ADR-0003 owed [EVIDENCE-GAP-2.7a].
 
@@ -323,28 +323,28 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 
 ---
 
-### Slide 3.2 — After: `FileTabView` ↔ `FileTabViewModel` ↔ `IFileService` (~75 sec)
+### Slide 3.2 — After: `FileTabView` ↔ `FileTabViewModel` ↔ `IFitsService` (~75 sec)
 
-**Claim:** Three units replace the file-loading slice of the god class. The View binds to ViewModel properties and commands; the ViewModel calls a `IFileService` interface; the adapter behind the interface is the only place native code is invoked.
+**Claim:** Three units replace the file-loading slice of the god class. The View binds to ViewModel properties and commands; the ViewModel calls a `IFitsService` interface; the adapter behind the interface is the only place native code is invoked.
 
 **Why this matters:** this is the moment the panel must be able to *see* the SRP split. A diagram with three boxes and labelled arrows is enough.
 
 **Theory anchor:**
-- **SRP.** `FileTabView` owns binding; `FileTabViewModel` owns command logic + validation; `FileServiceAdapter` owns the native call.
-- **DIP.** ViewModel depends on `IFileService` (interface), not `FileServiceAdapter` (concrete).
+- **SRP.** `FileTabView` owns binding; `FileTabViewModel` owns command logic + validation; `FitsServiceAdapter` owns the native call.
+- **DIP.** ViewModel depends on `IFitsService` (interface), not `FitsServiceAdapter` (concrete).
 - **GRASP Indirection.** The interface is the indirection that breaks the direct coupling.
 - **MVVM (Gossman, Microsoft).** The View binds to ViewModel via property change + command dispatch, not method calls.
 
 **Evidence:**
 - `D4-worked-examples/ex1-file-tab/after-class-diagram.puml`.
 - `D4-worked-examples/ex1-file-tab/after-dependency-graph.puml`.
-- `mvvm-binding-policy.md` §9.1 — File tab walkthrough [EVIDENCE-GAP-3.2a, the `_TODO` in §9.1].
+- `mvvm-binding-policy.md` §3.1 — File tab walkthrough [EVIDENCE-GAP-3.2a, the `_TODO` in §3.1].
 
-**Speaker note:** "the View knows about a ViewModel property called `SelectedDataset`. The ViewModel knows about an `IFileService` method called `OpenAsync(path)`. Neither knows that under the interface lies a P/Invoke call into a C plug-in. Each layer can be tested in isolation."
+**Speaker note:** "the View knows about a ViewModel property called `ImagePath`. The ViewModel knows about an `IFitsService` method called `OpenImageAsync(path)`. Neither knows that under the interface lies a P/Invoke call into a C plug-in. Each layer can be tested in isolation."
 
 **Risk if challenged — "this is just plain dependency injection — what does MVVM add?":** MVVM is DI plus *binding semantics* (`INotifyPropertyChanged` + `ICommand`). DI alone would still require the View to imperatively pull from the ViewModel. The binding contract is what makes the View declarative.
 
-**[EVIDENCE-GAP-3.2a]** `mvvm-binding-policy.md` §9.1 walkthrough fully written, citing skeleton file paths. Owner: TL. Due: Day 7.
+**[EVIDENCE-GAP-3.2a]** `mvvm-binding-policy.md` §3.1 walkthrough fully written, citing skeleton file paths. Owner: TL. Due: Day 7.
 
 ---
 
@@ -375,7 +375,7 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 
 ### Slide 3.4 — CK delta — the numbers (~75 sec)
 
-**Claim:** Replace `CanvassDesktop` *for the file-tab slice* with three classes; the projected CK numbers all fall within §7.1 thresholds.
+**Claim:** Replace `CanvassDesktop` *for the file-tab slice* with three classes; the measured CK numbers fall within §7.1 thresholds, with `FileTabViewModel` WMC (27) the one borderline case over the ≤ 20 domain ceiling — remediation documented.
 
 **Why this matters:** Section 7 of the assignment is unambiguous — "speculative numbers without evidence are not accepted". The projection must be supported by the skeleton code, not by hope.
 
@@ -389,9 +389,11 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 | Class | WMC before | WMC after | CBO before | CBO after | RFC before | RFC after | LCOM before | LCOM after | Threshold (domain) |
 |---|---|---|---|---|---|---|---|---|---|
 | CanvassDesktop (post-split, composition-root shell) | 63 | ~8 | 47 | ~4 | 118 | ~12 | 0.955 | ~0.30 | ≤ 40 (orchestrator) |
-| FileTabViewModel | — | ~12 | — | ~5 | — | ~25 | — | ~0.25 | ≤ 20 |
+| FileTabViewModel | — | 27 ⚠ | — | 9 | — | ~50 | — | ≈0.20 | ≤ 20 |
 | SubsetBoundsViewModel | — | ~8 | — | ~1 | — | ~15 | — | ~0.20 | ≤ 20 |
 | FitsServiceAdapter | — | ~10 | — | ~6 | — | ~20 | — | ~0.30 | ≤ 40 (adapter) |
+
+**Note on `FileTabViewModel` WMC = 27 (⚠):** hand-counted Day 6 (`metrics.md §2.2`), this is borderline **over** the ≤ 20 domain threshold and we say so on the slide. Documented remediation: extract a `FileTabCommands` helper for the four command bodies, dropping the ViewModel to WMC ~22. Every other class in the slice is within threshold. Do not quote the old "~12 / re-derive to 15" figure — it was a stale projection, superseded by the measured 27.
 
 **Speaker note:** "the projection is evidenced by the skeleton code in `refactoring-examples/sub-team-6/file-tab/`. The numbers are not aspirational — they are countable from the skeleton. The full Understand re-run on the skeleton is owed by Day 13."
 
@@ -410,18 +412,18 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 | Letter | Principle | Embodied by |
 |---|---|---|
 | **S** | Single Responsibility | `FileTabViewModel` (no maths, no I/O); `SubsetBoundsViewModel` (no UI, only validation); `FitsServiceAdapter` (no UI, only translation). |
-| **O** | Open–Closed | `IFileService` is closed; new adapters (e.g. HDF5) implement the interface without changing the ViewModel. |
-| **L** | Liskov Substitution | Any `IFileService` implementation can replace another without breaking `FileTabViewModel`. Test doubles depend on this. |
-| **I** | Interface Segregation | `IFileService` and `IFileDialogService` are split; `FileTabViewModel` does not depend on dialog methods. Each interface ≤ 7 members (NFR-REU-2). |
-| **D** | Dependency Inversion | `FileTabViewModel` depends on `IFileService`, not on `FitsServiceAdapter`. |
+| **O** | Open–Closed | `IFitsService` is closed; new adapters (e.g. HDF5) implement the interface without changing the ViewModel. |
+| **L** | Liskov Substitution | Any `IFitsService` implementation can replace another without breaking `FileTabViewModel`. Test doubles depend on this. |
+| **I** | Interface Segregation | `IFitsService` and `IFileDialogService` are split; `FileTabViewModel` does not depend on dialog methods. Each interface ≤ 7 members (NFR-REU-2). |
+| **D** | Dependency Inversion | `FileTabViewModel` depends on `IFitsService`, not on `FitsServiceAdapter`. |
 
 | GRASP | Embodied by |
 |---|---|
 | **Information Expert** | `SubsetBoundsViewModel` owns the bounds *data*; therefore owns the *validation*. |
-| **Indirection** | `IFileService` is the indirection between ViewModel and native code. |
+| **Indirection** | `IFitsService` is the indirection between ViewModel and native code. |
 | **Protected Variations** | The variation we anticipate (transport, file format, dialog) is each behind a stable interface. |
 | **Low Coupling / High Cohesion** | CBO drops 47 → ~4 on the composition-root shell; LCOM 0.955 → ~0.30. |
-| **Polymorphism** | `IFileService` adapters dispatch on file type — no `if (extension == ...)` switch in the ViewModel. |
+| **Polymorphism** | `IFitsService` adapters dispatch on file type — no `if (extension == ...)` switch in the ViewModel. |
 | **Pure Fabrication** | `FileTabViewModel` is a *fabricated* class with no real-world counterpart; it exists only to make the ViewModel layer testable. |
 
 **Evidence:**
@@ -442,23 +444,25 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 
 ---
 
-### Slide 4.1 — Debug tab today: IMGUI popup + static logger access (~60 sec)
+### Slide 4.1 — Debug tab today: a static, unstructured, untestable log hook (~60 sec)
 
-**Claim:** Debug output today is legacy `OnGUI` IMGUI inside the same god class, reading from static logger access. There is no log *stream* — there is a log *snapshot* re-read every frame.
+**Claim:** The Debug tab (`DebugLogging.cs`, a 255-line `MonoBehaviour`) *already* observes a Unity event — it subscribes to `Application.logMessageReceived` in `OnEnable` (push, event-driven). But it observes through a **static, Unity-coupled hook**, stores entries as **unstructured strings in a non-generic `Queue`**, does **per-message disk I/O**, and **rebuilds the entire output `StringBuilder` from the full queue on every message** (O(N)). There is no `LogEntry` type, no level, no source, no structured timestamp — only `"[" + type + "] : " + logString`.
 
-**Why this matters:** the architectural failure here is *the absence of an event surface*. Observer is impossible because there is nothing to observe.
+**Why this matters:** the architectural failure is not the *absence* of an observer — it is that the observer is bolted to a **static global Unity API** (untestable), carries **no structured data** (cannot filter by level or source), and **couples observation, formatting, file I/O and UI-text rebuild in one method** (`HandleLog`). The refactor replaces the static hook with a typed `ILogStream` / `ILogObserver` + a `LogEntry` DTO, fed from the server via `log.emit`.
 
 **Theory anchor:**
-- **Push vs pull (Hohpe & Woolf, Enterprise Integration Patterns).** Pull semantics force the consumer to poll; push allows the producer to fan out at its own rate.
-- **Temporal coupling (anti-pattern).** Frame-driven polling couples the consumer to the rendering tick — wrong granularity for a log.
+- **DIP + testability (Beck — "if it's hard to test, the design is wrong").** Subscribing to the *static* `Application.logMessageReceived` is an untestable seam: no fake can stand in for a global engine event. An `ILogStream` interface restores the seam.
+- **Primitive obsession (Fowler).** A `Queue` of `"[type] : message"` lines is structured data flattened to text. Levels, source tags and filtering are impossible without a `LogEntry` DTO.
+- **SRP.** `HandleLog` observes, formats, enqueues, writes to disk (`AutoSave`), rebuilds the whole `StringBuilder`, and force-sets the scrollbar — several reasons to change in one method.
 
 **Evidence:**
-- `requirements.md` §2 table — Debug tab row: "tool-state read-out, OnGUI popup toggles, internal-state log".
+- `Assets/Scripts/Debuggers/DebugLogging.cs` — `OnEnable` line 149 (`Application.logMessageReceived += HandleLog`); `HandleLog` lines 177–197 (non-generic `Queue`, O(N) `StringBuilder` rebuild, `debugScrollbar.value = 1.0f`); `AutoSave` lines 249–254 (per-message `StreamWriter` open/write/close).
+- `requirements.md` §2 table — Debug row: behaviour "Scrollable Unity log readout, save log to `.txt`"; coupling "Subscribes to `Application.logMessageReceived` on the main thread with no thread guard"; defect **B-02 (CRITICAL)** tab-switch-during-load crash.
 - [EVIDENCE-GAP-4.1] — `ex2-debug-tab/before-class-diagram.puml` and `before-dependency-graph.puml` are owed (the equivalents for File tab exist). Owner: TL. Due: Day 8.
 
-**Speaker note:** "the Debug tab is the worst panel in the slice because nothing about it is event-driven. The fix is not a button rewrite — it is *creating an event in the first place*."
+**Speaker note:** "the Debug tab is not missing an observer — it *is* one, subscribed to `Application.logMessageReceived`. The problem is three-fold: the hook is a static Unity API, so nothing can be unit-tested; the data is an unstructured string queue, so you cannot filter by level or source; and one method does observation, disk I/O and an O(N) UI rebuild on every single log line. The refactor swaps the static hook for a typed `ILogStream` the ViewModel can subscribe to and a fake can replace."
 
-**Risk if challenged — "what's wrong with OnGUI?":** it is deprecated in Unity 6's UI Toolkit world; it is not testable; it polls every frame regardless of whether log content changed. Three independent problems, all solved by Observer.
+**Risk if challenged — "it already subscribes to an event, so what is the win?":** the win is the *seam* and the *structure*. A static engine event cannot be faked in a unit test; `ILogStream` can. A `LogEntry` DTO turns flattened text back into filterable, structured data. Same Observer shape — testable and structured instead of static and stringly-typed.
 
 ---
 
@@ -543,24 +547,24 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 | Principle | File tab (3.5) | Debug tab |
 |---|---|---|
 | SRP | ViewModel / ViewModel / Adapter split | Stream / ViewModel / View split |
-| OCP | `IFileService` adapters | `ILogStream` sinks — **the differentiator** |
-| LSP | Test double swap on `IFileService` | Test double swap on `ILogStream` (`FakeDebugLogSource`) |
-| ISP | `IFileService` + `IFileDialogService` split | `ILogStream` + `ILogObserver` split |
+| OCP | `IFitsService` adapters | `ILogStream` sinks — **the differentiator** |
+| LSP | Test double swap on `IFitsService` | Test double swap on `ILogStream` (`FakeDebugLogSource`) |
+| ISP | `IFitsService` + `IFileDialogService` split | `ILogStream` + `ILogObserver` split |
 | DIP | ViewModel ↔ interfaces only | ViewModel ↔ interfaces only |
 | Information Expert | `SubsetBoundsViewModel` owns bounds | `DebugTabViewModel` owns the bound log collection |
-| Polymorphism | `IFileService.OpenAsync` dispatches by file type | **Multiple `ILogObserver` implementations**, dispatched uniformly |
-| Indirection | `IFileService` | `ILogStream` |
+| Polymorphism | `IFitsService.OpenImageAsync` dispatches by file type | **Multiple `ILogObserver` implementations**, dispatched uniformly |
+| Indirection | `IFitsService` | `ILogStream` |
 | Observer pattern | n/a | **the defining pattern of this example** |
 
 **Evidence:**
 - `refactoring-examples/sub-team-6/debug-tab/skeleton/`.
-- `mvvm-binding-policy.md` §9.2 — Debug tab walkthrough [EVIDENCE-GAP-4.5, the `_TODO`].
+- `mvvm-binding-policy.md` §3.2 — Debug tab walkthrough [EVIDENCE-GAP-4.5, the `_TODO`].
 
 **Speaker note:** "two patterns, one architecture. The SOLID matrix shows the differential — OCP and Polymorphism do real work in Debug that File tab does not exercise. If we only had one worked example, we could not claim the architecture is general."
 
 **Risk if challenged — "do you actually need *two* worked examples?":** the assignment requires it (§6.6). The deeper reason: a single example proves only that the pattern fits one problem. Two examples with different forces prove the architecture is not bespoke.
 
-**[EVIDENCE-GAP-4.5]** `mvvm-binding-policy.md` §9.2 walkthrough fully written. Owner: TL. Due: Day 7.
+**[EVIDENCE-GAP-4.5]** `mvvm-binding-policy.md` §3.2 walkthrough fully written. Owner: TL. Due: Day 7.
 
 ---
 
@@ -581,7 +585,7 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 **Theory anchor:**
 - **Test pyramid (Cohn).** Many unit tests at the bottom (fast, no Unity); fewer integration tests in the middle (slow, Unity required); a thin smoke layer at the top.
 - **Page Object (Fowler, *Page Object*).** A View-side abstraction with intent-named queries (`ClickOpenCubeButton()`, `EnterPath(string)`); the integration test does not couple to UXML structure.
-- **Test double taxonomy (Meszaros).** We use *fakes* (`FakeFileService`) and *stubs* (`FakeDebugLogSource`); no mocks-as-spies in ViewModel tests.
+- **Test double taxonomy (Meszaros).** We use *stubs* (`StubFitsService`, `StubVolumeService`) and *fakes* (`FakeDebugLogSource`); no mocks-as-spies in ViewModel tests.
 
 **Evidence:**
 - `test-strategy.md` §2 — layered test approach table.
@@ -608,19 +612,19 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 - `requirements.md` NFR-REU-2 (ISP ≤ 7), NFR-TST-2 (mocking difficulty = 0).
 - `test-strategy.md` §7 — Interface-size audit (BNCH-7).
 - `test-strategy.md` §8 — Mocking-difficulty count (BNCH-6).
-- [EVIDENCE-GAP-5.2] — BNCH-6 and BNCH-7 audit tables owed.
+- BNCH-6 (`other/T2-baseline-benchmark/BNCH-6.md`) and BNCH-7 (`…/BNCH-7.md`) audit tables — both committed (EVIDENCE-GAP-5.2 CLOSED).
 
 **Speaker note:** "the proof that the design is testable is not 'we wrote unit tests'. The proof is 'the interfaces are small enough that any developer can write a test in five lines'. ISP and DIP, working together, are the operational testability lever."
 
 **Risk if challenged — "is ≤ 7 a magic number?":** it is the threshold the assignment specifies (§7.2). The literature varies — 5 to 10 are all defensible. We picked the assignment number and made it a hard gate.
 
-**[EVIDENCE-GAP-5.2]** BNCH-6 mocking-difficulty count + BNCH-7 ISP audit tables filled with real numbers. Owner: Quality Champion. Due: Day 9.
+**EVIDENCE-GAP-5.2 — CLOSED 2026-05-28.** BNCH-6 mocking-difficulty count (`other/T2-baseline-benchmark/BNCH-6.md` — `CanvassDesktop` 205 → ViewModel 0) and BNCH-7 ISP audit (`…/BNCH-7.md` — 11/12 interfaces ≤ 7; `IFileTabViewModel` facade is the documented trade-off) both committed with real numbers. Owner: Quality Champion.
 
 ---
 
-### Slide 5.3 — Worked test specification: `OpenCubeCommand` (~60 sec)
+### Slide 5.3 — Worked test specification: `BrowseImageCommand` / `LoadCommand` (~60 sec)
 
-**Claim:** Three test cases that *would not exist* without the split. Happy path, error path, and concurrency path — all running in NUnit, no Unity.
+**Claim:** Three test cases that *would not exist* without the split. Browse contract, load contract, and error path — all running in NUnit, no Unity.
 
 **Why this matters:** the panel wants concreteness. A three-row test table whose rows make sense in plain English is the proof that the design lets us *describe* behaviours, not just observe them.
 
@@ -629,15 +633,15 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 - **Equivalence partitioning + boundary value analysis.** Three tests are three partitions of behaviour space, not three random calls.
 
 **Evidence:**
-- `test-strategy.md` §6:
+- `refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs` (Browse / Load cases):
 
 ```csharp
-[Test] public void OpenCube_HappyPath_CallsGatewayWithExpectedArgs() { ... }
-[Test] public void OpenCube_GatewayThrows_ShowsErrorState() { ... }
-[Test] public void OpenCube_WhileLoading_IsIgnored() { ... }
+[Test] public async Task BrowseImage_ValidCube_SetsImagePathAndIsLoadable() { ... }
+[Test] public async Task Load_ValidFile_PassesCorrectPathAndHduIndex() { ... }
+[Test] public async Task Load_VolumeServiceThrows_SetsValidationMessage() { ... }
 ```
 
-**Speaker note:** "test 1 is the contract — the ViewModel calls the gateway with the right argument. Test 2 is the error path — the gateway throws, the ViewModel exposes the error state without throwing out of the command (`mvvm-binding-policy.md` §2.3). Test 3 is the concurrency contract — re-entering an in-flight command is a no-op (`IsBusy` gate). All three are NUnit; none touches Unity."
+**Speaker note:** "test 1 is the browse contract — browsing a valid cube sets `ImagePath` and `IsLoadable` with no Unity in the loop. Test 2 is the load contract — the ViewModel hands `IVolumeService` the right path and 1-based HDU index. Test 3 is the error path — the volume service throws, the ViewModel exposes `ValidationMessage` without throwing out of the command (`mvvm-binding-policy.md` §2.3). All three are NUnit; none touches Unity."
 
 **Risk if challenged — "where is the implementation of these tests?":** the skeleton is owed in `refactoring-examples/sub-team-6/file-tab/code/` by Day 10. Pre-commit; defensible if challenged on the day.
 
@@ -741,7 +745,7 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 
 **Theory anchor:**
 - **Contract-first design (Bertrand Meyer, *Object-Oriented Software Construction*).** Both sides of a contract can design against the contract without either side being implemented. Used here.
-- **Stub-and-mock pattern.** Our `FakeFileService` consumes our `IFileService` interface; the real adapter lands when Sub-team 1's `IServiceGateway` is final.
+- **Stub-and-mock pattern.** Our `StubFitsService` consumes our `IFitsService` interface; the real adapter lands when Sub-team 1's `IServiceGateway` is final.
 
 **Evidence:**
 - ADR-0001 — DEPS-1 recorded on integration risk register R01.
@@ -830,7 +834,7 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 **Why this matters:** the close ends with names. Section 8.4 interviews follow within 48 hours; any name on a slide is a name interviewed against that slide.
 
 **Evidence:**
-- `adrs/0001-mvvm-split.md` — author named.
+- `D2-Architecture/architecture.md §4 (ADR-0001)` — author named.
 - `D2-Architecture/architecture.md` — ADR-0002 author owed [EVIDENCE-GAP-7.3a].
 - `mvvm-binding-policy.md` — author owed [EVIDENCE-GAP-7.3b].
 - Pitch speaker assignments per slide owed [EVIDENCE-GAP-7.3c].
@@ -846,17 +850,17 @@ Ranked by pitch-day visibility. Each gap names an artefact, an owner, and a due 
 
 | # | Gap | Artefact | Owner | Due | Slide(s) |
 |---|---|---|---|---|---|
-| 1 | DV8 / NDepend cycle report on 8-class slice | `docs/sub-team-6/metrics/cycles-day10.md` | Quality Champion | Day 10 | 1.3, 7.1 |
+| 1 | DV8 / NDepend cycle report on 8-class slice — after-state assembly-level acyclicity now tool-backed (MSBuild); class-level + before-state tool confirmation still owed | [`../other/cycles-report.md`](../other/cycles-report.md) | Quality Champion | Day 10 | 1.3, 7.1 |
 | 2 | PlantUML C4 Level 1 diagram for our slice | `docs/sub-team-6/diagrams/c4-context.puml` | TL | Day 8 (ARCH-3) | 2.1 |
 | 3 | C4 Level 2 + Level 3 PlantUML | `docs/sub-team-6/diagrams/c4-container.puml`, `c4-component.puml` | TL | Day 8 | 2.2, 2.3 |
 | 4 | NDepend rules wired into CI (cycles, no-Unity-in-VM, no-static-singleton) | `tools/ndepend/rules.cqlinq` | Quality Guild | Day 10 | 2.5, 6.2 |
-| 5 | Concern map text-source (replace `.png`) | `docs/sub-team-6/concern-map.puml` or `.mmd` | TL | Day 7 | 2.6 |
+| 5 | Concern map text-source (replace `.png`) — **CLOSED 2026-05-28** | `docs/sub-team-6/deliverables/D2-Architecture/concern-map.puml` | TL | Day 7 | 2.6 |
 | 6 | ADR-0003 (ACL + Unity 6 UI Toolkit migration) | `docs/sub-team-6/adrs/0003-acl-uitk-migration.md` | TL | Day 8 | 2.7, 5.4 |
-| 7 | `mvvm-binding-policy.md` §9.1 + §9.2 walkthroughs filled | `…/D3-MVVM-binding-policy/mvvm-binding-policy.md` | TL | Day 7 | 3.2, 4.5 |
+| 7 | `mvvm-binding-policy.md` §3.1 + §3.2 walkthroughs filled | `…/D3-MVVM-binding-policy/mvvm-binding-policy.md` | TL | Day 7 | 3.2, 4.5 |
 | 8 | Before- and after-sequence diagrams for file-tab | `…/D4-worked-examples/ex1-file-tab/*-sequence-diagram.puml` | TL | Day 8 | 3.3 |
 | 9 | Debug-tab before-state UML | `…/D4-worked-examples/ex2-debug-tab/before-*.puml` | TL | Day 8 | 4.1 |
-| 10 | BNCH-6 mocking-difficulty + BNCH-7 ISP audit tables | `docs/sub-team-6/metrics/bnch-6.md`, `bnch-7.md` | Quality Champion | Day 9 | 5.2 |
-| 11 | File-tab skeleton + 3 `OpenCubeCommand` unit tests | `refactoring-examples/sub-team-6/file-tab/code/` | Sub-team | Day 10 | 5.3 |
+| 10 | BNCH-6 mocking-difficulty + BNCH-7 ISP audit tables — **CLOSED 2026-05-28** (both committed; BNCH-6 `CanvassDesktop` 205 → VM 0; BNCH-7 11/12 interfaces ≤ 7, `IFileTabViewModel` facade documented trade-off) | `docs/sub-team-6/deliverables/other/T2-baseline-benchmark/BNCH-6.md`, `BNCH-7.md` | Quality Champion | ✅ Day 9 | 5.2 |
+| 11 | File-tab skeleton + `BrowseImage`/`Load` unit tests | `refactoring-examples/sub-team-6/file-tab/tests/` | Sub-team | Day 10 | 5.3 |
 | 12 | Day-13 CK re-measurement on skeleton (Understand re-run) | `docs/sub-team-6/metrics/projection.md` | Quality Champion | Day 13 | 3.4, 4.4 |
 | 13 | Author names on ADR-0002, mvvm-binding-policy | inline | TL | Day 7 | 7.3 |
 | 14 | Per-slide speaker assignment + rehearsal plan | `docs/sub-team-6/deliverables/T5-pitch/speakers.md` | SM | Day 12 | 7.3 |
@@ -882,7 +886,7 @@ Ranked by signal — *probability × difficulty × cost of muffing it*. If we re
 | **1** | *"You did not change a single line of production code. Why should we believe these CK numbers will land?"* | Projection ≠ measurement. §7 forbids "speculative numbers without evidence". | Point at skeleton: `refactoring-examples/sub-team-6/file-tab/`, `…/debug-tab/skeleton/`. The numbers are countable from skeleton, not from hope. Day 13 re-measurement on the skeleton is owed (Gap #12, Appendix A). | Promising the full refactor is delivered. It is not — design proposal only (§6.6). |
 | **2** | *"Pick one slide. Defend it as if you wrote it alone."* | §10.5 #4 — inability to defend = fail signal. They will pick a slide *with our name on it*. | Whichever member is asked: lead with the **claim** sentence from that slide, then the **theory anchor**, then the **evidence pointer**. Do not improvise — the spine is the script. | Reading the slide back. They asked you to *defend*, not narrate. |
 | **3** | *"Show me where in the brief MVVM is mandated, and defend the choice over MVP / MVU / MVC."* | LO4 + ADR-0001 quality. §6.6 says "MVVM-style split"; the choice between MVVM variants is ours. | Brief §6.6 names MVVM explicitly. ADR-0001 *Alternatives Considered* rejects MVP (no binding semantics — equivalent boilerplate without payoff), MVU (mismatch with UI Toolkit two-way binding; learning-curve risk), MVC (View pulls Model — defeats DIP for our threading model), Reactive MVVM (Rx adds a library dependency we have not justified). | Defending MVVM as "the obvious choice". The brief names it but does not justify it — we must. |
-| **4** | *"Sub-team 1 owns the `IServiceGateway`. What happens if their contract differs from your assumption?"* | DEPS-1, integration risk (R01 in ADR-0001). | Slide 6.3. The contract *is* the artefact. Day 8 integration review (sprint plan) is the lock-in date. Our ViewModel depends only on `IFileService` and `ILogStream` — those are *ours*. The seam to `IServiceGateway` is the adapter and is owned in our composition root. If Sub-team 1's shape changes, we rewrite the adapter, not the ViewModel. | Saying "we coordinated with them". Name the *artefact* and the *date*. |
+| **4** | *"Sub-team 1 owns the `IServiceGateway`. What happens if their contract differs from your assumption?"* | DEPS-1, integration risk (R01 in ADR-0001). | Slide 6.3. The contract *is* the artefact. Day 8 integration review (sprint plan) is the lock-in date. Our ViewModel depends only on `IFitsService` and `ILogStream` — those are *ours*. The seam to `IServiceGateway` is the adapter and is owned in our composition root. If Sub-team 1's shape changes, we rewrite the adapter, not the ViewModel. | Saying "we coordinated with them". Name the *artefact* and the *date*. |
 | **5** | *"`CanvassDesktop` is a `MonoBehaviour` because Unity demands it. Doesn't your split fight the engine?"* | The panel wrote the engine integration. They know Unity. | The View *stays* a `MonoBehaviour` (or `UIDocument` in UI Toolkit) — that is the only assembly that touches Unity. The ViewModel is pure C# because it does *not* extend `MonoBehaviour`; it is held by reference, not by the scene graph. We are not fighting Unity — we are letting Unity own only what Unity must own. `mvvm-binding-policy.md` §5 (composition root). | Implying the View is also pure C#. It is not. |
 | **6** | *"You claim 47 → ~4 CBO on the post-split shell. How? Show me the dependencies you removed."* | Quantitative challenge. CBO drops are easy to over-claim. | Walk the before-DSM (`before-dsm.md`) → after-DSM (`after-dsm.md`) for **CanvassDesktop (post-split)** row only. The shell's responsibility is *only* to instantiate the ViewModels and bind the `UIDocument`. Its CBO is now bounded by the count of ViewModels it composes (~4). The remaining dependencies (FITS, native, dialogs) moved *into* the adapters, where adapter thresholds (CBO ≤ 25) absorb them. | Quoting the gross number without showing where the coupling *went*. CBO does not disappear — it relocates to a class with a higher threshold. |
 | **7** | *"You found a real bug (`UpdateMaxValue` writes `minVal`). Did you fix it? Did you tell the maintainers?"* | This is the trick question. The brief is design-only (§6.6) — but the panel *is* the maintainer. | Frame: this is evidence of cost in Slide 1.4, not a deliverable. We are now telling you — on a slide. We can raise a GitHub issue post-pitch if useful; we did not raise it during the assessment because doing so was out of §6.6 scope. | Either (a) hedging — say it cleanly. Or (b) claiming we will fix it during the assessment window. We will not. |
@@ -924,9 +928,9 @@ These questions sit alongside the Risk lines on the slides themselves. Where a s
 
 #### B.2.3 — Worked examples (Sections 3 & 4 — 12 min slot, the centrepiece)
 
-- **Q: "I see `FileTabViewModel` ~ 12 WMC. Show me the method list."** — Skeleton probe. Answer: open `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs` if it exists; otherwise narrate from `after-class-diagram.puml`: `OpenAsync`, `CloseAsync`, `OnAxisChanged`, `OnThresholdChanged`, `OnSubsetBoundsChanged`, `Validate`, `Reset`, `IsBusy` get, `SelectedDataset` get/set, `Error` get, plus 2 INPC plumbing — ~12 methods.[EVIDENCE-GAP-B.2.3a — confirm method list against committed skeleton] **Trap:** quoting a number without method names.
+- **Q: "I see `FileTabViewModel` WMC 27. Show me the method list."** — Skeleton probe. Answer: open the committed `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs` and narrate: constructor, 9 non-trivial property setters (`ImagePath`, `MaskPath`, `SelectedHduIndex`, `SelectedZAxisIndex`, `SubsetEnabled`, `RatioMode`, `IsLoading`, `HeaderText`, `ValidationMessage`), the `IsLoadable` getter, 4 command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `ClearMask`), `Dispose`, `RefreshHduHeaderAsync`, `BuildMemoryWarning`, `PopulateZAxisOptions`, `UpdateZAxisMax`, `GetAxisMaxima`, `ComputeZScale`, `MaskAxesMatchImage`, plus the notify helpers — 27 total (hand-counted Day 6, `metrics.md §2.2`). WMC 27 is borderline over the ≤ 20 domain threshold; documented remediation: extract a `FileTabCommands` helper → WMC ~22. **Trap:** quoting a number without method names; quoting the stale "~12".
 
-- **Q: "How does the View know when `SelectedDataset` changes?"** — Binding mechanics. Answer: `INotifyPropertyChanged` event. The ViewModel raises `PropertyChanged("SelectedDataset")`; the View's `UIDocument` has a binding registered against `SelectedDataset` via UI Toolkit's binding system (Unity 6) or via our `UnityBinder<T>` shim (Unity 2021). `mvvm-binding-policy.md` §2.1. **Trap:** "the View polls it". That would be the old design.
+- **Q: "How does the View know when `ImagePath` changes?"** — Binding mechanics. Answer: `INotifyPropertyChanged` event. The ViewModel raises `PropertyChanged("ImagePath")`; the View's `UIDocument` has a binding registered against `ImagePath` via UI Toolkit's binding system (Unity 6) or via our `UnityBinder<T>` shim (Unity 2021). `mvvm-binding-policy.md` §2.1. **Trap:** "the View polls it". That would be the old design.
 
 - **Q: "Observer pattern for the Debug tab. Who removes the observer when the View is destroyed?"** — Lifecycle / leak probe. Answer: `DebugTabViewModel` implements `IDisposable`. The composition root holds the reference and disposes on scene unload. `mvvm-binding-policy.md` §6 (lifecycle).[EVIDENCE-GAP-B.2.3b — §6 of binding policy currently a stub; confirm before pitch] **Trap:** "garbage collection handles it". It does not — the publisher's strong reference pins the observer.
 
@@ -938,7 +942,7 @@ These questions sit alongside the Risk lines on the slides themselves. Where a s
 
 #### B.2.4 — Testability & Unity 6 migration (Section 5 — 6 min slot)
 
-- **Q: "70 % branch + line on ViewModel. What is your *line* coverage on `FileTabViewModel` today?"** — Coverage reality. Answer: 0 %. The skeleton tests are owed by Day 10 (Gap #11). The target is reached when the three `OpenCubeCommand` tests + analogues for `Close`, `Validate`, `SubsetBoundsViewModel.Validate`, error path, and threading land. We project ~75 % from the test list. **Trap:** quoting a number we have not measured.
+- **Q: "70 % branch + line on ViewModel. What is your *line* coverage on `FileTabViewModel` today?"** — Coverage reality. Answer: 0 %. The skeleton tests are owed by Day 10 (Gap #11). The target is reached when the `BrowseImage` and `Load` command tests + analogues for `BrowseMask`, `ClearMask`, `SubsetBoundsViewModel` bounds-clamping, the error paths, and PropertyChanged land. We project ~75 % from the test list. **Trap:** quoting a number we have not measured.
 
 - **Q: "Mocking framework — Moq, NSubstitute, FakeItEasy?"** — Tooling probe. Answer: Moq + NUnit. Moq because it is the framework the cohort already knows; NUnit because it is the Unity Test Framework's default. Both run outside Unity in `dotnet test`. **Trap:** discussing the framework war. The choice is conventional; defend it as conventional.
 
@@ -960,7 +964,7 @@ These questions sit alongside the Risk lines on the slides themselves. Where a s
 
 #### B.2.6 — Cross-team & integration
 
-- **Q: "How does Sub-team 4 (VR menus) reuse your ViewModels?"** — Reuse claim under pressure. Answer: ARQ-3 in `requirements.md` §4 — ViewModel surface is pure C#, callable from VR menu code (which is Unity-side, but a *different* View) without modification. The interface that lets VR menus open a file is `IFileService` — the same one our `FileTabViewModel` consumes. **Trap:** claiming the View is shared. It is not — only the ViewModel and below.
+- **Q: "How does Sub-team 4 (VR menus) reuse your ViewModels?"** — Reuse claim under pressure. Answer: ARQ-3 in `requirements.md` §4 — ViewModel surface is pure C#, callable from VR menu code (which is Unity-side, but a *different* View) without modification. The interface that lets VR menus open a file is `IFitsService` — the same one our `FileTabViewModel` consumes. **Trap:** claiming the View is shared. It is not — only the ViewModel and below.
 
 - **Q: "Sub-team 7 (Persistence). What does your slice contribute to workspace state?"** — D13 deliverable. Answer: every ViewModel exposes a JSON-serialisable `State` DTO. Persistence reads/writes those DTOs without touching Unity. The state contract is delivered to Sub-team 7 by Day 9 (sprint plan §8.2 exit criterion). **Trap:** "Persistence is their problem". Name our contribution (the DTOs).
 
@@ -978,9 +982,9 @@ These questions sit alongside the Risk lines on the slides themselves. Where a s
 
 #### B.2.8 — Panel-specific angles (iDaVIE maintainer hot buttons)
 
-- **Q: "Large FITS cubes can be tens of gigabytes. Does your interface assume in-memory data?"** — Domain reality. Answer: no. `IFileService.OpenAsync` returns a *handle* DTO (`DatasetHandle`), not bytes. Slices, axes, and subset reads are separate calls. The native plug-in keeps the cube; the client side only sees metadata + the slices it requested. This matches the existing iDaVIE architecture. **Trap:** "we did not consider it". It is the first question.
+- **Q: "Large FITS cubes can be tens of gigabytes. Does your interface assume in-memory data?"** — Domain reality. Answer: no. `IFitsService.OpenImageAsync` returns a `FitsFileInfo` DTO carrying an `IFitsHandle` to the open file, not bytes. Slices, axes, and subset reads are separate calls. The native plug-in keeps the cube; the client side only sees metadata + the slices it requested. This matches the existing iDaVIE architecture. **Trap:** "we did not consider it". It is the first question.
 
-- **Q: "The native plug-in is C++. Your interface is async C#. Where does the marshalling happen, and what is your cancellation story?"** — Real interop pain. Answer: `FitsServiceAdapter` is the only class that holds `[DllImport]`. Cancellation: `IFileService.OpenAsync(path, CancellationToken)`. The adapter polls the token between native calls (the native side itself is not cancellable mid-call, which is a known limitation we inherit, not introduce). Documented in ADR-0003 §Consequences [EVIDENCE-GAP-B.2.8a — confirm once ADR-0003 lands]. **Trap:** claiming we cancel mid-native-call. We do not.
+- **Q: "The native plug-in is C++. Your interface is async C#. Where does the marshalling happen, and what is your cancellation story?"** — Real interop pain. Answer: `FitsServiceAdapter` is the only class that holds `[DllImport]`. Cancellation: `IFitsService.OpenImageAsync(path, CancellationToken)`. The adapter polls the token between native calls (the native side itself is not cancellable mid-call, which is a known limitation we inherit, not introduce). Documented in ADR-0003 §Consequences [EVIDENCE-GAP-B.2.8a — confirm once ADR-0003 lands]. **Trap:** claiming we cancel mid-native-call. We do not.
 
 - **Q: "VR side already uses a different menu system. Are you proposing to replace that too?"** — Scope creep probe. Answer: no. VR menus are Sub-team 4's scope (§6.4). Our deliverable is the *desktop* client shell. The ViewModels are *reusable* from VR menu code, which is the architectural value; whether the VR side adopts them is Sub-team 4's call. **Trap:** offering to refactor VR. Out of scope.
 
@@ -1006,7 +1010,7 @@ These are the questions designed to break composure or expose unfounded confiden
 
 - **Q: "Your sub-team is allocated to 'Desktop GUI and Client Shell'. The brief lists you as Sub-team 5 (Die Boks) in §5.5 but you call yourselves Sub-team 6. Why?"** — **A:** §5.5 numbers are *allocation IDs*; §6.x numbers are *work-package IDs*. We are allocation 5, work package 6. We refer to "Sub-team 6" because that is the work package we read; we are formally Die Boks / Sub-team 5 in cohort coordination. (Resolved 2026-05-19 — see CLAUDE.md project header.)
 
-- **Q: "I don't believe your CK projections. Re-derive WMC for `FileTabViewModel` from first principles, live."** — **A:** WMC is the sum of method complexities (CC). The skeleton lists ~12 methods, each cyclomatic complexity 1–2 (no nested branching in the ViewModel — the validation logic lives in `SubsetBoundsViewModel`). Sum is ~15. We rounded to ~12 in the projection. If the live re-derivation gives 15, the projection is conservative-by-3, still well under the threshold of 20.
+- **Q: "I don't believe your CK projections. Re-derive WMC for `FileTabViewModel` from first principles, live."** — **A:** WMC is the sum of method complexities. The committed skeleton has 27 methods/accessors, most of cyclomatic complexity 1–2 (validation lives in `SubsetBoundsViewModel`), so WMC 27 — hand-counted Day 6 (`metrics.md §2.2`), measured not projected. That is borderline over the ≤ 20 domain threshold and we say so; documented remediation is to extract a `FileTabCommands` helper → WMC ~22.
 
 - **Q: "What is one thing about your design you are uncertain about?"** — **A:** The `IUIDispatcher` abstraction may be heavier than necessary if UI Toolkit's binding system already marshals to the UI thread reliably under all event sources. We carry the abstraction because the Unity 2021 path (without UI Toolkit) needs it; once we are Unity-6-only it may simplify. Open question for Sprint 3.
 
@@ -1074,15 +1078,15 @@ Phrases to bank-avoid in Q&A. Each has been a known anti-signal in past assessme
 
 ## Cross Reference
 
-- ADR-0001 — `docs/sub-team-6/adrs/0001-mvvm-split.md`
+- ADR-0001 — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` (§4)
 - ADR-0002 — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md` (§4)
-- D1 Requirements — `docs/sub-team-6/requirements.md`
-- D2 Architecture — `docs/sub-team-6/architecture.md`
+- D1 Requirements — `docs/sub-team-6/deliverables/D1-requirements/requirements.md`
+- D2 Architecture — `docs/sub-team-6/deliverables/D2-Architecture/architecture.md`
 - D3 MVVM Binding Policy — `docs/sub-team-6/deliverables/D3-MVVM-binding-policy/mvvm-binding-policy.md`
 - D4 File-tab worked example — `docs/sub-team-6/deliverables/D4-worked-examples/ex1-file-tab/`
 - D4 Debug-tab skeleton — `refactoring-examples/sub-team-6/debug-tab/skeleton/`
-- D5 Test strategy — `docs/sub-team-6/test-strategy.md`
-- D9 CK baseline — `docs/sub-team-6/deliverables/other/D9-ck-baseline/SK_BNCH.md`
-- D9 SonarQube baseline — `docs/sub-team-6/deliverables/other/D9-ck-baseline/SonarQube Baseline report.md`
+- D5 Test strategy — `docs/sub-team-6/deliverables/D5-testing/test-strategy.md`
+- D9 CK baseline — `docs/sub-team-6/archived/SK_BNCH.md`
+- D9 SonarQube baseline — `docs/sub-team-6/archived/SonarQube Baseline report.md`
 - Deliverables checklist — `docs/sub-team-6/deliverables/deliverables-checklist.md`
 - Assignment spec — `Assignment-Docs/iDaVIE_Refactoring_Assignment_FINAL_1.md`

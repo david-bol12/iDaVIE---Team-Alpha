@@ -46,7 +46,7 @@ The four-tier pyramid below mirrors the architectural layer boundaries. Each tie
 refactoring-examples/sub-team-6/
   file-tab/
     skeleton/FileTabSkeleton.csproj   ← ViewModel + NUnit + Moq + Coverlet; no UnityEngine reference
-    tests/FileTabViewModelTests.cs    ← 34 NUnit tests, zero Unity dependency
+    tests/FileTabViewModelTests.cs    ← 47 NUnit tests, zero Unity dependency
   debug-tab/
     skeleton/DebugTabSkeleton.csproj
     tests/DebugTabTests.cs            ← 29 NUnit tests, ~20 ms total
@@ -349,7 +349,7 @@ Every row below points at an artefact a panel reviewer can open in this repo.
 | Artefact | What it shows |
 |---|---|
 | [BNCH-6 — Mocking-difficulty count](../other/T2-baseline-benchmark/BNCH-6.md) | Before: 205 call sites in `CanvassDesktop` that require a live Unity scene or native DLL to test. After: 0 in the ViewModel layer (205 → 0 static/Unity; 6 → 0 `FindObjectOfType`; 36 → 0 P/Invoke / `StandaloneFileBrowser`). |
-| [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) | **34 NUnit tests** on `FileTabViewModel` — zero `using UnityEngine`, mocks four split service interfaces. |
+| [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) | **47 NUnit tests** on `FileTabViewModel` — zero `using UnityEngine`, mocks four split service interfaces. |
 | [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) | **29 NUnit tests** on `DebugTabViewModel` + `LogStream` — zero `using UnityEngine`, `dotnet test` runtime **~17 ms**. |
 | [`contracts/tests/LengthPrefixFramingTests.cs`](../../../../refactoring-examples/sub-team-6/contracts/tests/LengthPrefixFramingTests.cs) + [`FakeGatewayTests.cs`](../../../../refactoring-examples/sub-team-6/contracts/tests/FakeGatewayTests.cs) | **11 NUnit tests** pinning the wire framing (ADR-0002 §"Framing") and the gateway double's contract. Zero Unity dependency. |
 | [`FitsServiceAdapterTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/adapters/tests/FitsServiceAdapterTests.cs) | **4 NUnit tests** asserting `FitsServiceAdapter` dispatches `file.open` → `dataset.getAxes` → `dataset.getHeader` → `file.close` through `IServiceGateway` with the params shape mandated by ADR-0002. **Closes audit F9** ("transport contract has no consumer"). |
