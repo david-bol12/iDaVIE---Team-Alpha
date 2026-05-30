@@ -32,16 +32,7 @@
 
 All four failing metrics on the same class is the diagnostic signature of a **God Class**. The worst single method, `_startFunc`, carries CC = 28 across 185 lines. CBO = 45 means 45 other files must be considered on any edit.
 
-### 2.2 What the Metrics Mean in Practice
-
-| Metric | Value | Target | Significance |
-|--------|-------|--------|--------------|
-| WMC | 97 | ≤ 20 | 97 methods, 84 instance variables. Worst method (`_startFunc`) CC = 28 over 185 lines — CC > 10 predicts elevated defect rates. |
-| CBO | 28 | ≤ 14 | Coupled to 28 classes. Mask data set (~92 refs) and feature manager (~29 refs) are the primary extraction targets. |
-| RFC | 97 | — | 97-method transitive fan-out makes any call impossible to reason about in isolation. |
-| LCOM | 0.95 | → 0.0 | 95% lack of cohesion — metric confirmation of multiple unrelated responsibilities. |
-
-### 2.3 Responsibility Inventory
+### 2.2 Responsibility Inventory
 
 | # | Responsibility | Proposed Owner |
 |---|---------------|----------------|
@@ -52,7 +43,7 @@ All four failing metrics on the same class is the diagnostic signature of a **Go
 | 5 | Mask mode branching | `IMaskMode` strategy implementations |
 | 6–8 | Region selection, cursor tracking, FITS I/O | Out of scope for this refactor |
 
-### 2.4 Render Pipeline Lock-In
+### 2.3 Render Pipeline Lock-In
 
 Three calls in `VolumeDataSetRenderer` are incompatible with Unity 6 URP: `Graphics.DrawProceduralNow` (lines 1148, 1154), `OnRenderObject` (line 1142), and `Shader.EnableKeyword` (lines 1099, 1103). The refactored architecture isolates all pipeline-specific code behind `IRenderPipeline`, making the domain testable without a Unity player context.
 
