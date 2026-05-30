@@ -62,60 +62,30 @@ Three calls in `VolumeDataSetRenderer` are incompatible with Unity 6 URP: `Graph
 
 ### 3.1 What Sub-team 3 Owns
 
-Sub-team 3 is responsible for the GPU-side volume rendering layer: every class, interface, and shader file that converts a loaded FITS data cube into a visible 3D image inside the VR headset. This includes the five target classes (`VolumeRenderCoordinator`, `VolumeMaterialBinder`, `VolumeTextureManager`, `VolumeCameraDriver`, `FoveatedSamplingPolicy`), the `IRenderPipeline` and `IMaskMode` interfaces and their implementations, and the test doubles in `iDaVIE.Rendering.Tests`. Sub-team 3 also owns the `IGazeProvider` interface definition as the consuming party, and the `MockGazeProvider` stub — but has no dependency on any SteamVR SDK type in its domain or adapter assemblies.
+Sub-team 3 owns the GPU-side volume rendering layer: all classes, interfaces, and shader files that convert a loaded FITS cube into a visible 3D image in the VR headset. This covers the five target classes, the `IRenderPipeline` and `IMaskMode` interfaces and their implementations, and the test doubles in `iDaVIE.Rendering.Tests`. Sub-team 3 also owns the `IGazeProvider` interface as the consuming party and the `MockGazeProvider` stub, but holds no dependency on any SteamVR SDK type in its domain assemblies.
 
-`VolumeDataSetRenderer.cs` — the existing monolith — is the subject of this refactor. Sub-team 3 authored the analysis but does not modify it in Sprint 2; this is a design-only proposal and no production code is changed this sprint.
+`VolumeDataSetRenderer.cs` is the subject of this refactor. No production code is modified this sprint — this is a design-only proposal.
 
 ### 3.2 What Is Explicitly Out of Scope
 
-Three areas are excluded from Sub-team 3's responsibilities.
-
-**FITS data ingest (Sub-team 2).** Loading, parsing, and delivery of raw voxel data is Sub-team 2's responsibility. Sub-team 3 consumes volume data only through the `IRawVolumeDataSource` interface and the `RawVolumeData` struct; it never reads a FITS file directly. The `StubVolumeDataSource` in the test assembly is a wire-compatible stand-in until Sub-team 2's implementation is delivered.
-
-**VR interaction and gaze SDK (Sub-team 4).** The SteamVR/OpenXR integration and the concrete `SteamVRGazeProvider` are Sub-team 4's responsibility. `VolumeCameraDriver` receives camera state via value types (`Matrix4x4`, `float`) and has no dependency on VR-specific input beyond what `IGazeProvider` expresses.
-
-**Application shell (Sub-team 7).** Scene lifecycle, the main menu, and session save/restore are out of scope. `VolumeRenderCoordinator` is the sole entry point Sub-team 3 contributes to the scene graph. The `RegionSelectionController` and `CursorPaintController` responsibilities present in the current monolith remain untouched — their presence inflates the WMC and CBO baseline figures, but absorbing them is explicitly prohibited this sprint.
-
+- **FITS data ingest (Sub-team 2)** — Sub-team 3 consumes volume data only through `IRawVolumeDataSource` and `RawVolumeData`; it never reads a FITS file directly.
+- **VR interaction and gaze SDK (Sub-team 4)** — The concrete `SteamVRGazeProvider` is Sub-team 4's responsibility. `VolumeCameraDriver` has no dependency on VR-specific input beyond the `IGazeProvider` interface.
+- **Application shell (Sub-team 7)** — Scene lifecycle, menus, and session save/restore are out of scope. `VolumeRenderCoordinator` is Sub-team 3's sole contribution to the scene graph. `RegionSelectionController` and `CursorPaintController` remain untouched in the monolith this sprint.
 ## 4. Requirements Recap
 
 ### 4.1 Current Invariants (must survive refactoring)
 
-- **INV-01** — Maintain 90 FPS on reference hardware; frame-rate drops cause motion sickness in VR.
-- **INV-02** — Total 3D texture memory must not exceed 4 GB (Unity engine limit).
-- **INV-03** — Default volume cube limited to 368 MB.
-- **INV-04** — Nearest-neighbour filtering only; bilinear/trilinear interpolation distorts voxel data.
-- **INV-05** — Eye-tracking-based foveated rendering must remain fully functional to sustain INV-01 at usable image quality.
-- **INV-06** — Visual output for Apply, Inverse, and Isolate mask modes must match the legacy system exactly.
+90 FPS minimum (INV-01), 4 GB total texture cap (INV-02), 368 MB volume budget (INV-03), nearest-neighbour filtering only (INV-04), foveated rendering must remain functional (INV-05), and mask mode visual output must match the legacy system exactly (INV-06).
 
 ### 4.2 Key Functional Requirements
 
-- **FR01** — Ray-march through a 3D texture, accumulating colour and opacity via the active colour map.
-- **FR02** — Support three mask modes (Apply, Inverse, Isolate) without a pipeline restart.
-- **FR03** — Apply a configurable colour map with single-frame visual updates.
-- **FR04** — Adjust sample rate based on gaze direction (higher at focus, lower at periphery).
-- **FR05** — Enforce the 368 MB budget by evicting and reusing GPU texture slots.
-- **FR06** — Core assemblies must not import URP or HDRP types directly or transitively; this is a hard architectural constraint.
+FR01 ray-march volume visualisation; FR02 three mask modes without pipeline restart; FR03 dynamic colour mapping with single-frame updates; FR04 gaze-contingent sample rate adjustment; FR05 368 MB GPU texture budget enforcement; FR06 no URP/HDRP imports in core assemblies.
 
 ### 4.3 Key Non-Functional Requirements
 
-#### CK Metrics Targets (per domain class)
+**CK targets per domain class:** WMC ≤ 20, CBO ≤ 14, RFC ≤ 50, LCOM ≤ 0.5, DIT ≤ 4.
 
-| Metric | Target |
-|--------|--------|
-| WMC | ≤ 20 |
-| CBO | ≤ 14 |
-| RFC | ≤ 50 |
-| LCOM | ≤ 0.5 |
-| DIT | ≤ 4 |
-
-#### Design Standards
-
-- Zero circular dependencies, verified via NDepend.
-- All rendering logic must be unit-testable without the Unity runtime.
-- Adding a new mask mode requires only a new `IMaskMode` implementation — no changes to existing code.
-- Switching from URP to HDRP requires replacing only one adapter class.
-- All internal APIs must be explicitly defined as interfaces.
-
+**Design standards:** Zero circular dependencies (verified via NDepend). All rendering logic unit-testable without the Unity runtime. Adding a new mask mode requires only a new `IMaskMode` implementation. Switching render pipeline requires replacing one adapter class only. All internal APIs defined as explicit interfaces.
 ## 5. Design Decisions
 
 ### 5.1 Current Architecture (As-Is)
