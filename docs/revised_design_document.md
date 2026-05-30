@@ -71,28 +71,14 @@ Sub-team 3 owns the GPU-side volume rendering layer: all classes, interfaces, an
 - **FITS data ingest (Sub-team 2)** — Sub-team 3 consumes volume data only through `IRawVolumeDataSource` and `RawVolumeData`; it never reads a FITS file directly.
 - **VR interaction and gaze SDK (Sub-team 4)** — The concrete `SteamVRGazeProvider` is Sub-team 4's responsibility. `VolumeCameraDriver` has no dependency on VR-specific input beyond the `IGazeProvider` interface.
 - **Application shell (Sub-team 7)** — Scene lifecycle, menus, and session save/restore are out of scope. `VolumeRenderCoordinator` is Sub-team 3's sole contribution to the scene graph. `RegionSelectionController` and `CursorPaintController` remain untouched in the monolith this sprint.
-## 4. Requirements Recap
 
-### 4.1 Current Invariants (must survive refactoring)
+## 4. Design Decisions
 
-90 FPS minimum (INV-01), 4 GB total texture cap (INV-02), 368 MB volume budget (INV-03), nearest-neighbour filtering only (INV-04), foveated rendering must remain functional (INV-05), and mask mode visual output must match the legacy system exactly (INV-06).
-
-### 4.2 Key Functional Requirements
-
-FR01 ray-march volume visualisation; FR02 three mask modes without pipeline restart; FR03 dynamic colour mapping with single-frame updates; FR04 gaze-contingent sample rate adjustment; FR05 368 MB GPU texture budget enforcement; FR06 no URP/HDRP imports in core assemblies.
-
-### 4.3 Key Non-Functional Requirements
-
-**CK targets per domain class:** WMC ≤ 20, CBO ≤ 14, RFC ≤ 50, LCOM ≤ 0.5, DIT ≤ 4.
-
-**Design standards:** Zero circular dependencies (verified via NDepend). All rendering logic unit-testable without the Unity runtime. Adding a new mask mode requires only a new `IMaskMode` implementation. Switching render pipeline requires replacing one adapter class only. All internal APIs defined as explicit interfaces.
-## 5. Design Decisions
-
-### 5.1 Current Architecture (As-Is)
+### 4.1 Current Architecture (As-Is)
 
 The current structure is a single node coupled to 45 files across 8 packages. The SOLID/GRASP audit (§8) catalogues 17 confirmed violations — 6 Critical, 8 High, 1 Medium.
 
-### 5.2 Target Architecture (To-Be)
+### 4.2 Target Architecture (To-Be)
 
 `VolumeDataSetRenderer` is replaced by five collaborating classes, each behind its own interface:
 
@@ -106,7 +92,7 @@ The current structure is a single node coupled to 45 files across 8 packages. Th
 
 `VolumeRenderCoordinator` is the only class that inherits from `MonoBehaviour` and the only class that knows all four domain classes exist. It contains zero domain logic — all computation is delegated.
 
-### 5.3 DD-01 — Render Pipeline Abstraction (`IRenderPipeline`)
+### 4.3 DD-01 — Render Pipeline Abstraction (`IRenderPipeline`)
 
 `IRenderPipeline` is a six-member interface in `iDaVIE.Rendering`. The two concrete adapters — `UrpRenderPipeline` and `HdrpRenderPipeline` — are the only files permitted to import `UnityEngine.Rendering.Universal` or HDRP namespaces. A `NullRenderPipeline` test double enables edit-mode unit tests without a GPU.
 
@@ -123,7 +109,7 @@ public interface IRenderPipeline {
 
 **DIP justification:** High-level policy depends on `IRenderPipeline`, not on `UnityEngine.Rendering.Universal`. Future pipeline migrations touch only the adapter — zero domain changes. This resolves V-10 and V-15 (§8.1).
 
-### 5.4 DD-02 — Mask Mode Strategy Pattern (`IMaskMode`)
+### 4.4 DD-02 — Mask Mode Strategy Pattern (`IMaskMode`)
 
 The current if/else chain at lines 1072–1094 is an OCP violation (V-04): adding a new mask mode requires editing four files. The Strategy pattern replaces it with a two-member interface:
 
@@ -143,7 +129,7 @@ public interface IMaskMode {
 
 Adding a new mode = one new class, zero existing files changed. Worked example in `refactoring-examples/example2-MaskModes/`.
 
-### 5.5 DD-03 — `VolumeDataSetRenderer` Split (SRP)
+### 4.5 DD-03 — `VolumeDataSetRenderer` Split (SRP)
 
 Colour-coding analysis of the class body identified four dense, well-separated clusters. Each maps to an extracted class:
 
@@ -157,11 +143,11 @@ Colour-coding analysis of the class body identified four dense, well-separated c
 
 Each extracted class operates on a single field cluster — the structural guarantee that LCOM approaches zero.
 
-### 5.6 DD-04 — Foveated Rendering Extraction (`FoveatedSamplingPolicy`)
+### 4.6 DD-04 — Foveated Rendering Extraction (`FoveatedSamplingPolicy`)
 
 The current code calls the SteamVR gaze API directly inside `Update()` — a DIP breach (V-07). `FoveatedSamplingPolicy` takes an `IGazeProvider` interface at construction. When `IsGazeAvailable == false`, it falls back to a uniform sample rate, preserving INV-01. Sub-team 4 will implement the concrete `SteamVRGazeProvider`; `MockGazeProvider` covers all unit tests until then.
 
-### 5.7 Shader/Asset Organisation Policy
+### 4.7 Shader/Asset Organisation Policy
 
 Full policy in `docs/shader-asset-policy.md`. Summary:
 
@@ -171,7 +157,7 @@ Full policy in `docs/shader-asset-policy.md`. Summary:
 - **Variant stripping:** Only the three active mask mode keywords and active colour map variants ship. Variant collection committed to version control; reviewed on any shader keyword change.
 - **Runtime vs. baked:** `Texture3D` volumes are runtime-only (never saved as `.asset`). Colour map LUT textures are baked 256×1 RGBA PNGs. `VolumeMaterial.mat` is a committed baked asset.
 
-### 5.8 Migration Path — Strangler Fig (7 Phases)
+### 4.8 Migration Path — Strangler Fig (7 Phases)
 
 No big-bang rewrite. Each phase extracts one responsibility; the codebase compiles and runs at 90 FPS after every phase. `VolumeDataSetRenderer` is not deleted until Phase 6 is verified.
 
@@ -188,18 +174,18 @@ No big-bang rewrite. Each phase extracts one responsibility; the codebase compil
 
 ---
 
-## 6. CK Metrics Worksheet
+## 5. CK Metrics Worksheet
 
 *Full table with raw Understand formula values in `docs/metrics-worksheet.md`.*
 
-### 6.1 Day 2 Baseline (Measured)
+### 5.1 Day 2 Baseline (Measured)
 
 | Class | WMC | DIT | NOC | CBO | RFC | LCOM |
 |-------|-----|-----|-----|-----|-----|------|
 | `VolumeDataSetRenderer` | **44** | 1 | 0 | **45** | **89** | **0.81** |
 | Target | ≤ 20 | ≤ 4 | ≤ 5 | ≤ 14 | ≤ 50 | ≤ 0.5 |
 
-### 6.2 Day 13 Projection (Proposed)
+### 5.2 Day 13 Projection (Proposed)
 
 | Class | WMC | CBO | RFC | LCOM | Meets Target? |
 |-------|-----|-----|-----|------|---------------|
@@ -211,13 +197,13 @@ No big-bang rewrite. Each phase extracts one responsibility; the codebase compil
 | `ApplyMaskMode` / `InverseMaskMode` / `IsolateMaskMode` / `DisabledMaskMode` | 2 each | 1 each | 3 each | 0.00 | ✅ all |
 | `UrpRenderPipeline` (adapter) | 8 | 14 | 20 | 0.00 | ✅ (adapter ≤ 40/≤ 25) |
 
-### 6.3 Delta Summary
+### 5.3 Delta Summary
 
 Splitting `VolumeDataSetRenderer` eliminates every CK threshold violation. WMC drops from 44 to ≤ 20 per class. CBO drops from 45 to ≤ 11 per domain class, breaking the 46-file dependency cycle (39.8% propagation cost). LCOM collapses from 0.81 to ≤ 0.05 per class.
 
 ---
 
-## 7. Class and Sequence Diagrams
+## 6. Class and Sequence Diagrams
 
 All diagrams are PlantUML source in `diagrams/`:
 
@@ -228,11 +214,11 @@ All diagrams are PlantUML source in `diagrams/`:
 
 ---
 
-## 8. SOLID/GRASP Audit
+## 7. SOLID/GRASP Audit
 
 *Full evidence with code line references: `docs/Codebase Exploration/SOLID_GRASP_Violations.md`*
 
-### 8.1 Violations in Current Code
+### 7.1 Violations in Current Code
 
 | ID | Principle | Violation | Severity |
 |----|-----------|-----------|----------|
@@ -250,7 +236,7 @@ All diagrams are PlantUML source in `diagrams/`:
 
 *6 Critical, 8 High, 1 Medium total — see `SOLID_GRASP_Violations.md` for full 17-row table including V-02, V-03, V-05, V-09, V-11, V-12.*
 
-### 8.2 Fixes in Proposed Design
+### 7.2 Fixes in Proposed Design
 
 | Violation | Resolved By | How |
 |-----------|------------|-----|
@@ -262,7 +248,7 @@ All diagrams are PlantUML source in `diagrams/`:
 | V-15 (Prot. Variations) | DD-01 | `IRenderPipeline` is the stable seam around the render pipeline variation point |
 | V-16/V-17 | DD-01 + DD-03 | Per-class CBO ≤ 11; per-class LCOM ≤ 0.05 |
 
-### 8.3 Remaining Trade-offs
+### 7.3 Remaining Trade-offs
 
 **T-01 — Coordinator coupling (CBO ~6):** `VolumeRenderCoordinator` couples to four interfaces — acceptable (CBO ≤ 25 for orchestrators per brief). Coupling is to interfaces, not concrete classes.
 
@@ -270,7 +256,7 @@ All diagrams are PlantUML source in `diagrams/`:
 
 ---
 
-## 9. Sub-team Dependencies
+## 8. Sub-team Dependencies
 
 | Dependency | Interface | Status |
 |---|---|---|
@@ -281,7 +267,7 @@ Sub-team 3 exposes camera state via `VolumeCameraDriver` (available to Sub-team 
 
 ---
 
-## 10. Risks
+## 9. Risks
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
@@ -296,7 +282,7 @@ Sub-team 3 exposes camera state via `VolumeCameraDriver` (available to Sub-team 
 
 ---
 
-## 11. Appendices
+## 10. Appendices
 
 **Appendix A — Diagram Source Files:** `diagrams/class-before.puml`, `class-after.puml`, `architecture.puml`, `sequence-render-frame.puml`, `vdsr-dependencies.puml`.
 
