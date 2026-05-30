@@ -87,6 +87,14 @@ The current structure is a single node coupled to 45 files across 8 packages. Th
 
 `IRenderPipeline` is a six-member interface in `iDaVIE.Rendering`. The two concrete adapters — `UrpRenderPipeline` and `HdrpRenderPipeline` — are the only files permitted to import `UnityEngine.Rendering.Universal` or HDRP namespaces. A `NullRenderPipeline` test double enables edit-mode unit tests without a GPU.
 
+**Problem — three Built-In RP calls that break in URP:**
+
+| Call | Location | URP incompatibility |
+|---|---|---|
+| `Graphics.DrawProceduralNow` | lines 1148, 1154 | Executes outside a command buffer — silently dropped by URP |
+| `OnRenderObject` callback | line 1142 | Not invoked by the URP render loop — draw call never fires |
+| `Shader.EnableKeyword` | lines 1099, 1103 | URP deprecates global keywords in favour of per-material `LocalKeyword` |
+
 ```csharp
 public interface IRenderPipeline {
     void AddCommandBuffer(Camera camera, CameraEvent evt, CommandBuffer buffer);
@@ -98,11 +106,37 @@ public interface IRenderPipeline {
 }
 ```
 
+**Method rationale:**
+
+| Method | Replaces | Domain role |
+|---|---|---|
+| `AddCommandBuffer` / `RemoveCommandBuffer` | `Graphics.DrawProceduralNow` + `OnRenderObject` | Domain schedules ray-march work via `CommandBuffer`; adapter chooses the camera event |
+| `SetPipelineKeyword` | `Shader.EnableKeyword` / `DisableKeyword` | Adapter translates to `LocalKeyword` (URP) or HDRP equivalent — domain never knows which |
+| `DepthTextureAvailable` | Inline `_CameraDepthTexture` branching | URP requires opt-in; HDRP always provides it — `VolumeMaterialBinder` reads this once at startup |
+| `Initialise` / `Dispose` | Inline setup/teardown in `_startFunc` | Adapter registers `ScriptableRenderFeature`, allocates command buffers, releases GPU resources |
+
 **DIP justification:** High-level policy depends on `IRenderPipeline`, not on `UnityEngine.Rendering.Universal`. Future pipeline migrations touch only the adapter — zero domain changes. This resolves V-10 and V-15 (§8.1).
+
+**Concrete adapters:**
+
+| Adapter | Assembly | Key distinction |
+|---|---|---|
+| `UrpRenderPipeline` | `iDaVIE.Rendering.URP` | Only class in the codebase importing `UnityEngine.Rendering.Universal`; URP major-version upgrades touch this file only |
+| `HdrpRenderPipeline` | `iDaVIE.Rendering.HDRP` | Injects via `RenderPipelineManager.beginCameraRendering`; `DepthTextureAvailable` returns `true` unconditionally |
+| `NullRenderPipeline` | `iDaVIE.Rendering.Tests` (Editor-only) | All no-ops; `DepthTextureAvailable = true`; `.asmdef` Editor flag prevents shipping in production builds |
 
 ### 4.4 DD-02 — Mask Mode Strategy Pattern (`IMaskMode`)
 
-The current if/else chain at lines 1072–1094 is an OCP violation (V-04): adding a new mask mode requires editing four files. The Strategy pattern replaces it with a two-member interface:
+The current if/else chain at lines 1072–1094 (`VolumeDataSetRendererMaskMode.cs`) is an OCP violation (V-04): adding a new mask mode requires editing four files — `MaskMode` enum, `VolumeDataSetRenderer`, `BasicVolume.cginc`, and `PaintMenuController`. It also cannot be unit-tested without a real `Material` and a running Unity context.
+
+**Before (abbreviated):**
+```csharp
+if (MaskMode == MaskMode.Enabled)      { _materialInstance.EnableKeyword("_MASK_APPLY");   _materialInstance.SetFloat("_MaskAlpha", 1.0f); }
+else if (MaskMode == MaskMode.Inverted) { _materialInstance.EnableKeyword("_MASK_INVERSE"); _materialInstance.SetFloat("_MaskAlpha", 1.0f); }
+else if (MaskMode == MaskMode.Isolated) { _materialInstance.EnableKeyword("_MASK_ISOLATE"); _materialInstance.SetFloat("_MaskAlpha", 0.15f); }
+```
+
+The Strategy pattern replaces it with a two-member interface:
 
 ```csharp
 public interface IMaskMode {
@@ -120,6 +154,10 @@ public interface IMaskMode {
 
 Adding a new mode = one new class, zero existing files changed. Worked example in `refactoring-examples/example2-MaskModes/`.
 
+**OCP/SRP justification:** Each implementation changes only when its own rendering behaviour changes — no class has a reason to change that belongs to another. `VolumeMaterialBinder` holds a single `IMaskMode _activeMaskMode` field; mode switching is a constructor call with no branching in the coordinator.
+
+**Pattern choice:** Strategy over Decorator (mask modes are mutually exclusive per frame — composition adds complexity without benefit) and over State (mode is set by external user input, not autonomous transitions — Strategy is the simpler fit).
+
 ### 4.5 DD-03 — `VolumeDataSetRenderer` Split (SRP)
 
 Colour-coding analysis of the class body identified four dense, well-separated clusters. Each maps to an extracted class:
@@ -134,9 +172,33 @@ Colour-coding analysis of the class body identified four dense, well-separated c
 
 Each extracted class operates on a single field cluster — the structural guarantee that LCOM approaches zero.
 
+**One reason to change per class:**
+- `VolumeMaterialBinder` — shader property protocol changes (new keyword, new float, colour map pipeline change)
+- `VolumeTextureManager` — texture lifecycle policy changes (budget, eviction strategy, filter mode)
+- `VolumeCameraDriver` — camera math changes (projection mode, coordinate frame, clip plane policy)
+- `FoveatedSamplingPolicy` — foveation algorithm changes (zone thresholds, fallback policy)
+
+`VolumeRenderCoordinator` contains zero domain logic — every computation is delegated. A SonarQube gate (CC > 2 = build failure) enforces this; any method that computes rather than delegates fails the build.
+
 ### 4.6 DD-04 — Foveated Rendering Extraction (`FoveatedSamplingPolicy`)
 
 The current code calls the SteamVR gaze API directly inside `Update()` — a DIP breach (V-07). `FoveatedSamplingPolicy` takes an `IGazeProvider` interface at construction. When `IsGazeAvailable == false`, it falls back to a uniform sample rate, preserving INV-01. Sub-team 4 will implement the concrete `SteamVRGazeProvider`; `MockGazeProvider` covers all unit tests until then.
+
+```csharp
+public interface IGazeProvider
+{
+    Vector3 GetGazeDirection();   // normalised world-space gaze; only valid when IsGazeAvailable is true
+    bool IsGazeAvailable { get; } // false during HMD absence, SteamVR init window, or non-eye-tracking headsets
+}
+```
+
+**Fallback:** `IsGazeAvailable == false` → `FoveatedSamplingPolicy.Evaluate()` returns `FoveatedSamplingConfig.UniformSampleStep` — identical to today's HMD-absent path; INV-01 preserved.
+
+**DIP dependency direction:**
+- `FoveatedSamplingPolicy` (high-level) → `IGazeProvider` (abstraction it controls)
+- `SteamVRGazeProvider` (low-level, Sub-team 4) → implements `IGazeProvider`
+
+The domain assembly never names `SteamVRGazeProvider`. Swapping HMD SDK or targeting a non-SteamVR platform = new `IGazeProvider` implementation, zero domain changes. Resolves V-07 and V-15.
 
 ### 4.7 Shader/Asset Organisation Policy
 
@@ -152,16 +214,23 @@ Full policy in `docs/shader-asset-policy.md`. Summary:
 
 No big-bang rewrite. Each phase extracts one responsibility; the codebase compiles and runs at 90 FPS after every phase. `VolumeDataSetRenderer` is not deleted until Phase 6 is verified.
 
-| Phase | What Is Extracted | Highest Risk | Rollback Cost |
-|-------|------------------|-------------|---------------|
-| 0 | Interfaces + test doubles | None | Delete 8 files |
-| 1 | Mask mode branching → `IMaskMode` strategies | Low | 1 file restored |
-| 2 | Foveation calculation → `FoveatedSamplingPolicy` | Low | 1 file restored |
-| 3 | Shader property writes → `VolumeMaterialBinder` | Medium | 1 file restored |
-| 4 | Camera matrix math → `VolumeCameraDriver` | Medium | 1 file restored |
-| 5 | Texture lifecycle → `VolumeTextureManager` | High | 1 file restored |
-| 6 | `VolumeRenderCoordinator` introduced; `VolumeDataSetRenderer` retired | Medium | Restore prefab reference |
-| 7 | `UrpRenderPipeline` replaces `BuiltInRenderPipeline` | High | Swap Graphics Settings asset |
+**Three governing principles:**
+1. **One extraction per PR.** Each phase is a standalone PR with a reviewable diff and minimal rollback scope.
+2. **Interfaces before implementations.** Every new class is hidden behind its interface from the first commit — immediately swappable with a test double.
+3. **No public API change at the scene boundary.** `VolumeDataSetRenderer` keeps the same public fields in Phases 1–6; prefabs and scene files do not change until Phase 7.
+
+| Phase | What Is Extracted | Entry Condition | Exit Condition | Highest Risk | Rollback |
+|-------|------------------|----------------|----------------|-------------|---------|
+| 0 | Interfaces + test doubles (no behaviour change) | — | Project compiles; existing tests pass | None | Delete 8 files |
+| 1 | Mask mode branching → `IMaskMode` strategies | Phase 0 | 4 mask-mode unit tests pass; frame rate gate passes | Low | Restore if/else block |
+| 2 | Foveation → `FoveatedSamplingPolicy` | Phase 1 | Foveation unit tests pass (all zones + uniform fallback); frame rate gate passes | Low | Restore inline foveation block |
+| 3 | Shader property writes → `VolumeMaterialBinder` | Phases 1–2 | Material binding tests pass; **zero heap allocations on hot path** (Unity Memory Profiler) | Medium | Restore `SetFloat`/`EnableKeyword` calls |
+| 4 | Camera matrix math → `VolumeCameraDriver` | Phase 3 | Correctness test passes for ≥ 5 camera configurations (oblique, zero-distance, ortho); frame rate gate passes | Medium | Restore inline matrix math |
+| 5 | Texture lifecycle → `VolumeTextureManager` | Phases 1–4 | Budget test passes (370 MB → eviction triggered; 368 MB → no eviction); nearest-neighbour verified; eviction completes within 1 frame (< 2 ms spike) | High | Restore inline texture lifecycle |
+| 6 | `VolumeRenderCoordinator` introduced; `VolumeDataSetRenderer` retired | Phase 5 | Shadow mode comparison passes; `CoordinatorWiringTest` passes; frame rate gate passes with only coordinator active | Medium | Restore prefab reference |
+| 7 | `UrpRenderPipeline` replaces `BuiltInRenderPipeline` | Phase 6 | Frame rate gate passes with URP; visual regression screenshot comparison passes | High | Swap Graphics Settings asset |
+
+Phase 6 uses **shadow mode**: coordinator and monolith run in parallel for one session, per-frame `VolumeRenderState` compared, before the monolith is disabled and retired. The codebase is in a fully runnable, 90-fps-verified state at every phase boundary.
 
 ---
 
