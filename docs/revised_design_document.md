@@ -7,7 +7,11 @@
 
 ## 1. Executive Summary
 
-This document analyses the iDaVIE rendering layer using CK metrics and proposes a refactoring of `VolumeDataSetRenderer` — a 1,403-line God Class (WMC 44, CBO 45) — into five focused collaborating classes behind clean interfaces. No production code is changed; this is a design-only proposal.
+- This document analyses the iDaVIE rendering layer using CK metrics to evaluate code health, performance and maintainability
+- In addition, this document proposes modifications to the codebase's architecture and design to improve performance and stability.
+- The file with the largest number of violations is VolumeDataSetRenderer. `VolumeDataSetRenderer` (~1 400 lines, WMC 97, CBO 28) is a monolith that violates SRP, OCP, and DIP; the proposal splits it into four focused classes behind clean interfaces.
+- The document outlines the two concrete refactoring examples demonstrated in `refactoring-examples/`.
+- Note that no production code is changed — this is a design-only proposal.
 
 ---
 
@@ -28,7 +32,16 @@ This document analyses the iDaVIE rendering layer using CK metrics and proposes 
 
 All four failing metrics on the same class is the diagnostic signature of a **God Class**. The worst single method, `_startFunc`, carries CC = 28 across 185 lines. CBO = 45 means 45 other files must be considered on any edit.
 
-### 2.2 Responsibility Inventory
+### 2.2 What the Metrics Mean in Practice
+
+| Metric | Value | Target | Significance |
+|--------|-------|--------|--------------|
+| WMC | 97 | ≤ 20 | 97 methods, 84 instance variables. Worst method (`_startFunc`) CC = 28 over 185 lines — CC > 10 predicts elevated defect rates. |
+| CBO | 28 | ≤ 14 | Coupled to 28 classes. Mask data set (~92 refs) and feature manager (~29 refs) are the primary extraction targets. |
+| RFC | 97 | — | 97-method transitive fan-out makes any call impossible to reason about in isolation. |
+| LCOM | 0.95 | → 0.0 | 95% lack of cohesion — metric confirmation of multiple unrelated responsibilities. |
+
+### 2.3 Responsibility Inventory
 
 | # | Responsibility | Proposed Owner |
 |---|---------------|----------------|
@@ -39,7 +52,7 @@ All four failing metrics on the same class is the diagnostic signature of a **Go
 | 5 | Mask mode branching | `IMaskMode` strategy implementations |
 | 6–8 | Region selection, cursor tracking, FITS I/O | Out of scope for this refactor |
 
-### 2.3 Render Pipeline Lock-In
+### 2.4 Render Pipeline Lock-In
 
 Three calls in `VolumeDataSetRenderer` are incompatible with Unity 6 URP: `Graphics.DrawProceduralNow` (lines 1148, 1154), `OnRenderObject` (line 1142), and `Shader.EnableKeyword` (lines 1099, 1103). The refactored architecture isolates all pipeline-specific code behind `IRenderPipeline`, making the domain testable without a Unity player context.
 
@@ -47,27 +60,61 @@ Three calls in `VolumeDataSetRenderer` are incompatible with Unity 6 URP: `Graph
 
 ## 3. Scope
 
-**Sub-team 3 owns:** `VolumeRenderCoordinator`, `VolumeMaterialBinder`, `VolumeTextureManager`, `VolumeCameraDriver`, `FoveatedSamplingPolicy`, `IRenderPipeline`, `IMaskMode` + four implementations, `UrpRenderPipeline`, `HdrpRenderPipeline`, and the test doubles in `iDaVIE.Rendering.Tests`.
+### 3.1 What Sub-team 3 Owns
 
-**Explicitly out of scope:** FITS data ingest (Sub-team 2), VR interaction and gaze SDK (Sub-team 4), application shell and session save/restore (Sub-team 7). The `RegionSelectionController` and `CursorPaintController` responsibilities in the current monolith are excluded from this sprint.
+Sub-team 3 is responsible for the GPU-side volume rendering layer: every class, interface, and shader file that converts a loaded FITS data cube into a visible 3D image inside the VR headset. This includes the five target classes (`VolumeRenderCoordinator`, `VolumeMaterialBinder`, `VolumeTextureManager`, `VolumeCameraDriver`, `FoveatedSamplingPolicy`), the `IRenderPipeline` and `IMaskMode` interfaces and their implementations, and the test doubles in `iDaVIE.Rendering.Tests`. Sub-team 3 also owns the `IGazeProvider` interface definition as the consuming party, and the `MockGazeProvider` stub — but has no dependency on any SteamVR SDK type in its domain or adapter assemblies.
 
-| Brief §6.3 Component | This Document | Content |
-|---|---|---|
-| Rendering Layer Design | §5 Design Decisions | DD-01 through DD-04, migration path |
-| Shader/Asset Policy | §5.7 | Folder conventions, naming, variant selection |
-| Metrics Worksheet | §6 CK Metrics Worksheet | Day 2 baseline, Day 13 projection, delta |
+`VolumeDataSetRenderer.cs` — the existing monolith — is the subject of this refactor. Sub-team 3 authored the analysis but does not modify it in Sprint 2; this is a design-only proposal and no production code is changed this sprint.
 
----
+### 3.2 What Is Explicitly Out of Scope
+
+Three areas are excluded from Sub-team 3's responsibilities.
+
+**FITS data ingest (Sub-team 2).** Loading, parsing, and delivery of raw voxel data is Sub-team 2's responsibility. Sub-team 3 consumes volume data only through the `IRawVolumeDataSource` interface and the `RawVolumeData` struct; it never reads a FITS file directly. The `StubVolumeDataSource` in the test assembly is a wire-compatible stand-in until Sub-team 2's implementation is delivered.
+
+**VR interaction and gaze SDK (Sub-team 4).** The SteamVR/OpenXR integration and the concrete `SteamVRGazeProvider` are Sub-team 4's responsibility. `VolumeCameraDriver` receives camera state via value types (`Matrix4x4`, `float`) and has no dependency on VR-specific input beyond what `IGazeProvider` expresses.
+
+**Application shell (Sub-team 7).** Scene lifecycle, the main menu, and session save/restore are out of scope. `VolumeRenderCoordinator` is the sole entry point Sub-team 3 contributes to the scene graph. The `RegionSelectionController` and `CursorPaintController` responsibilities present in the current monolith remain untouched — their presence inflates the WMC and CBO baseline figures, but absorbing them is explicitly prohibited this sprint.
 
 ## 4. Requirements Recap
 
-**Current invariants (must survive refactoring):** 90 FPS (INV-01), 4 GB texture cap (INV-02), 368 MB volume budget (INV-03), nearest-neighbour filtering (INV-04), foveated rendering (INV-05), mask mode visual correctness (INV-06).
+### 4.1 Current Invariants (must survive refactoring)
 
-**Key functional requirements:** FR01 ray-march volume visualisation; FR02 three mask modes without pipeline restart; FR03 dynamic colour mapping; FR04 gaze-contingent sampling; FR05 368 MB cache enforcement; FR06 no transitive URP/HDRP imports in core assemblies.
+- **INV-01** — Maintain 90 FPS on reference hardware; frame-rate drops cause motion sickness in VR.
+- **INV-02** — Total 3D texture memory must not exceed 4 GB (Unity engine limit).
+- **INV-03** — Default volume cube limited to 368 MB.
+- **INV-04** — Nearest-neighbour filtering only; bilinear/trilinear interpolation distorts voxel data.
+- **INV-05** — Eye-tracking-based foveated rendering must remain fully functional to sustain INV-01 at usable image quality.
+- **INV-06** — Visual output for Apply, Inverse, and Isolate mask modes must match the legacy system exactly.
 
-**CK targets per domain class:** WMC ≤ 20, CBO ≤ 14, RFC ≤ 50, LCOM ≤ 0.5, DIT ≤ 4. Zero circular dependencies. All rendering logic unit-testable without Unity runtime.
+### 4.2 Key Functional Requirements
 
----
+- **FR01** — Ray-march through a 3D texture, accumulating colour and opacity via the active colour map.
+- **FR02** — Support three mask modes (Apply, Inverse, Isolate) without a pipeline restart.
+- **FR03** — Apply a configurable colour map with single-frame visual updates.
+- **FR04** — Adjust sample rate based on gaze direction (higher at focus, lower at periphery).
+- **FR05** — Enforce the 368 MB budget by evicting and reusing GPU texture slots.
+- **FR06** — Core assemblies must not import URP or HDRP types directly or transitively; this is a hard architectural constraint.
+
+### 4.3 Key Non-Functional Requirements
+
+#### CK Metrics Targets (per domain class)
+
+| Metric | Target |
+|--------|--------|
+| WMC | ≤ 20 |
+| CBO | ≤ 14 |
+| RFC | ≤ 50 |
+| LCOM | ≤ 0.5 |
+| DIT | ≤ 4 |
+
+#### Design Standards
+
+- Zero circular dependencies, verified via NDepend.
+- All rendering logic must be unit-testable without the Unity runtime.
+- Adding a new mask mode requires only a new `IMaskMode` implementation — no changes to existing code.
+- Switching from URP to HDRP requires replacing only one adapter class.
+- All internal APIs must be explicitly defined as interfaces.
 
 ## 5. Design Decisions
 
