@@ -1,7 +1,3 @@
-// WE2-4 | Debug tab AFTER — DebugTabView (Unity-assembly, thin View)
-// Binds IDebugTabViewModel to Unity UI controls.
-// No business logic. No transform.Find chains.
-// Satisfies ADR-0001 (MVVM split) and NFR-MOD-2.
 using System.Text;
 using iDaVIE.Desktop.DebugTab;
 using TMPro;
@@ -12,15 +8,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
 {
     /// <summary>
     /// Thin MonoBehaviour view for the Debug tab panel.
-    ///
-    /// Subscribes to <see cref="IDebugTabViewModel.EntriesChanged"/> and rebuilds
-    /// the log display text on each change. The Clear button delegates directly to
-    /// <see cref="IDebugTabViewModel.ClearEntries"/>.
-    ///
-    /// Contrast with the "before" state: CanvassDesktop had no debug console panel —
-    /// log output existed only in Unity's built-in Console window and was unreachable
-    /// at runtime by the desktop operator. This view makes the live log observable
-    /// inside the application UI.
+    /// Rebuilds the log text on each <see cref="IDebugTabViewModel.EntriesChanged"/> event.
     /// </summary>
     public sealed class DebugTabView : MonoBehaviour
     {
