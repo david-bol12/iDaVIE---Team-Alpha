@@ -1,16 +1,8 @@
-// WE2-4 | Debug tab AFTER skeleton
-// LogStream — concrete implementation of ILogStream.
-// Thread-safe observer registration and dispatch.
-// No UnityEngine dependency.
 using System;
 using System.Collections.Generic;
 namespace iDaVIE.Desktop.DebugTab
 {
-    /// <summary>
-    /// Default implementation of <see cref="ILogStream"/>.
-    /// Maintains a list of <see cref="ILogObserver"/> subscribers
-    /// and dispatches each published <see cref="LogEntry"/> to all of them.
-    /// </summary>
+    // Snapshot-under-lock so Subscribe/Unsubscribe during dispatch is safe.
     public sealed class LogStream : ILogStream
     {
         private readonly List<ILogObserver> _observers = new();
