@@ -439,10 +439,8 @@ Counts across CanvassDesktop before vs all WE1 + WE2 successor types combined. A
 Cycles are forbidden across all top-level components (see §6, row "Circular dependency cycles"). DIT and NOC thresholds apply uniformly across both roles. Observed DIT and NOC across all WE1/WE2 successor types stay at 0–1 (see §2.2 and §3.2) — well under threshold.
 
 Role assignments:
-- **Domain / ViewModel:** `SubsetBoundsViewModel`, `DebugTabViewModel`
-- **Orchestrator:** `FileTabViewModel` (coordinates 4 injected services — re-classified Day 10)
-- **Adapter / Orchestrator:** `FileTabView`, `FitsServiceAdapter`, `StandaloneFileDialogAdapter`, `VolumeServiceAdapter`, `DebugTabView`, `GatewayLogStreamAdapter`, `CanvassDesktop` shell
-- **Utility (static):** `FitsMetadataHelper` (extracted from `FileTabViewModel` — Day 10)
+- **Domain / ViewModel:** `FileTabViewModel`, `SubsetBoundsViewModel`, `DebugTabViewModel`
+- **Adapter / Orchestrator:** `FileTabView`, `FitsServiceAdapter`, `FileDialogAdapter`, `VolumeServiceAdapter`, `DebugTabView`, `GatewayLogStreamAdapter`, `CanvassDesktop` shell
 
 ---
 

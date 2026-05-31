@@ -101,30 +101,29 @@ The committed suite at `refactoring-examples/sub-team-6/file-tab/tests/FileTabVi
 
 ### 3.3 Test shapes — Debug tab ViewModel (Observer pattern)
 
-The Debug tab ViewModel subscribes to `ILogStream.OnLogEntry`. Tests fire events via Moq's `Raise` — no Unity, no static logger, no thread.
+The Debug tab ViewModel implements `ILogObserver` and subscribes to `ILogStream` via `Subscribe(this)` (the Observer pattern, matching D2 §6 and the committed skeleton). Tests publish through a concrete `LogStream` — no Unity, no static logger, no thread.
 
 ```csharp
 [Category("ViewModel")]
 public class DebugTabViewModelTests
 {
     [Test]
-    public void OnLogEntry_SingleWarning_AppendsToEntries()
+    public void Publish_SingleWarning_AppendsToLogEntries()
     {
-        var logStream = new Mock<ILogStream>();
-        var vm = new DebugTabViewModel(logStream.Object);
+        var logStream = new LogStream();            // concrete ILogStream — pure C#, no Unity
+        var vm = new DebugTabViewModel(logStream);  // ctor calls logStream.Subscribe(this)
 
-        logStream.Raise(l => l.OnLogEntry += null,
-            new LogEntry { Level = LogLevel.Warning, Message = "VR init slow" });
+        logStream.Publish(LogLevel.Warning, "VR init slow");
 
-        Assert.That(vm.Entries, Has.Count.EqualTo(1));
-        Assert.That(vm.Entries[0].Message, Is.EqualTo("VR init slow"));
+        Assert.That(vm.LogEntries, Has.Count.EqualTo(1));
+        Assert.That(vm.LogEntries[0].Message, Is.EqualTo("VR init slow"));
     }
 
     [Test]
-    public void ClearEntries_EmptiesCollection() { ... }
+    public void MultipleEntries_PreserveArrivalOrder() { ... }
 
     [Test]
-    public void MultipleEntries_PreserveArrivalOrder() { ... }
+    public void LogEntries_ExposedAsReadOnlyList() { ... }
 }
 ```
 
