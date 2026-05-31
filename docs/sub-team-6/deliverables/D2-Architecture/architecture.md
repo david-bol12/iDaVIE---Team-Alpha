@@ -368,7 +368,7 @@ classDiagram
     }
 
     class DebugTabViewModel {
-        +LogEntries : IObservableList~LogEntryDto~
+        +LogEntries : IReadOnlyList~LogEntry~
         +FilterLevel : LogLevel
     }
 
@@ -436,6 +436,7 @@ The following interfaces define every public boundary within the client shell. F
 | `IVolumeService` | ViewModel → Adapter | `LoadCubeAsync`, `IsCubeLoaded`, renderer queries. |
 | `IFileDialogService` | ViewModel → Adapter | `PickFileAsync(filter)` — hides `StandaloneFileBrowser`. |
 | `IConfigService` | ViewModel → Adapter | `GetValue<T>(key)` / `SetValue<T>(key, value)` — hides `PlayerPrefs`. |
+| `IMemoryProbe` | ViewModel → Adapter | `TotalSystemBytes` / available-RAM query; lets `FileTabViewModel` warn before loading a cube that would exceed memory. Hides `UnityEngine.SystemInfo`. Implemented by `MemoryProbeAdapter` (Unity adapter). |
 
 **Rule:** every interface must have at least one test double (mock or stub) committed to the test project before the worked example that uses it is merged (§4.2 constraint 4).
 
@@ -474,5 +475,5 @@ Sub-team 7 (Persistence) must save and restore the desktop shell state across se
 | 1 — No SOLID/GRASP violations without documented trade-off | SOLID audit in §5.3 above; GRASP Indirection and Protected Variations applied via `IPanel` and service interfaces. One accepted trade-off: `VolumeServiceAdapter` has DIT = 4 (needs `MonoBehaviour` for coroutines); documented in ADR-0003. |
 | 2 — Zero circular dependencies between top-level components | ViewModel assembly has no reference to Adapter assembly; Adapter assembly has no reference to ViewModel assembly; both reference a shared `Contracts` assembly containing only interfaces and DTOs. Verified by NDepend cycle rule (see CI). |
 | 3 — Domain code has no transitive UnityEngine / SteamVR dep | Enforced by assembly structure (ADR-0003) + CI layer-violation check. `iDaVIE.Client.ViewModel` assembly lists no Unity assembly reference. |
-| 4 — Every public API boundary expressed as interface + test double | Ten interfaces listed in §6; corresponding mock/stub committed alongside each worked example in [D4](../D4-worked-examples/README.md). |
+| 4 — Every public API boundary expressed as interface + test double | Eleven interfaces listed in §6; corresponding mock/stub committed alongside each worked example in [D4](../D4-worked-examples/README.md). |
 | 5 — Plug-in C ABI semver, ABI-stable within a major | Out of scope for this sub-team — owned by Sub-team 1. Client references the server gateway, not the plug-in ABI directly. |
