@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-MVVM split with a service gateway replaces the god-canvas. `FileTabView` (thin Unity MonoBehaviour) → `FileTabViewModel` (pure C#, no `UnityEngine` ref) → three injected interfaces: `IFileDialogService`, `IFitsService`, `IVolumeService`. `IntPtr` lifetime contained inside `FitsServiceAdapter`: try/catch closes the pointer on failure, success transfers ownership to `FitsHandle.Dispose()` — no native handle ever crosses the ACL. The `postLoadFileFileSystem` cross-tab cascade is replaced by a single `IVolumeService.CubeLoaded(DTO)` event, which structurally closes Anomaly #8 (rest-frequency subscription leak). **Honest about what remains:** one smell *contained* — S5 (field writes onto `VolumeDataSetRenderer`) — inside `VolumeServiceAdapter` behind `IVolumeService`. Sub-team 3 can swap it out without touching the VM or any of the **34 NUnit tests**.
+MVVM split with a service gateway replaces the god-canvas. `FileTabView` (thin Unity MonoBehaviour) → `FileTabViewModel` (pure C#, no `UnityEngine` ref) → three injected interfaces: `IFileDialogService`, `IFitsService`, `IVolumeService`. FITS reading is **server-side**: `FitsServiceAdapter` forwards each call over `IServiceGateway` as JSON-RPC (`file.open` → `dataset.getAxes` → `dataset.getHeader`, ADR-0002). The client never touches `[DllImport]` or `IntPtr` — it carries only an opaque `RemoteFitsHandle` (a server-assigned `datasetId`). A failed `dataset.getAxes` fires a best-effort `file.close` so no dataset leaks server-side; `RemoteFitsHandle.Dispose()` closes it on teardown — no native handle ever crosses the ACL. The `postLoadFileFileSystem` cross-tab cascade is replaced by a single `IVolumeService.CubeLoaded(DTO)` event, which structurally closes Anomaly #8 (rest-frequency subscription leak). **Honest about what remains:** one smell *contained* — S5 (field writes onto `VolumeDataSetRenderer`) — inside `VolumeServiceAdapter` behind `IVolumeService`. Sub-team 3 can swap it out without touching the VM or any of the **47 NUnit tests**.
 
 ---
 
@@ -22,7 +22,8 @@ The single visible difference at the user level: the UI no longer needs two clic
 | `IFileDialogService` | `skeleton/IFileDialogService.cs` | Domain interface for OS file pickers. |
 | `FileDialogAdapter` | `adapters/FileDialogServiceAdapter.cs` | Wraps `StandaloneFileBrowser`. Owns `PlayerPrefs` persistence. |
 | `IFitsService` | `skeleton/IFitsService.cs` | Domain interface for FITS metadata. |
-| `FitsAdapter` | `adapters/FitsServiceAdapter.cs` | Wraps `FitsReader` P/Invoke calls. The only code allowed to touch `IntPtr`. |
+| `FitsAdapter` | `adapters/FitsServiceAdapter.cs` | Client-side proxy. Forwards every call over `IServiceGateway` (JSON-RPC); the native FITS read runs server-side. No `[DllImport]`, no `IntPtr`. |
+| `Gateway` | `contracts-team1/IServiceGateway.cs` | Transport seam to the server (named-pipe JSON-RPC in local mode). Sub-team 1's contract. |
 | `IVolumeService` | `skeleton/IVolumeService.cs` | Gateway to Sub-team 1's micro-kernel. |
 | `VolumeAdapter` | `adapters/VolumeServiceAdapter.cs` | Owns the load coroutine, prefab instantiation, native-memory cleanup. |
 | `VCC` | `VolumeCommandController` | Reached only via `VolumeAdapter`; never from the VM. |
@@ -43,14 +44,14 @@ The ACL boundary in the diagram is the vertical line between the *interfaces* an
 | A6 | `FileDialogAdapter` writes `PlayerPrefs.SetString("LastPath", ...)` and resolves the `TaskCompletionSource` | `FileDialogServiceAdapter.cs:41-53` | The async callback is converted to a `Task<string?>` — the VM `await`s it; no callback closure into a `MonoBehaviour`. |
 | A7 | `FileTabVM` sets `IsLoading = true`; clears `ValidationMessage` | `FileTabViewModel.cs:172-173` | `INotifyPropertyChanged` drives spinner / disabled buttons declaratively. |
 | A8 | `FileTabVM → IFitsService.OpenImageAsync(path)` | `FileTabViewModel.cs:176` | **The replacement.** No P/Invoke from the VM. Returns a plain `FitsFileInfo` DTO. |
-| A9 | `FitsAdapter` runs `Task.Run(ReadFitsMetadata)` — calls `FitsReader.FitsOpenFile / FitsGetHduCount / FitsMovabsHdu / FitsReadKey / FitsCloseFile` inside a try/catch block | `FitsServiceAdapter.cs:31-128` | All `IntPtr` lifetime contained to one method. **Failure path** closes `fptr` in the catch and rethrows (`FitsServiceAdapter.cs:121-127`); **success path** transfers ownership to `FitsHandle.Dispose()` (called by the VM on swap or teardown). No `IntPtr` outlives `ReadFitsMetadata` in either branch. Replaces BEFORE A8–A16. |
-| A10 | `FitsAdapter` returns `new FitsFileInfo { FilePath, HduList, NAxis, AxisSizes, HeaderText }` | `FitsServiceAdapter.cs:110-119`, `FitsFileInfo.cs:14-25` | Immutable DTO with `required` init-only properties. |
+| A9 | `FitsAdapter.OpenAsync` sends `file.open` then `dataset.getAxes` over `IServiceGateway` | `FitsServiceAdapter.cs:59-95` | Two JSON-RPC calls (ADR-0002 catalogue v1). The native FITS read happens **server-side** — no P/Invoke, no `IntPtr` on the client. **Failure path:** if `dataset.getAxes` throws, the `catch` fires a best-effort `file.close` for the orphaned `datasetId` and rethrows (`FitsServiceAdapter.cs:87-94, 110-119`). **Success path:** the server-assigned `datasetId` is wrapped in a `RemoteFitsHandle` whose `Dispose()` issues `file.close` (`:148-177`). Replaces BEFORE A8–A16. |
+| A10 | `FitsAdapter` returns `new FitsFileInfo { Handle = RemoteFitsHandle, FilePath, HduList, NAxis, AxisSizes, HeaderText, EstimatedBytes }` | `FitsServiceAdapter.cs:76-85`, `FitsFileInfo.cs` | Immutable DTO carrying an opaque `IFitsHandle` (server `datasetId`), not a native pointer. |
 | A11 | `FileTabVM` populates `_hduOptions`, `HeaderText`, Z-axis options; resets `Subset` to axis maxima; invalidates any prior mask | `FileTabViewModel.cs:177-200` | All state mutation goes through setters that raise `PropertyChanged` — the View updates automatically. Replaces BEFORE A14 (transform.Find HDU dropdown mutation). |
 | A12 | `FileTabVM` computes `IsLoadable` and sets `ValidationMessage` | `FileTabViewModel.cs:136-152, 202` | Pure C# axis-count rule, fully unit-testable. Replaces BEFORE A17. |
 | A13 | `FileTabVM` sets `IsLoading = false`; `LoadCommand.CanExecute()` becomes true | `FileTabViewModel.cs:210, 54` | View re-evaluates button enablement via `CanExecuteChanged`. No `transform.Find` to manually toggle interactability. |
 | A14 | `FileTabView` re-renders: HDU dropdown populated, header text shown, Load button enabled, subset panel visible | `FileTabView.BindTo` | All driven by `PropertyChanged` events; the View has no domain logic. Replaces BEFORE A18. |
 
-**At end of Phase A:** the FITS metadata has been read on a background thread (via `Task.Run` in the adapter), the native file pointer is closed inside the adapter, no `IntPtr` exists in the VM, and the UI is bound declaratively. The user *can* click Load now — but does not have to wait through a separate "open" round-trip if validation already passed.
+**At end of Phase A:** the FITS metadata has been read server-side and returned over the gateway as a plain DTO, no native pointer exists anywhere on the client, no `IntPtr` exists in the VM, and the UI is bound declaratively. The user *can* click Load now — but does not have to wait through a separate "open" round-trip if validation already passed.
 
 ---
 
@@ -81,14 +82,14 @@ The ACL boundary in the diagram is the vertical line between the *interfaces* an
 
 | ID (from before-trace) | Smell | Status | Where it now lives |
 |---|---|---|---|
-| S1 | Direct `[DllImport]` from UI | **eliminated for VM** | All `FitsReader.*` calls confined to `FitsServiceAdapter.cs:45-125` (`OpenAndReadMetadata` + `ReadHeaderText`). VM has no `using System.Runtime.InteropServices`. |
+| S1 | Direct `[DllImport]` from UI | **eliminated (client-side)** | No `FitsReader`/`[DllImport]` anywhere on the client — FITS reading is server-side; `FitsServiceAdapter` only forwards JSON-RPC over `IServiceGateway`. Neither the VM nor the adapter has `using System.Runtime.InteropServices`. |
 | S2 | God class | **eliminated** | Split into `FileTabView` (Unity), `FileTabViewModel` (domain), `SubsetBoundsViewModel` (domain), three adapters. |
 | S3 | `transform.Find` chains | **eliminated for File-tab slice** | View binds by reference (Inspector-assigned fields on `FileTabView`); no string-path lookups. |
 | S4 | `FindObjectOfType<>` singletons | **contained** | Two calls remain inside `VolumeServiceAdapter.Awake` (`VolumeServiceAdapter.cs:37-38`). Acceptable per ACL: adapter-only, not domain. |
 | S5 | Public mutable field writes onto renderer | **contained** | Still happens inside `VolumeServiceAdapter.LoadCubeCoroutine` (`VolumeServiceAdapter.cs:122-131`). One place to refactor when Sub-team 3 encapsulates `VolumeDataSetRenderer`. |
 | S6 | Busy-wait on `started` | **eliminated** | Replaced at `VolumeServiceAdapter.cs:158` by `yield return StartCoroutine(renderer._startFunc())` — coroutine suspension, not polling. The inner coroutine sets `started = true` at its terminating yield (`VolumeDataSetRenderer.cs:541-542`); our coroutine resumes only when it completes. No `WaitForSeconds(0.1f)` anywhere on the path. |
 | S7 | Inspector-wired button handlers | **eliminated** | `FileTabView.BindTo` subscribes in code. Tests construct the VM directly. |
-| S8 | Unmanaged `fptr` lifetime spread across UI | **eliminated** | try/catch on the open-and-read path (`FitsServiceAdapter.cs:51-127`): failure closes `fptr` and rethrows (`:121-127`); success transfers ownership to a sealed `FitsHandle` (`:151-172`) whose `Dispose()` is called by the VM on swap or teardown (`FileTabViewModel.cs:196-197, 259, 316, 328-329`). No `IntPtr` in the VM. |
+| S8 | Unmanaged `fptr` lifetime spread across UI | **eliminated** | No unmanaged pointer exists client-side: the server owns the FITS file; the client holds an opaque `RemoteFitsHandle` (`datasetId`). A failed `dataset.getAxes` fires a best-effort `file.close` (`FitsServiceAdapter.cs:87-94, 110-119`); `RemoteFitsHandle.Dispose()` issues `file.close` on swap or teardown (`:167-176`), driven by the VM (`FileTabViewModel.cs:196-197, 259, 316, 328-329`). No `IntPtr` anywhere on the client. |
 
 ---
 
@@ -113,7 +114,7 @@ One smell is **contained, not removed**, and the panel should expect questions:
 
 1. **`VolumeServiceAdapter` still pokes public fields on `VolumeDataSetRenderer`** (`VolumeServiceAdapter.cs:122-131`). Fix vector: when Sub-team 3 introduces an `IRendererCommand` interface, the adapter starts emitting commands instead.
 
-This item lives behind the `IVolumeService` interface and can be swapped without touching `FileTabViewModel` or any of its 34 unit tests.
+This item lives behind the `IVolumeService` interface and can be swapped without touching `FileTabViewModel` or any of its 47 unit tests.
 
 ---
 
@@ -122,6 +123,6 @@ This item lives behind the `IVolumeService` interface and can be swapped without
 See [`after-sequence.md`](after-sequence.md). The conversion follows the same rules as [`before-trace.md` §97-104](before-trace.md):
 
 - Phases A and B drawn as one continuous diagram with a `Note` separator labelled "validation passed — Load enabled."
-- `activate` bars on lifelines that are genuinely doing async work: `FileTabVM` (during command execution), `VolumeAdapter` (during the load coroutine), `FileDialogAdapter` (while the OS picker is open), and `FitsAdapter` (during the off-thread `Task.Run` metadata read). The View is stateless on the critical path — no `activate` bar.
+- `activate` bars on lifelines that are genuinely doing async work: `FileTabVM` (during command execution), `VolumeAdapter` (during the load coroutine), `FileDialogAdapter` (while the OS picker is open), and `FitsAdapter` / `Gateway` (during the JSON-RPC round-trip for the server-side metadata read). The View is stateless on the critical path — no `activate` bar.
 - The ACL boundary is rendered as a `box` around `[FileDialogAdapter, FitsAdapter, VolumeAdapter, VCC]` so the panel sees at a glance that no message originates *from* the VM *to* anything inside the box without going through an interface.
 - The one contained smell (B7 field writes onto `VolumeDataSetRenderer`) is annotated with `Note right of VolumeAdapter` so the AFTER diagram is honest about what was kept. B10 is **not** annotated as a smell — it is the structural replacement for the BEFORE busy-wait.
