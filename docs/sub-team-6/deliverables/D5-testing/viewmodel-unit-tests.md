@@ -34,7 +34,7 @@ Tests live in plain **.NET class library projects** under [`refactoring-examples
 - the ViewModel skeleton csproj (no `UnityEngine` dependency — `dotnet build` succeeds with 0 warnings, 0 errors);
 - `NUnit`, `Moq`, `Coverlet` NuGet packages.
 
-Unity is never imported. This is the hard guarantee that enforces the anti-corruption layer. The 63 committed tests (34 file-tab + 29 debug-tab) run in **~20 ms total** on the debug-tab side; the file-tab side has not yet been timed but uses the same stack.
+Unity is never imported. This is the hard guarantee that enforces the anti-corruption layer. The 76 committed tests (47 file-tab + 29 debug-tab) run in **~20 ms total** on the debug-tab side; the file-tab side has not yet been timed but uses the same stack.
 
 ---
 
@@ -65,7 +65,7 @@ public class FileTabViewModelTests
 ```
 
 Categories:
-- `ViewModel` — pure ViewModel logic (the committed 63 tests)
+- `ViewModel` — pure ViewModel logic (the committed 76 tests)
 - `LogStream` — `LogStream` Observer-dispatch class (debug tab)
 
 ---
@@ -167,7 +167,7 @@ CI (Quality Guild pipeline) will fail the build if either gate is missed on `mai
 | MVVM split decision | [D2 architecture doc](../D2-Architecture/architecture.md) (ADR rationale lives there — no separate ADR files) |
 | Interface contracts | [`file-tab/skeleton/IFileTabViewModel.cs`](../../../../refactoring-examples/sub-team-6/file-tab/skeleton/IFileTabViewModel.cs), [`debug-tab/skeleton/IDebugTabViewModel.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/skeleton/IDebugTabViewModel.cs) |
 | Parent test strategy | [`test-strategy.md`](test-strategy.md) |
-| Worked test suites | [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) (34), [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) (29) |
+| Worked test suites | [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) (47), [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) (29) |
 | CK thresholds this strategy defends | §7.1 — RFC ≤ 50, LCOM ≤ 0.5 on ViewModel classes |
 | Assignment spec reference | §9.2.4, §6.6 ST, LO6 |
 

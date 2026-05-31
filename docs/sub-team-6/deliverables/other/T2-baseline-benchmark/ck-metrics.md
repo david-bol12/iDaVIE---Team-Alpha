@@ -17,7 +17,7 @@ After refactoring (all tabs extracted via the MVVM pattern), the original god-cl
 - Views (MonoBehaviour UI layer, ~5 classes)  
 - Composition Root (`CanvassDesktop` shell)
 
-**Tool-verified (WE1 + WE2):** Circular dependencies eliminated (2 → 0). `UnityEngine` removed from domain layer. 63 NUnit tests added (34 file-tab + 29 debug-tab). WMC and CBO reduce substantially vs the god-class. **LCOM violations remain in 6 of 10 WE1 classes and 2 of 5 WE2 classes** — these reflect property-backing-field fragmentation inherent in MVVM (one backing field per bindable property, accessed by ≤2 methods), not disjoint concern clusters. `FileTabViewModel` WMC=43 and CBO=19 exceed thresholds and have a documented remediation (extract `FileTabCommands` helper).
+**Tool-verified (WE1 + WE2):** Circular dependencies eliminated (2 → 0). `UnityEngine` removed from domain layer. 76 NUnit tests added (47 file-tab + 29 debug-tab). WMC and CBO reduce substantially vs the god-class. **LCOM violations remain in 6 of 10 WE1 classes and 2 of 5 WE2 classes** — these reflect property-backing-field fragmentation inherent in MVVM (one backing field per bindable property, accessed by ≤2 methods), not disjoint concern clusters. `FileTabViewModel` WMC=43 and CBO=19 exceed thresholds and have a documented remediation (extract `FileTabCommands` helper).
 
 ---
 
@@ -77,7 +77,7 @@ WE1/WE2 figures tool-verified. `[proj.]` figures are extrapolations.
 | Max LCOM % (any class) | **95%** (`CanvassDesktop`) | **91%** (`FileTabViewModel`) | −4 pp — different structural cause |
 | `UnityEngine` in domain/VM code | Yes | **No** (tool-verified) | **−1 ✅** |
 | Interfaces backing public API | 0 | **8** (tool-verified) | **+8 ✅** |
-| NUnit tests (no Unity dependency) | 0 | **63** (34 file-tab + 29 debug-tab, tool-verified) | **+63 ✅** |
+| NUnit tests (no Unity dependency) | 0 | **76** (47 file-tab + 29 debug-tab, tool-verified) | **+76 ✅** |
 | Testable without Unity runner | 0 / 63 methods | **4 domain types** (file-tab) + **2 domain types** (debug-tab) | **+6 pure-C# testable types ✅** |
 
 ---
@@ -147,7 +147,7 @@ Aggregate RFC across the 25 classes is ≈ 850, but the responsibility is now di
   - `GatewayLogStreamAdapter` LCOM = 72% (4 fields; single concern: translate gateway notifications to `ILogStream`).
   - `DebugTabView` LCOM = 41% ✅, `DebugTabCompositionRoot` LCOM = 41% ✅, `LogStream` LCOM = 25% ✅.
 
-  **The structural win is not captured by LCOM.** Circular dependencies dropped from 2 → 0. `UnityEngine` removed from the domain layer. 63 NUnit tests added. The LCOM metric cannot distinguish "many independent properties in a cohesive ViewModel" from "four disjoint concern clusters in a god-class".
+  **The structural win is not captured by LCOM.** Circular dependencies dropped from 2 → 0. `UnityEngine` removed from the domain layer. 76 NUnit tests added. The LCOM metric cannot distinguish "many independent properties in a cohesive ViewModel" from "four disjoint concern clusters in a god-class".
 
   For `[proj.]` remaining tabs: expect similar LCOM readings (~55–65%) in ViewModel/View classes following the same property-heavy pattern.
 
@@ -255,7 +255,7 @@ All Day 13 figures for WE1/WE2 are tool-verified (Understand export, 2026-05-29)
 | LCOM % (max any class) | `CanvassDesktop` **95%** | **91%** (`FileTabViewModel`; different cause — MVVM property pattern) | Same §2.2 LCOM note |
 | Circular cycles | **2** | **0** | Cycles removed via service injection |
 | `UnityEngine` in domain | Yes | **No** | `dotnet build` on skeleton csproj; `dependency-graph.md` |
-| NUnit tests | 0 | **63** (34 + 29) | `file-tab/tests/`, `debug-tab/tests/` |
+| NUnit tests | 0 | **76** (47 + 29) | `file-tab/tests/`, `debug-tab/tests/` |
 
 ---
 

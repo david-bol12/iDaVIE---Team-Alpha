@@ -259,9 +259,9 @@ Method names are namespaced with `.`; namespaces map 1:1 to ViewModel slices.
 
 - **File tab** dispatches `file.open` → `dataset.getAxes` → `dataset.getHeader` → `file.close` via `FitsServiceAdapter` (request/response). Wire-shape assertions live in `refactoring-examples/sub-team-6/file-tab/adapters/tests/FitsServiceAdapterTests.cs`.
 - **Debug tab** consumes `log.emit` notifications via `GatewayLogStreamAdapter` (server-pushed stream). Wire-shape assertions live in `refactoring-examples/sub-team-6/debug-tab/adapters/tests/GatewayLogStreamAdapterTests.cs`.
-- Pure framing and gateway-double behaviour are pinned in `refactoring-examples/sub-team-6/contracts/tests/` against ADR-0002 §"Framing" and §"Message shape".
+- Pure framing and gateway-double behaviour are pinned in `refactoring-examples/sub-team-6/contracts-team1/tests/` against ADR-0002 §"Framing" and §"Message shape".
 
-All three test projects build and run without Unity (`dotnet test`); current count is 95 / 95 green in &lt; 200 ms total.
+All three test projects build and run without Unity (`dotnet test`); current count is **95 tests** in &lt; 200 ms total — all green on a host without Smart App Control. The 19 Tier-2 tests load the unsigned `iDaVIE.Client.Gateway.dll` and are blocked at load (`0x800711C7`) on SAC-enforced Windows hosts; the 76 Tier-1 tests pass everywhere. CI compiles all five projects under `-warnaserror` but does not currently run `dotnet test` — see [`../D5-testing/test-strategy.md` §4.4](../D5-testing/test-strategy.md).
 
 ---
 

@@ -129,7 +129,7 @@ Directionality to remember:
 - **VM → Gateway:** only via injected interfaces (`IFitsService`, `IVolumeService`…), wired in `FileTabCompositionRoot`.
 - **Gateway → Server:** JSON-RPC (`FitsServiceAdapter` owns the `file.*`/`dataset.*` method names, ADR-0002).
 
-The VM is a **coordinator over interfaces** — which is exactly why it unit-tests with no Unity, no OS dialog, no server. The whole tab is 95/95 green in `dotnet test`.
+The VM is a **coordinator over interfaces** — which is exactly why it unit-tests with no Unity, no OS dialog, no server. The whole tab is green in `dotnet test` (part of the 95-test no-Unity suite; the 19 gateway/adapter tests need a host without Smart App Control — see D5 `test-strategy.md` §4.4).
 
 **Debug tab (second worked example):** `DebugTabViewModel` implements **`ILogObserver`**, calls `_logStream.Subscribe(this)`, and `OnNext(LogEntry)` appends to the bound list. This is the GoF **Observer** pattern (matches the brief's "Debug tab as Observer of a structured logging stream"), consuming server-pushed `log.emit` notifications. Together the two examples exercise the transport on **both** paths — File = request/response, Debug = server push.
 

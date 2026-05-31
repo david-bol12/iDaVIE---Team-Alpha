@@ -14,7 +14,7 @@ Source files (read-only ground truth):
 |---|---|
 | `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IFitsHandle`, `ICommand`, `IAsyncCommand`, `IFileTabViewModel` | `refactoring-examples/sub-team-6/file-tab/skeleton/` |
 | `IDebugTabViewModel`, `ILogStream`, `ILogObserver` | `refactoring-examples/sub-team-6/debug-tab/skeleton/` |
-| `IServiceGateway` | `refactoring-examples/sub-team-6/contracts/IServiceGateway.cs` |
+| `IServiceGateway` | `refactoring-examples/sub-team-6/contracts-team1/IServiceGateway.cs` |
 
 DTO / value types (`LogEntry`, `FitsFileInfo`, `HduInfo`, `LoadCubeRequest`, `SubsetBounds`, `CubeLoadedEventArgs`, `JsonRpcNotification`) are data carriers, not behavioural interfaces, and are out of ISP scope.
 
