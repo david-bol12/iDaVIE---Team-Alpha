@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 namespace iDaVIE.Desktop.DebugTab
 {
-    /// Observes an <see cref="ILogStream"/> and exposes entries for the View.
+    // Observes an ILogStream and exposes entries for the View.
     /// Call Dispose() from OnDestroy to unsubscribe.
     public sealed class DebugTabViewModel : IDebugTabViewModel, ILogObserver, IDisposable
     {
