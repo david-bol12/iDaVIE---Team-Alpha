@@ -4,7 +4,8 @@
 
 | Date | Author | Tool / Model | Prompt class | Where it helped | Where it failed |
 |---|---|---|---|---|---|
-| | | | | | | | |
+| 2026-05-25 | Harry Kennedy | Claude Code / Sonnet 4.6 | refactoring-proposal | Produced the initial three-way split of `FeatureSetManager` into `FeatureCatalog`, `FeatureSetService`, and `FeatureVisualiser` with correct layer assignments (`iDaVIE.Domain`, `iDaVIE.Application`, `iDaVIE.Infrastructure.Unity`); surfaced the dirty-event coupling issue between `Feature` and `FeatureSetRenderer` | Suggested a `FeatureFactory` helper class that wasn't needed — dismissed; constructor parameter names in the generated `Feature` skeleton didn't match the existing codebase (`cubeMin`/`cubeMax` vs `cornerMin`/`cornerMax`) and had to be fixed manually |
+| 2026-05-25 | Harry Kennedy | Claude Code / Sonnet 4.6 | diagram-generation | Generated the before/after PlantUML class diagram for `FeatureData` (`FeatureData(Before).puml`, `FeatureData(Refactored).puml`) with correct associations, multiplicities, and namespace notes | |
 
 **Prompt classes (use these):** requirements-drafting · ADR-drafting · code-skeleton · test-generation · refactoring-proposal · diagram-generation · metric-interpretation · prose-editing · backlog-drafting · review · tool-setup.
 
