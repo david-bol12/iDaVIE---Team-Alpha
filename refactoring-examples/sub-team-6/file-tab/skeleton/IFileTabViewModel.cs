@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — IFileTabViewModel
+// brief §6.6 | File tab AFTER skeleton — IFileTabViewModel
 // ViewModel contract bound by the View (FileTabView / thin CanvassDesktop shell).
 // No UnityEngine dependency. Satisfies NFR-MOD-2 and ADR-009 (MVVM split).
 using System.ComponentModel;

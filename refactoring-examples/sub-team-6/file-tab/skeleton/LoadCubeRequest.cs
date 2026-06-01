@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — LoadCubeRequest DTO
+// brief §6.6 | File tab AFTER skeleton — LoadCubeRequest DTO
 // Replaces the direct field-writes into VolumeDataSetRenderer in
 // CanvassDesktop.LoadCubeCoroutine. No UnityEngine dependency.
 namespace iDaVIE.Desktop.FileTab

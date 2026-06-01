@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — CubeLoadedEventArgs DTO
+// brief §6.6 | File tab AFTER skeleton — CubeLoadedEventArgs DTO
 // Raised by IVolumeService.CubeLoaded once a cube has finished loading and is
 // visible. Peer-tab ViewModels (Rendering, Stats, Sources, Paint) subscribe on
 // construction and unsubscribe on Dispose — replaces the ad-hoc cross-tab

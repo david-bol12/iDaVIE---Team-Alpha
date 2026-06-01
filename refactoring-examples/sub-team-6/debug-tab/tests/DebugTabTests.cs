@@ -1,4 +1,4 @@
-// WE2-4 | Debug tab AFTER — unit tests for LogStream and DebugTabViewModel (NUnit 3)
+// brief §6.6 | Debug tab AFTER — unit tests for LogStream and DebugTabViewModel (NUnit 3)
 // No Unity dependency. Satisfies NFR-TST-1 and Section 9.2 testability evidence.
 // Run with: dotnet test debug-tab/tests/DebugTabTests.csproj
 using System;

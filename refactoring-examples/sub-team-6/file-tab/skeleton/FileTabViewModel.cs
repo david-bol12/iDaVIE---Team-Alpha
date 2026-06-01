@@ -1,5 +1,6 @@
-// WE1-3 | File tab AFTER skeleton — FileTabViewModel
-// Replaces the File-tab responsibilities of CanvassDesktop (lines ~200–700).
+// brief §6.6 | File tab AFTER skeleton — FileTabViewModel
+// Replaces the File-tab responsibilities of CanvassDesktop — scattered (not contiguous)
+// across lines 306–1133 (BrowseImageFile→LoadCubeCoroutine) plus ChangeHduSelection (1435).
 // No UnityEngine dependency. Satisfies NFR-MOD-2, ADR-009 (MVVM), ADR-002 (ACL).
 using System.ComponentModel;
 using System.Runtime.CompilerServices;

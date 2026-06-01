@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER — unit tests for FileTabViewModel and SubsetBoundsViewModel
+// brief §6.6 | File tab AFTER — unit tests for FileTabViewModel and SubsetBoundsViewModel
 // NUnit 3, no Unity dependency. Satisfies NFR-TST-1 and Section 9.2 testability evidence.
 // Run with: dotnet test file-tab/tests/FileTabTests.csproj
 using System;

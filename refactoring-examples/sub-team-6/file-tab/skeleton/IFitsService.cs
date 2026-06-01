@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — IFitsService (ACL boundary)
+// brief §6.6 | File tab AFTER skeleton — IFitsService (ACL boundary)
 // Abstracts over FitsReader P/Invoke calls. The adapter (FitsServiceAdapter)
 // lives in the Unity assembly and may use [DllImport]; nothing inside this
 // interface or the ViewModel may. Satisfies ADR-003 (DI) and ADR-002 (ACL).

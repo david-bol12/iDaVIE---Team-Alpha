@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — IVolumeService (Sub-team 1 gateway boundary)
+// brief §6.6 | File tab AFTER skeleton — IVolumeService (Sub-team 1 gateway boundary)
 // This is the seam between Sub-team 6 (Desktop Client) and Sub-team 1 (Micro-kernel).
 // In local mode the adapter calls VolumeCommandController directly (in-process).
 // In future remote mode the adapter sends a JSON-RPC / gRPC message over a named pipe.

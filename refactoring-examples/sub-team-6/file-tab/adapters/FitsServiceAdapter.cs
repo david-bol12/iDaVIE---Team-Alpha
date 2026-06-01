@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER — FitsServiceAdapter (client-side gateway proxy)
+// brief §6.6 | File tab AFTER — FitsServiceAdapter (client-side gateway proxy)
 //
 // Adapts IServiceGateway to IFitsService. Per the brief §6.6 ("direct file I/O
 // that belongs server-side"), FITS reading happens in a server-side plug-in;

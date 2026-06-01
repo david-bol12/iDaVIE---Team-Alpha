@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — IMemoryProbe (ACL boundary)
+// brief §6.6 | File tab AFTER skeleton — IMemoryProbe (ACL boundary)
 // Abstracts over UnityEngine.SystemInfo so the ViewModel can reason about
 // RAM availability without referencing Unity. Replaces the direct
 // SystemInfo.systemMemorySize / FileInfo.Length calls in

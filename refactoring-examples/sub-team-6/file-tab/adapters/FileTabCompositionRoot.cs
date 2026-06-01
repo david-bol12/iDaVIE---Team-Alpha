@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER — FileTabCompositionRoot (Unity-assembly)
+// brief §6.6 | File tab AFTER — FileTabCompositionRoot (Unity-assembly)
 // The only class permitted to reference both the domain assembly and the Unity
 // assembly simultaneously. Constructs and wires the object graph once on Awake.
 // Satisfies the Pure DI / composition root pattern from ADR-003.

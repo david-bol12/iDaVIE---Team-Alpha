@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — IFitsHandle (server-resident FITS file lifetime)
+// brief §6.6 | File tab AFTER skeleton — IFitsHandle (server-resident FITS file lifetime)
 // Eliminates the per-HDU-change file-reopen defect (CanvassDesktop.ChangeHduSelection
 // line 1435 reopens the file on every dropdown selection). The handle is held open
 // by the adapter; the ViewModel disposes it when replacing the image or on shutdown.

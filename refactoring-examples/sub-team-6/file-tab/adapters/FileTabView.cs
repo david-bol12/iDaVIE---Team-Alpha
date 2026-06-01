@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER — FileTabView (Unity-assembly, thin View)
+// brief §6.6 | File tab AFTER — FileTabView (Unity-assembly, thin View)
 // Single responsibility: translate Unity UI events into ViewModel calls,
 // and ViewModel PropertyChanged events into UI updates.
 // No business logic. No transform.Find chains. No file I/O.

@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — DTOs
+// brief §6.6 | File tab AFTER skeleton — DTOs
 // No UnityEngine dependency. Satisfies NFR-MOD-2 and ADR-009 (MVVM).
 namespace iDaVIE.Desktop.FileTab
 {

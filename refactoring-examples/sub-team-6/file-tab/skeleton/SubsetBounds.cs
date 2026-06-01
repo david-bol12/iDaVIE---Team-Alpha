@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — SubsetBounds DTO
+// brief §6.6 | File tab AFTER skeleton — SubsetBounds DTO
 // Plain data transfer object; owned and validated by SubsetBoundsViewModel.
 // Passed into LoadCubeRequest when the user has enabled the subset selector.
 // No UnityEngine dependency.

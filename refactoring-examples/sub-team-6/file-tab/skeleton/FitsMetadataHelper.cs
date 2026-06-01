@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — FitsMetadataHelper
+// brief §6.6 | File tab AFTER skeleton — FitsMetadataHelper
 // Pure-static computations extracted from FileTabViewModel to keep its WMC
 // within the ≤ 40 orchestrator threshold. No state, no Unity dependency.
 namespace iDaVIE.Desktop.FileTab

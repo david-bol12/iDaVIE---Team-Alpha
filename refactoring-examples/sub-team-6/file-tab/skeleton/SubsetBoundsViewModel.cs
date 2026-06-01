@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — SubsetBoundsViewModel
+// brief §6.6 | File tab AFTER skeleton — SubsetBoundsViewModel
 // Extracted from three methods in CanvassDesktop:
 //   checkSubsetBounds()  → per-property setters with clamping
 //   setSubsetBounds()    → ResetToAxisMaxima()

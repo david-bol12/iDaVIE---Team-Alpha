@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER — VolumeServiceAdapter (Unity-assembly adapter)
+// brief §6.6 | File tab AFTER — VolumeServiceAdapter (Unity-assembly adapter)
 // Owns coroutine lifecycle, prefab instantiation, and native memory cleanup.
 // The ViewModel never touches VolumeCommandController, VolumeDataSetRenderer,
 // or any Unity coroutine directly. Satisfies ADR-009 (transport contract) and

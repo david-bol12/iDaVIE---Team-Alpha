@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER skeleton — minimal command interfaces
+// brief §6.6 | File tab AFTER skeleton — minimal command interfaces
 // Defined in-project to avoid a WindowsBase / WPF reference that Unity does not link.
 // The View (FileTabView MonoBehaviour) calls CanExecute() before wiring button onClick.
 namespace iDaVIE.Desktop.FileTab

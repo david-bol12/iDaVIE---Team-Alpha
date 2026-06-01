@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER — FileDialogServiceAdapter (Unity-assembly adapter)
+// brief §6.6 | File tab AFTER — FileDialogServiceAdapter (Unity-assembly adapter)
 // Wraps StandaloneFileBrowser's async callback pattern into Task<string?>.
 // Also owns PlayerPrefs persistence of the last-used directory.
 // Satisfies ADR-002 (ACL): the ViewModel never touches SFB or PlayerPrefs.
