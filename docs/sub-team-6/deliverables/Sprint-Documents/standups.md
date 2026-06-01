@@ -35,10 +35,10 @@
 | Rory | | Settign sup testing software e.g. SonarCube and CodeScene| |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- Everyone should read the brief to understand it better
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- Nothing of concern
 
 ---
 
@@ -54,10 +54,10 @@
 | Jimmy | Debugging worked examples | More on worked example refactoring and reviewing | None |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- N/A
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- N/A
 
 ---
 
@@ -73,10 +73,10 @@
 | Rory| Got CK metrics for beforehand| | |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- N/A
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- N/A
 
 ---
 
@@ -87,15 +87,15 @@
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
 | Jimmy | Sprint 1 review & retro | Sprint 2 task coordination | None |
-| Con | Sprint 1 review & retro | _(assigned role/task)_ | None |
-| Rory | Sprint 1 review & retro | _(assigned role/task)_ | None |
-| Mark | Sprint 1 review & retro | _(assigned role/task)_ | None |
+| Con | Sprint 1 review & retro | Look over worked examples | None |
+| Rory | Sprint 1 review & retro | Make sure we are aligned with the brief | None |
+| Mark | Sprint 1 review & retro | Assess the quality of the work already completed | None |
 
 **Decisions:**
 - Divided Sprint 2 tasks and assigned roles to each team member.
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- N/A
 
 ---
 
@@ -116,10 +116,10 @@
 | Mark | CodeScene + metrics | Set up NDepend; update main testing doc | NDepend errors |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- N/A
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- N/A
 
 ---
 
@@ -139,7 +139,7 @@
 - Began allocating slide sections and deciding who presents what
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+-N/A
 
 ---
 
@@ -158,7 +158,7 @@
 - Realised the sub-team and team interviews had been confused; had to re-think the interview approach
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- N/A
 
 ---
 
@@ -174,10 +174,10 @@
 | Mark | Finished the majority of the documentation | Working on Q&A documents supporting the interview | None |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- N/A
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- N/A
 
 ---
 
