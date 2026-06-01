@@ -34,6 +34,7 @@ This section slots into the team architecture document as the **client-shell cha
 | **Analysability** | WMC 63, RFC 118 — too many methods and call sites to reason about locally. | WMC ≤ 27 per class; max RFC 50. No class exceeds the §7.1 thresholds. |
 | **Modifiability** | 20+ `transform.Find("A/B/C").GetComponent<T>()` chains hard-wire the code to the scene hierarchy; adding a panel requires editing `CanvassDesktop`. | IPanel contract; panels registered via composition root, not hard-wired paths. |
 | **Testability** | Zero testable methods today — every method is inside a MonoBehaviour. | ≥ 70% branch/line on ViewModel and domain code (NFR-TST-1); ViewModels require no Unity runner. |
+| **Reusability** | Tab logic is welded to the scene hierarchy and to `UnityEngine`/`Valve.VR` types, so nothing can be reused outside this one Canvas — the VR client (Sub-team 4) cannot share a line of it. | ViewModels and service interfaces sit in Unity-free assemblies; the same `IFitsService` / `ILogStream` contracts and ViewModel logic are reusable by the VR client and by test harnesses without modification. |
 
 ### 2.2 Day 2 Baseline Evidence
 
