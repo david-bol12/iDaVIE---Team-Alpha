@@ -1,14 +1,15 @@
 namespace iDaVIE.Desktop.DebugTab
 {
+    //File references the errors/warnings being added/removed from the logs
     public interface ILogStream
     {
-        /// <summary>Publish with UtcNow as the timestamp.</summary>
+        //Publish with UtcNow as the timestamp
         void Publish(LogLevel level, string message);
 
-        /// <summary>Publish with an explicit timestamp — preserves the server-emitted ts end-to-end.</summary>
+        //Publish a log from json, with warning/error level, message, and timestamp
         void Publish(LogLevel level, string message, System.DateTime timestamp);
 
-        /// <summary>Idempotent — registering the same observer twice has no effect.</summary>
+        //registering the same observer twice has no effect.
         void Subscribe(ILogObserver observer);
         void Unsubscribe(ILogObserver observer);
     }

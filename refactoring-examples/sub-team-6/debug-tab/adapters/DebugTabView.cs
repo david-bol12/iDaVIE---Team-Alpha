@@ -6,10 +6,8 @@ using UnityEngine.UI;
 
 namespace iDaVIE.Desktop.Adapters.DebugTab
 {
-    /// <summary>
     /// Thin MonoBehaviour view for the Debug tab panel.
-    /// Rebuilds the log text on each <see cref="IDebugTabViewModel.EntriesChanged"/> event.
-    /// </summary>
+    /// Rebuilds the log text on each entries change event.
     public sealed class DebugTabView : MonoBehaviour
     {
         // ── Inspector-assigned references ─────────────────────────────────────
@@ -19,7 +17,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
 
         private IDebugTabViewModel? _vm;
 
-        // Capped to avoid unbounded TMP_Text growth inside long sessions
+        //Number cap of how many messages to rebuilt so not rebuilding pointless data
         private const int MaxDisplayLines = 500;
 
         // ── Public binding point ──────────────────────────────────────────────
