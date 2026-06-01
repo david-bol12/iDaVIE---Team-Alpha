@@ -1,7 +1,7 @@
 // WE1-3 | File tab AFTER skeleton — IFileDialogService (ACL boundary)
 // Abstracts over StandaloneFileBrowser (SFB). The adapter wraps the SFB async
 // callback and lives in the Unity assembly. No UnityEngine dependency here.
-// Satisfies ADR-0001 (DIP) and ADR-0003 (ACL).
+// Satisfies ADR-003 (DI) and ADR-002 (ACL).
 namespace iDaVIE.Desktop.FileTab
 {
     /// <summary>

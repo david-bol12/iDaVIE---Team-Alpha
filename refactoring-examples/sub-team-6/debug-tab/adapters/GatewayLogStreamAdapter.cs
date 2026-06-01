@@ -86,7 +86,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
             _gateway.OnNotification -= _handler;
         }
 
-        /// <summary>Wire-shape DTO for <c>log.emit</c> params (ADR-0002 §"Message shape").</summary>
+        /// <summary>Wire-shape DTO for <c>log.emit</c> params (Gateway Contract v1 §"Message shape").</summary>
         private sealed record LogEmitParams(string? Level, string? Msg, string? Ts);
     }
 }

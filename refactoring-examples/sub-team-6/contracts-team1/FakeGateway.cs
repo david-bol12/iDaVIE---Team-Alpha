@@ -9,7 +9,7 @@
 // Faithful-enough mimic of JsonRpcPipeGateway:
 //   - SendAsync before ConnectAsync is a programmer error (InvalidOperationException).
 //   - Every call is recorded in Sent (method + camelCase params element) so tests
-//     can assert the exact JSON-RPC method/param shape from ADR-0002.
+//     can assert the exact JSON-RPC method/param shape from Gateway Contract v1.
 //   - SetResponse / SetError stub the server side; an unstubbed method throws an
 //     InvalidOperationException naming the method (the "forgot to stub" trap).
 //   - Params/response are round-tripped through System.Text.Json with the same

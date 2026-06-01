@@ -1,7 +1,7 @@
 // WE1-3 | File tab AFTER — FileDialogServiceAdapter (Unity-assembly adapter)
 // Wraps StandaloneFileBrowser's async callback pattern into Task<string?>.
 // Also owns PlayerPrefs persistence of the last-used directory.
-// Satisfies ADR-0003 (ACL): the ViewModel never touches SFB or PlayerPrefs.
+// Satisfies ADR-002 (ACL): the ViewModel never touches SFB or PlayerPrefs.
 using System.IO;
 using System.Threading.Tasks;
 using iDaVIE.Desktop.FileTab;

@@ -2,7 +2,7 @@
 // This is the seam between Sub-team 6 (Desktop Client) and Sub-team 1 (Micro-kernel).
 // In local mode the adapter calls VolumeCommandController directly (in-process).
 // In future remote mode the adapter sends a JSON-RPC / gRPC message over a named pipe.
-// Satisfies ADR-0002 (transport contract) and ADR-0003 (ACL).
+// Satisfies ADR-009 (transport contract) and ADR-002 (ACL).
 // No UnityEngine dependency.
 namespace iDaVIE.Desktop.FileTab
 {

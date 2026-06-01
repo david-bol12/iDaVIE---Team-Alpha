@@ -9,7 +9,7 @@
 // command per user intent — see CurrentGUIStateDoc.md §9/§11 for the shared-state
 // touchpoints this replaces. The real implementation is an adapter over
 // IServiceGateway: commands are JSON-RPC requests (C->S) and notifications are
-// JSON-RPC notifications (S->C) on the ADR-0002 transport. The wire verb for each
+// JSON-RPC notifications (S->C) on the Gateway Contract v1 transport. The wire verb for each
 // member is named in its doc comment so the adapter and the server agree.
 //
 // Pure C#. No UnityEngine reference, and no dependency on the service-gateway

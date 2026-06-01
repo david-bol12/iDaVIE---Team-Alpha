@@ -58,7 +58,7 @@ namespace iDaVIE.Client.Gateway.Tests
         {
             var gateway = new FakeGateway();
             await gateway.ConnectAsync();
-            // Code -32011 = "FITS header invalid" per ADR-0002 §"Error model".
+            // Code -32011 = "FITS header invalid" per Gateway Contract v1 §"Error model".
             gateway.SetError("file.open", code: -32011, message: "FITS header invalid");
 
             var ex = Assert.ThrowsAsync<JsonRpcException>(

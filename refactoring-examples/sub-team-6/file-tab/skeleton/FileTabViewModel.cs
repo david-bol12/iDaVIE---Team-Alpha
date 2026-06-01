@@ -1,6 +1,6 @@
 // WE1-3 | File tab AFTER skeleton — FileTabViewModel
 // Replaces the File-tab responsibilities of CanvassDesktop (lines ~200–700).
-// No UnityEngine dependency. Satisfies NFR-MOD-2, ADR-0001 (MVVM), ADR-0003 (ACL).
+// No UnityEngine dependency. Satisfies NFR-MOD-2, ADR-009 (MVVM), ADR-002 (ACL).
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 namespace iDaVIE.Desktop.FileTab

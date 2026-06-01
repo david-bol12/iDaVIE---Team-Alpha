@@ -3,7 +3,7 @@
 //   checkSubsetBounds()  → per-property setters with clamping
 //   setSubsetBounds()    → ResetToAxisMaxima()
 //   updateSubsetZMax()   → UpdateZAxisMax()
-// Pure C# — no UnityEngine dependency. Satisfies NFR-MOD-2 and ADR-0001.
+// Pure C# — no UnityEngine dependency. Satisfies NFR-MOD-2 and ADR-009 (MVVM).
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 namespace iDaVIE.Desktop.FileTab

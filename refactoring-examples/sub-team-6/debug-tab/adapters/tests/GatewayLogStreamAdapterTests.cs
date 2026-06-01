@@ -3,7 +3,7 @@
 // Companion to FitsServiceAdapterTests for the push-stream half of the
 // transport (audit F10). Asserts that a server-pushed log.emit notification
 // on the gateway becomes a structured LogEntry on the inner ILogStream,
-// per ADR-0002 §"Message shape".
+// per Gateway Contract v1 §"Message shape".
 //
 // What each test pins:
 //   1. LogEmitNotification_PublishesToSubscribers_WithLevelMsgAndTimestamp

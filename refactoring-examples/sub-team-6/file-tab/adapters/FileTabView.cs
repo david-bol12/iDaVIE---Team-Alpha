@@ -2,7 +2,7 @@
 // Single responsibility: translate Unity UI events into ViewModel calls,
 // and ViewModel PropertyChanged events into UI updates.
 // No business logic. No transform.Find chains. No file I/O.
-// Satisfies ADR-0001 (MVVM split) and NFR-MOD-2.
+// Satisfies ADR-009 (MVVM split) and NFR-MOD-2.
 using System.ComponentModel;
 using System.IO;
 using iDaVIE.Desktop.FileTab;
