@@ -26,6 +26,8 @@ The class has a **WMC (Weighted Methods per Class)** of 63 and an **RFC (Respons
 ### Modifiability
 
 The class relies heavily on `transform.Find` chains to locate UI objects. These hard-coded paths are fragile: if a UI element is renamed or moved, multiple lookup paths must be updated manually. This increases the likelihood of regressions.
+<img width="1999" height="1168" alt="Screenshot 2026-06-01 212254" src="https://github.com/user-attachments/assets/261f8de8-654e-45c9-98fa-ca5b1cd2138e" />
+
 
 ### Testability
 
