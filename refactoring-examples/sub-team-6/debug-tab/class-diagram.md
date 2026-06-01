@@ -150,6 +150,7 @@ classDiagram
         class IDebugTabViewModel {
             <<interface>>
             +IReadOnlyList~LogEntry~ LogEntries
+            +bool AutoScrollEnabled
             +AppendEntry(LogEntry) void
             +ClearEntries() void
             +event EntriesChanged
@@ -162,6 +163,7 @@ classDiagram
             -int MaxEntries = 2000
             +DebugTabViewModel(ILogStream)
             +LogEntries IReadOnlyList~LogEntry~
+            +bool AutoScrollEnabled
             +AppendEntry(LogEntry) void
             +ClearEntries() void
             +OnNext(LogEntry) void
@@ -259,13 +261,13 @@ classDiagram
     DebugTabCompositionRoot --> DebugTabView          : [SerializeField]
     DebugTabView --> IDebugTabViewModel               : binds via interface
 
-    note for DebugTabViewModel "77 LOC · 6 methods · pure C#\nIDisposable — unsubscribes from ILogStream in Dispose.\nList capped at MaxEntries (2000); replaces unbounded non-generic Queue.\nNo using UnityEngine.\nFully unit-testable: 29 NUnit tests in tests/DebugTabTests.cs."
+    note for DebugTabViewModel "78 LOC · 6 methods · pure C#\nIDisposable — unsubscribes from ILogStream in Dispose.\nList capped at MaxEntries (2000); replaces unbounded non-generic Queue.\nAutoScrollEnabled property gates the View's scroll-to-bottom (S7 fix).\nNo using UnityEngine.\nFully unit-testable: 31 NUnit tests in tests/DebugTabTests.cs."
 
     note for LogStream "43 LOC · thread-safe.\nObserver list under lock; iteration over array snapshot\nso a subscriber can Unsubscribe inside its own OnNext\nwithout corrupting the dispatch loop."
 
     note for UnityLogStreamAdapter "53 LOC · MonoBehaviour : ILogStream.\nThe ONLY class that touches Application.logMessageReceived.\nLogType → LogLevel normalisation lives here.\nThe 44 existing Debug.Log* call sites are captured\nautomatically — none of them need to change."
 
-    note for DebugTabView "86 LOC · MonoBehaviour, thin.\nTMP rebuild capped at MaxDisplayLines (500) — S5/S6 contained.\nScrollbar.value = 0f every refresh — S7 remaining.\nSee after-trace.md → Known limitations."
+    note for DebugTabView "86 LOC · MonoBehaviour, thin.\nTMP rebuild capped at MaxDisplayLines (500) — S5/S6 contained.\nScrollbar.value = 0f gated on AutoScrollEnabled — S7 eliminated.\nSee after-trace.md → smell table."
 ```
 
 ### Smell visibility in the AFTER diagram
@@ -292,6 +294,6 @@ classDiagram
 | `DebugTabView` | — | 86 | 3 | **3** (`TMP_Text`, `Scrollbar`, `Button`) |
 | `DebugTabCompositionRoot` | — | 43 | 2 | **3** (`DebugTabView`, `UnityLogStreamAdapter`, `DebugTabViewModel`) |
 
-Single 255-line `MonoBehaviour` → seven small focused types (three interfaces, four concrete classes, one DTO record, one enum). The **domain layer** (`DebugTabViewModel` + `LogStream` + DTOs) is reachable from a unit-test runner without Unity present (**29 NUnit tests** in `tests/DebugTabTests.cs`, all passing in ~20 ms).
+Single 255-line `MonoBehaviour` → seven small focused types (three interfaces, four concrete classes, one DTO record, one enum). The **domain layer** (`DebugTabViewModel` + `LogStream` + DTOs) is reachable from a unit-test runner without Unity present (**31 NUnit tests** in `tests/DebugTabTests.cs`, all passing in ~20 ms).
 
 CBO for the domain ViewModel falls from 9 collaborators to 1 (only `ILogStream`). The 44 existing `Debug.Log*` call sites are not modified — they are captured automatically by `UnityLogStreamAdapter.OnUnityLog`.

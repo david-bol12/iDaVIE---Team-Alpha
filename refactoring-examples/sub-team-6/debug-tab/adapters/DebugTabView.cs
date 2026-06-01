@@ -65,8 +65,9 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
                 sb.Append($"<color={hex}>[{e.Timestamp:HH:mm:ss}] {e.Message}</color>\n");
             }
 
-            _logText.text    = sb.ToString();
-            _scrollbar.value = 0f;   // scroll to bottom (0 = bottom for inverted scroll)
+            _logText.text = sb.ToString();
+            if (_vm.AutoScrollEnabled)
+                _scrollbar.value = 0f;
         }
     }
 }

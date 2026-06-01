@@ -139,7 +139,7 @@ graph LR
 2. **Section 4.2 satisfied for the slice.** No solid arrow leaves `Domain` toward `UnityEngine`, `TMPro`, or `System.IO`. `DebugTabViewModel` cannot, even by accident, end up calling `Application.logMessageReceived` or `TMP_Text.text`.
 3. **Producers are entirely untouched.** The `Producers` package contains the same `CanvassDesktop` and `DataAnalysis` classes as BEFORE, calling the same `Debug.Log*` methods. The only path change is that `Application.logMessageReceived` now dispatches to `UnityLogStreamAdapter` (in `Adapters`) instead of `DebugLogging` (deleted). Migrating any specific producer to structured `ILogStream.Publish(...)` is a separate, opt-in refactor — not a prerequisite for this slice.
 4. **One composition root** (`DebugTabCompositionRoot`) is the only class permitted to reference both `Domain` and `Adapters` concrete classes. It instantiates the domain object graph and hands it to the view; it also disposes the VM on `OnDestroy`.
-5. **Test reachability.** `dotnet test refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.csproj` compiles and runs against the `Domain` assembly alone, with no Unity present. The 29 NUnit tests in `tests/DebugTabTests.cs` exercise the slice end-to-end via test doubles.
+5. **Test reachability.** `dotnet test refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.csproj` compiles and runs against the `Domain` assembly alone, with no Unity present. The 31 NUnit tests in `tests/DebugTabTests.cs` exercise the slice end-to-end via test doubles.
 
 ### Cycles in the AFTER graph
 
