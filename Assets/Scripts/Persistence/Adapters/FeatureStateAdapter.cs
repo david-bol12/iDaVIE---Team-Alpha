@@ -36,7 +36,7 @@ namespace iDaVIE.Persistence.Adapters
     /// <summary>
     /// Captures and restores feature set state.
     ///
-    /// NOT captured: Selected, mask bounding boxes, mask statistics, GPU refs.
+    /// NOT captured: Selected, Temporary, mask bounding boxes, mask statistics, GPU refs.
     /// ColumnMapping is serialised as Dictionary&lt;string, string&gt; (SourceMappingOptions.ToString() → column name).
     ///
     /// Restore ordering:
@@ -106,12 +106,9 @@ namespace iDaVIE.Persistence.Adapters
                     // RawData — New features only
                     if (fsr.FeatureSetType == FeatureSetType.New)
                         fDto.RawData = feature.RawData;
-
                     fDto.IsTemporary = feature.Temporary;
-
                     setDto.Features.Add(fDto);
                 }
-
                 dto.FeatureSets.Add(setDto);
             }
             return dto;
@@ -142,9 +139,9 @@ namespace iDaVIE.Persistence.Adapters
                     featureSetType);
 
                 if (setDto.FeatureVisibility)
-                    fsr.ShowAll();
+                    fsr.SetVisibilityOn();
                 else
-                    fsr.HideAll();
+                    fsr.SetVisibilityOff();
 
                 foreach (var fDto in setDto.Features)
                 {
@@ -157,18 +154,19 @@ namespace iDaVIE.Persistence.Adapters
                     var min = new Vector3(fDto.CornerMin.X, fDto.CornerMin.Y, fDto.CornerMin.Z);
                     var max = new Vector3(fDto.CornerMax.X, fDto.CornerMax.Y, fDto.CornerMax.Z);
 
-                    fsr.AddFeature(new Feature(
-                        cubeMin:  min,
-                        cubeMax:  max,
-                        cubeColor: cubeColor,
-                        name:     fDto.Name ?? $"Feature_{fDto.Id}",
-                        flag:     fDto.Flag ?? "0",
-                        index:    fsr.FeatureList.Count,
-                        id:       fDto.Id,
-                        rawData:  fDto.RawData,
-                        startVisible: fDto.Visible,
-                        temporary: fDto.IsTemporary
-                    ));
+                    var restoredFeature = new Feature(
+                            cubeMin:      min,
+                            cubeMax:      max,
+                            cubeColor:    cubeColor,
+                            name:         fDto.Name ?? $"Feature_{fDto.Id}",
+                            flag:         fDto.Flag ?? "0",
+                            index:        fsr.FeatureList.Count,
+                            id:           fDto.Id,
+                            rawData:      fDto.RawData,
+                            startVisible: fDto.Visible
+                        );
+                        restoredFeature.Temporary = fDto.IsTemporary;
+                        fsr.AddFeature(restoredFeature);
                 }
             }
 

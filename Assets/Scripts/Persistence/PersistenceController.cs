@@ -49,7 +49,7 @@ namespace iDaVIE.Persistence
         public VolumeInputController volumeInputController;
 
         [Tooltip("The FeatureSetManager in the scene.")]
-        public FeatureData.FeatureSetManager featureSetManager;
+        public FeatureSetManager featureSetManager;
 
         // ── Services (built in Awake) ─────────────────────────────────────────
         private AutosaveService      _autosaveService;
