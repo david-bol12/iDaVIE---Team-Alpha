@@ -1,5 +1,5 @@
 // brief §6.6 | File tab AFTER — FileDialogServiceAdapter (Unity-assembly adapter)
-// Wraps StandaloneFileBrowser's async callback pattern into Task<string?>.
+// Wraps StandaloneFileBrowser's (SFB) async callback pattern into Task<string?>.
 // Also owns PlayerPrefs persistence of the last-used directory.
 // Satisfies ADR-002 (ACL): the ViewModel never touches SFB or PlayerPrefs.
 using System.IO;
@@ -10,13 +10,7 @@ using UnityEngine;
 
 namespace iDaVIE.Desktop.Adapters.FileTab
 {
-    /// <summary>
-    /// Adapter for <see cref="IFileDialogService"/>.
-    /// Converts StandaloneFileBrowser's callback model into a Task the ViewModel awaits.
-    ///
-    /// Replaces the direct SFB calls in CanvassDesktop.BrowseImageFile (line 317)
-    /// and BrowseMaskFile, while keeping PlayerPrefs persistence out of the domain.
-    /// </summary>
+    // Adapter for IFileDialogService — the Unity side of the ACL. Converts StandaloneFileBrowser's callback model into a Task the ViewModel can await, and keeps PlayerPrefs persistence of the last-used directory out of the domain. Replaces the direct SFB calls in CanvassDesktop.BrowseImageFile (line 317) and BrowseMaskFile.
     public sealed class FileDialogServiceAdapter : IFileDialogService
     {
         private const string LastPathKey = "LastPath";

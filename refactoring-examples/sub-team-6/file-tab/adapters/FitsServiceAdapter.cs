@@ -1,22 +1,16 @@
 // brief §6.6 | File tab AFTER — FitsServiceAdapter (client-side gateway proxy)
-//
-// Adapts IServiceGateway to IFitsService. Per the brief §6.6 ("direct file I/O
-// that belongs server-side"), FITS reading happens in a server-side plug-in;
-// this client-side adapter only translates IFitsService method calls into the
-// JSON-RPC method catalogue defined in Gateway Contract v1 §"Method catalogue (v1)":
-//
+
+// Adapts IServiceGateway to IFitsService. Per the brief §6.6 ("direct file I/O that belongs server-side"), FITS reading happens in a server-side plug-in;
+// This client-side adapter only translates IFitsService method calls into the JSON-RPC method catalogue defined in Gateway Contract v1 §"Method catalogue (v1)":
+
 //   IFitsService.OpenImageAsync(path)              →  file.open       + dataset.getAxes
 //   IFitsService.OpenMaskAsync(path)               →  file.open       + dataset.getAxes
 //   IFitsService.GetHeaderTextAsync(handle, hdu)   →  dataset.getHeader
 //   IFitsHandle.Dispose()                          →  file.close (best-effort)
-//
-// No UnityEngine, no [DllImport], no IntPtr. The dataset id is server-assigned
-// and opaque to the ViewModel — RemoteFitsHandle carries it round-trip.
-//
-// Satisfies ADR-009 Decision §1 ("ViewModel commands → server calls via the
-// transport contract"), ADR-002 (ACL — Unity-side coupling eliminated), and
-// brief §6.6 ("from direct native-plugin call → ViewModel command via service
-// gateway").
+
+// No UnityEngine, no [DllImport], no IntPtr. The dataset id is server-assigned and opaque to the ViewModel — RemoteFitsHandle carries it round-trip.
+
+// Satisfies ADR-009 Decision §1 ("ViewModel commands → server calls via the transport contract"), ADR-002 (ACL — Unity-side coupling eliminated), and brief §6.6 ("from direct native-plugin call → ViewModel command via service gateway").
 
 using System;
 using System.Collections.Generic;
@@ -27,13 +21,7 @@ using iDaVIE.Desktop.FileTab;
 
 namespace iDaVIE.Desktop.Adapters.FileTab
 {
-    /// <summary>
-    /// Client-side <see cref="IFitsService"/> implementation that forwards every
-    /// call through <see cref="IServiceGateway"/>. The ViewModel sees only the
-    /// interface; whether the gateway is the real named-pipe transport
-    /// (<see cref="JsonRpcPipeGateway"/>) or an in-memory <see cref="FakeGateway"/>
-    /// is a composition-root decision.
-    /// </summary>
+    // Client-side IFitsService that forwards every call through IServiceGateway — no [DllImport]/IntPtr ever exists client-side; FITS reading lives in a server-side plug-in. The ViewModel sees only the interface; whether the gateway is the real named-pipe transport (JsonRpcPipeGateway) or an in-memory FakeGateway is a composition-root decision (which is what makes the VM testable).
     public sealed class FitsServiceAdapter : IFitsService
     {
         // Gateway Contract v1 method names — single source of truth so a rename here matches
@@ -64,9 +52,8 @@ namespace iDaVIE.Desktop.Adapters.FileTab
                 .ConfigureAwait(false);
 
             // 2. dataset.getAxes → HDU list + axis metadata + primary-HDU header.
-            //    Two calls instead of one because the catalogue separates "obtain
-            //    a handle" from "read structural metadata" — leaves room for a
-            //    later "open without parsing" optimisation.
+            //    Two calls instead of one because the catalogue separates "obtain a handle" from "read structural metadata"
+            // This leaves room for a later "open without parsing" optimisation.
             try
             {
                 var meta = await _gateway
@@ -118,12 +105,8 @@ namespace iDaVIE.Desktop.Adapters.FileTab
                 .ContinueWith(t => { _ = t.Exception; }, TaskScheduler.Default);
         }
 
-        // ── Wire DTOs ─────────────────────────────────────────────────────────
-        //
-        // These are private to the adapter — they exist only to shape the JSON
-        // on the wire and never escape. System.Text.Json with the gateway's
-        // camelCase policy produces the field names documented in Gateway Contract v1
-        // §"Message shape" (e.g. params: { "path": "...", "isMask": false }).
+        // Wire DTOs
+        // Private to the adapter — they exist only to shape the JSON on the wire and never escape. System.Text.Json with the gateway's camelCase policy produces the field names documented in Gateway Contract v1 §"Message shape" (e.g. params: { "path": "...", "isMask": false }).
 
         private sealed record FileOpenParams(string Path, bool IsMask);
 
@@ -140,10 +123,8 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             string HeaderText,
             long EstimatedBytes);
 
-        // ── Handle implementation ─────────────────────────────────────────────
-        //
-        // Wraps a server-assigned dataset id; the ViewModel sees only IFitsHandle.
-        // Disposal issues a best-effort file.close — see BestEffortClose above.
+        // Handle implementation
+        // Wraps a server-assigned dataset id; the ViewModel sees only IFitsHandle. Disposal issues a best-effort file.close — see BestEffortClose above.
 
         private sealed class RemoteFitsHandle : IFitsHandle
         {

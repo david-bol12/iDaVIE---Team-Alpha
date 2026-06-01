@@ -1,8 +1,12 @@
 // brief §6.6 | File tab AFTER — FileTabView (Unity-assembly, thin View)
-// Single responsibility: translate Unity UI events into ViewModel calls,
-// and ViewModel PropertyChanged events into UI updates.
-// No business logic. No transform.Find chains. No file I/O.
+
+// Single responsibility: translate Unity UI events into ViewModel calls, and ViewModel PropertyChanged events into UI updates.
+// No business logic. No transform. No file I/O.
 // Satisfies ADR-009 (MVVM split) and NFR-MOD-2.
+
+// FileTabView.cs is in a different folder to FileTabViewModel.cs as adapters and skeletons are inherently different. A skeleton is pure C#, Unity-free, and is testable. adapters/ are Unit-coupled
+// FileTabView.cs here is a MonoBehaviour, it inherents from the Unity Engine
+// Adapters reference Skeletons, but Skeletons don't reference Adapters
 using System.ComponentModel;
 using System.IO;
 using iDaVIE.Desktop.FileTab;
@@ -12,30 +16,29 @@ using UnityEngine.UI;
 
 namespace iDaVIE.Desktop.Adapters.FileTab
 {
-    /// <summary>
-    /// Thin MonoBehaviour view for the File tab panel.
-    ///
-    /// All UI references are assigned via the Unity Inspector (no transform.Find).
-    /// The composition root calls <see cref="BindTo"/> once after constructing the
-    /// ViewModel; thereafter the View is purely reactive.
-    ///
-    /// Contrast with CanvassDesktop._browseImageFile (lines 329–429) which mixed
-    /// P/Invoke, scene-hierarchy writes, and validation in a single 100-line method.
-    /// </summary>
+    // Thin MonoBehaviour view for the File tab panel.
+    // UI references are assigned via the Unity Inspector (no transform.Find).
+    // The composition root calls BindTo once; thereafter the View is purely reactive.
     public sealed class FileTabView : MonoBehaviour
     {
-        // ── Inspector-assigned UI references ──────────────────────────────────
+        // Inspector-assigned UI references
+        // [Header(...)] just draws a bold section title in the Inspector. It is visual grouping for whoever wires the slots and has no effect at runtime
+
+        // Read-only text the VM pushes out: chosen paths, FITS header dump, validation message.
         [Header("Labels")]
         [SerializeField] private TMP_Text _imagePathLabel  = null!;
         [SerializeField] private TMP_Text _maskPathLabel   = null!;
         [SerializeField] private TMP_Text _headerText      = null!;
         [SerializeField] private TMP_Text _validationLabel = null!;
 
+        // User choices fed back into the VM: which HDU, which axis is Z, aspect-ratio mode.
         [Header("Dropdowns")]
         [SerializeField] private TMP_Dropdown _hduDropdown   = null!;
         [SerializeField] private TMP_Dropdown _zAxisDropdown = null!;
         [SerializeField] private TMP_Dropdown _ratioDropdown = null!;
 
+        // Optional crop region: the toggle + the two panels shown/hidden with it,
+        // plus the six X/Y/Z min-max bounds inputs.
         [Header("Subset panel")]
         [SerializeField] private GameObject     _subsetPanel  = null!;
         [SerializeField] private GameObject     _zAxisPanel   = null!;
@@ -47,6 +50,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
         [SerializeField] private TMP_InputField _zMinInput    = null!;
         [SerializeField] private TMP_InputField _zMaxInput    = null!;
 
+        // The four actions, wired in BindTo to the VM's commands (browse image/mask, load, clear mask).
         [Header("Buttons")]
         [SerializeField] private Button _browseImageBtn = null!;
         [SerializeField] private Button _browseMaskBtn  = null!;
@@ -55,7 +59,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
 
         private IFileTabViewModel? _vm;
 
-        // ── Public binding point (called by FileTabCompositionRoot) ───────────
+        // Public binding point (called by FileTabCompositionRoot)
 
         public void BindTo(IFileTabViewModel vm)
         {
@@ -134,8 +138,10 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             _vm = null;
         }
 
-        // ── ViewModel → View: top-level properties ────────────────────────────
+        // ViewModel → View: top-level properties
 
+        // The VM raises PropertyChanged with the name of whatever property just changed; this switch routes that name to the one  widget that displays it, reads the new value back off the VM, and pushes it in.
+        // All logic stays in the VM; the View only translates a property name into a UI update.
         private void OnPropertyChanged(object? _, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
@@ -185,8 +191,10 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             }
         }
 
-        // ── ViewModel → View: subset bounds ──────────────────────────────────
+        // ViewModel → View: subset bounds
 
+        // Same inbound pattern, but for the nested SubsetBoundsViewModel: when the VM clamps or corrects a bound, it pushes the corrected number back into the matching input field.
+        // SetTextWithoutNotify writes the field without re-firing onEndEdit, so the correction doesn't bounce straight back into the VM.
         private void OnSubsetPropertyChanged(object? _, PropertyChangedEventArgs e)
         {
             var s = _vm!.Subset;
@@ -201,7 +209,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             }
         }
 
-        // ── Dropdown rebuilds ─────────────────────────────────────────────────
+        // Dropdown
 
         private void RebuildHduDropdown()
         {
@@ -232,7 +240,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             _ratioDropdown.RefreshShownValue();
         }
 
-        // ── Initial full sync ─────────────────────────────────────────────────
+        // Initial full sync
 
         private void SyncAll()
         {
