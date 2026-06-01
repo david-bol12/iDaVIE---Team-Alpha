@@ -3,24 +3,18 @@
 // within the ≤ 40 orchestrator threshold. No state, no Unity dependency.
 namespace iDaVIE.Desktop.FileTab
 {
-    /// <summary>
-    /// Pure-static FITS metadata calculations used by <see cref="FileTabViewModel"/>.
-    /// Extracted so FileTabViewModel's method count stays within the orchestrator
-    /// WMC threshold (≤ 40). All methods are stateless and have no Unity dependency.
-    /// </summary>
+    // A bag of stateless FITS-metadata sums that FileTabViewModel would otherwise carry itself. Pulling them out keeps the VM's method count under the orchestrator WMC threshold (≤ 40). No state, no Unity — just inputs in, numbers out, so each is trivially unit-testable on its own.
     internal static class FitsMetadataHelper
     {
-        /// <summary>Returns the pixel maxima for axes 1, 2, and 3 from a FitsFileInfo.</summary>
+        // Pulls the pixel sizes of axes 1/2/3 (X/Y/Z) out of a FitsFileInfo, defaulting any missing axis to 1.
         internal static (int maxX, int maxY, int maxZ) GetAxisMaxima(FitsFileInfo info)
         {
             long Get(int axis) => info.AxisSizes.TryGetValue(axis, out var v) ? v : 1;
             return ((int)Get(1), (int)Get(2), (int)Get(3));
         }
 
-        /// <summary>
-        /// Replaces the inline zScale arithmetic at CanvassDesktop.cs:1028-1039.
-        /// Isotropic returns 1; ProportionalZ scales Z by axisZ / max(axisX, axisY).
-        /// </summary>
+        // Works out how much to stretch the Z axis so the cube renders with the chosen aspect ratio. Replaces the inline zScale arithmetic at CanvassDesktop.cs:1028-1039.
+        // Isotropic (or no file) returns 1 — no stretch; ProportionalZ scales Z by axisZ / max(axisX, axisY).
         internal static float ComputeZScale(RatioMode mode, FitsFileInfo? info)
         {
             if (mode == RatioMode.Isotropic || info is null) return 1f;
@@ -31,10 +25,8 @@ namespace iDaVIE.Desktop.FileTab
             return (float)ax(3) / xy;
         }
 
-        /// <summary>
-        /// Pure validation — replaces the axis-comparison logic inside
-        /// CanvassDesktop._browseMaskFile. No Unity types.
-        /// </summary>
+        // True when a mask's first three axes are the same size as the image's — i.e. the mask actually fits the cube. Replaces the axis-comparison logic inside CanvassDesktop._browseMaskFile.
+        // There are no Unity types.
         internal static bool MaskAxesMatchImage(FitsFileInfo image, FitsFileInfo mask) =>
             image.AxisSizes.TryGetValue(1, out var ix) && mask.AxisSizes.TryGetValue(1, out var mx) && ix == mx &&
             image.AxisSizes.TryGetValue(2, out var iy) && mask.AxisSizes.TryGetValue(2, out var my) && iy == my &&

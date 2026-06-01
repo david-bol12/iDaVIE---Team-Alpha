@@ -4,10 +4,8 @@
 // No UnityEngine dependency.
 namespace iDaVIE.Desktop.FileTab
 {
-    /// <summary>
-    /// Six-axis subset selection. Mutable DTO; created via
-    /// <see cref="SubsetBoundsViewModel.ToDto"/> to snapshot validated state.
-    /// </summary>
+    // The six X/Y/Z min-max bounds of a crop region — a flat snapshot of the values, with no validation of its own.
+    // SubsetBoundsViewModel does the clamping/validating and produces one of these via ToDto() to hand to LoadCubeRequest once the user confirms a load.
     public sealed class SubsetBounds
     {
         public int XMin { get; set; }

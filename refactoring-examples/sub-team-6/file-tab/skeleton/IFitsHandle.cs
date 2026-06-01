@@ -5,18 +5,11 @@
 // No UnityEngine, no IntPtr — concrete IntPtr is sealed inside the adapter implementation.
 namespace iDaVIE.Desktop.FileTab
 {
-    /// <summary>
-    /// Opaque handle to an open FITS file held by <see cref="IFitsService"/>.
-    /// Carried by <see cref="FitsFileInfo"/> and passed back to the service when
-    /// reading subsequent HDU headers — replaces the per-call reopen pattern.
-    ///
-    /// Disposing the handle closes the underlying file pointer. The ViewModel
-    /// owns the lifetime: dispose old before assigning a new one, and dispose
-    /// all live handles in <c>FileTabViewModel.Dispose()</c>.
-    /// </summary>
+    // Opaque handle to a FITS file that IFitsService keeps open. Carried on FitsFileInfo and handed back to the service to read further HDU headers — so the file is opened once, not reopened on every dropdown change.
+    // The handle is IDisposable and the ViewModel owns its lifetime: dispose the old one before assigning a new image, and dispose every live handle in FileTabViewModel.Dispose(). Disposing closes the underlying file pointer.
     public interface IFitsHandle : IDisposable
     {
-        /// <summary>Absolute path the handle was opened against (informational only).</summary>
+        // Absolute path the handle was opened against (informational only).
         string FilePath { get; }
     }
 }
