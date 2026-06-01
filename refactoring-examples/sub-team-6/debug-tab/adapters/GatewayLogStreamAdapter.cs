@@ -7,10 +7,7 @@ using iDaVIE.Desktop.DebugTab;
 
 namespace iDaVIE.Desktop.Adapters.DebugTab
 {
-    /// <summary>
-    /// <see cref="ILogStream"/> that receives entries via <c>log.emit</c> JSON-RPC
-    /// notifications and fans them out to local observers.
-    /// </summary>
+    // ILogStream that receives entries via log.emit JSON-RPC notifications and fans them out to local observers.
     public sealed class GatewayLogStreamAdapter : ILogStream, IDisposable
     {
         // Single source of truth — tests reference this constant too.
@@ -86,7 +83,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
             _gateway.OnNotification -= _handler;
         }
 
-        /// <summary>Wire-shape DTO for <c>log.emit</c> params (Gateway Contract v1 §"Message shape").</summary>
+        // Wire-shape DTO for log.emit params (Gateway Contract v1 "Message shape").
         private sealed record LogEmitParams(string? Level, string? Msg, string? Ts);
     }
 }

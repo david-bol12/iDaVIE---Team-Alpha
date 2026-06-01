@@ -1,4 +1,4 @@
-// WE1-3 | File tab AFTER — VolumeServiceAdapter (Unity-assembly adapter)
+// brief §6.6 | File tab AFTER — VolumeServiceAdapter (Unity-assembly adapter)
 // Owns coroutine lifecycle, prefab instantiation, and native memory cleanup.
 // The ViewModel never touches VolumeCommandController, VolumeDataSetRenderer,
 // or any Unity coroutine directly. Satisfies ADR-009 (transport contract) and
@@ -13,15 +13,10 @@ using VolumeData;
 
 namespace iDaVIE.Desktop.Adapters.FileTab
 {
-    /// <summary>
-    /// Concrete adapter for <see cref="IVolumeService"/>.
-    /// Translates a plain <see cref="LoadCubeRequest"/> DTO into the scene-graph
-    /// operations that were previously scattered inside CanvassDesktop.LoadCubeCoroutine
-    /// (lines 1015–1131): renderer teardown, prefab instantiation, field assignment,
-    /// coroutine management, and polling on <c>started</c>.
-    ///
-    /// Attach to the same GameObject as the scene's VolumeDataSetManager.
-    /// </summary>
+    // Concrete adapter for IVolumeService — the Unity side of the ACL, and the busiest one. Translates a plain LoadCubeRequest DTO into the scene-graph work that was scattered inside CanvassDesktop.LoadCubeCoroutine (lines 1015–1131):
+    // renderer teardown, prefab instantiation, field assignment, coroutine management, and the readiness wait that used to poll on `started`.
+    // It owns the coroutine lifecycle and native memory cleanup so the VM never touches VolumeCommandController, VolumeDataSetRenderer, or any Unity coroutine.
+    // It's a MonoBehaviour (not new()-ed) because it needs a coroutine host; attach it to the same GameObject as the scene's VolumeDataSetManager.
     [DisallowMultipleComponent]
     public sealed class VolumeServiceAdapter : MonoBehaviour, IVolumeService
     {
@@ -40,7 +35,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
 
         public bool IsCubeLoaded => FindFirstActiveRenderer() != null;
 
-        /// <inheritdoc />
+        // Raised once per successful load so peer tabs can react (see IVolumeService).
         public event EventHandler<CubeLoadedEventArgs>? CubeLoaded;
 
         public Task LoadCubeAsync(
@@ -53,8 +48,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             return tcs.Task;
         }
 
-        // ── Coroutine — owns all Unity scene operations ────────────────────────
-
+        // Coroutine — owns all Unity scene operations
         private IEnumerator LoadCubeCoroutine(
             LoadCubeRequest request,
             IProgress<float>? progress,
@@ -149,20 +143,15 @@ namespace iDaVIE.Desktop.Adapters.FileTab
 
             _commandController!.AddDataSet(renderer);
 
-            // Phase 4: await renderer initialisation. _startFunc() is the IEnumerator
-            // coroutine that sets `started = true` at its terminating yield
-            // (VolumeDataSetRenderer.cs:541-542). Yielding the StartCoroutine handle
-            // suspends this coroutine until _startFunc completes — eliminating the
-            // per-100ms polling loop in CanvassDesktop.LoadCubeCoroutine (lines 1116-1119)
-            // that previously busy-waited on the same readiness signal.
+            // Phase 4: await renderer initialisation. _startFunc() is the IEnumerator coroutine that sets `started = true` at its terminating yield
+            // (VolumeDataSetRenderer.cs:541-542). Yielding the StartCoroutine handle suspends this coroutine until _startFunc completes — eliminating the per-100ms polling loop in CanvassDesktop.LoadCubeCoroutine (lines 1116-1119)
+
             yield return StartCoroutine(renderer._startFunc());
 
             progress?.Report(1f);
             tcs.TrySetResult(true);
 
-            // Notify peer-tab subscribers exactly once. The adapter holds no
-            // reference to the renderer in the event payload — only a plain DTO —
-            // so unsubscribed subscribers do not leak the previous cube.
+            // Notify peer-tab subscribers exactly once. The adapter holds no reference to the renderer in the event payload — only a plain DTO — so unsubscribed subscribers do not leak the previous cube.
             CubeLoaded?.Invoke(this, new CubeLoadedEventArgs
             {
                 ImagePath = request.ImagePath,
@@ -171,8 +160,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
             });
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────
-
+        // Helpers
         private VolumeDataSetRenderer? FindFirstActiveRenderer()
         {
             if (_volumeDataSetManager == null) return null;

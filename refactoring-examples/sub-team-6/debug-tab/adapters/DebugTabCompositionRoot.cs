@@ -6,11 +6,8 @@ using UnityEngine;
 
 namespace iDaVIE.Desktop.Adapters.DebugTab
 {
-    /// <summary>
-    /// Wires <see cref="GatewayLogStreamAdapter"/>, <see cref="DebugTabViewModel"/>,
-    /// and <see cref="DebugTabView"/> for the Debug tab panel.
-    /// Attach to the panel root; assign <see cref="_view"/> in the Inspector.
-    /// </summary>
+    // Wires GatewayLogStreamAdapter, DebugTabViewModel, and DebugTabView for the Debug tab panel.
+    // Attach to the panel root; assign _view in the Inspector.
     [DisallowMultipleComponent]
     public sealed class DebugTabCompositionRoot : MonoBehaviour
     {
@@ -20,7 +17,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
         private GatewayLogStreamAdapter? _logStreamAdapter;
         private DebugTabViewModel? _vm;
 
-        /// <summary>Must be called before Awake — the outer scene composition root owns ordering.</summary>
+        //Must be called before Awake — the outer scene composition root owns ordering
         public void Configure(IServiceGateway gateway)
             => _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
 

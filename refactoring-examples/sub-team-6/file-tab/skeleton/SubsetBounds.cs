@@ -1,13 +1,11 @@
-// WE1-3 | File tab AFTER skeleton — SubsetBounds DTO
+// brief §6.6 | File tab AFTER skeleton — SubsetBounds DTO
 // Plain data transfer object; owned and validated by SubsetBoundsViewModel.
 // Passed into LoadCubeRequest when the user has enabled the subset selector.
 // No UnityEngine dependency.
 namespace iDaVIE.Desktop.FileTab
 {
-    /// <summary>
-    /// Six-axis subset selection. Mutable DTO; created via
-    /// <see cref="SubsetBoundsViewModel.ToDto"/> to snapshot validated state.
-    /// </summary>
+    // The six X/Y/Z min-max bounds of a crop region — a flat snapshot of the values, with no validation of its own.
+    // SubsetBoundsViewModel does the clamping/validating and produces one of these via ToDto() to hand to LoadCubeRequest once the user confirms a load.
     public sealed class SubsetBounds
     {
         public int XMin { get; set; }

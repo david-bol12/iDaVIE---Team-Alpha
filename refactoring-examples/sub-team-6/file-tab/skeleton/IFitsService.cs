@@ -1,42 +1,22 @@
-// WE1-3 | File tab AFTER skeleton — IFitsService (ACL boundary)
+// brief §6.6 | File tab AFTER skeleton — IFitsService (ACL boundary)
 // Abstracts over FitsReader P/Invoke calls. The adapter (FitsServiceAdapter)
 // lives in the Unity assembly and may use [DllImport]; nothing inside this
 // interface or the ViewModel may. Satisfies ADR-003 (DI) and ADR-002 (ACL).
 // No UnityEngine dependency.
 namespace iDaVIE.Desktop.FileTab
 {
-    /// <summary>
-    /// Domain interface for FITS file operations.
-    /// Replaces direct FitsReader.FitsOpenFile / FitsGetHduCount / FitsReadKey /
-    /// FitsGetImageSize calls that were scattered inside CanvassDesktop._browseImageFile,
-    /// UpdateHeaderFromFits, IsLoadable, and ChangeHduSelection.
-    ///
-    /// HDU index convention: all hduIndex parameters are <b>1-based</b> (FITS native),
-    /// not zero-based dropdown indices. The ViewModel converts at the boundary.
-    /// </summary>
+    // The anti-corruption boundary for FITS file operations. The VM depends on this, not on FitsReader's P/Invoke — so the [DllImport] calls stay in the adapter (FitsServiceAdapter) and the VM stays testable with a fake.
+    // Replaces the direct FitsReader.FitsOpenFile / FitsGetHduCount / FitsReadKey / FitsGetImageSize calls scattered through CanvassDesktop._browseImageFile, UpdateHeaderFromFits, IsLoadable, and ChangeHduSelection.
+    // HDU index convention: every hduIndex here is 1-based (FITS native), not a zero-based dropdown index. The ViewModel converts at the boundary.
     public interface IFitsService
     {
-        /// <summary>
-        /// Opens a FITS image file, reads all HDU metadata and the primary header,
-        /// and returns a <see cref="FitsFileInfo"/> DTO carrying an <see cref="IFitsHandle"/>
-        /// to the still-open file pointer. The handle stays open until the caller
-        /// disposes it — subsequent <see cref="GetHeaderTextAsync"/> calls reuse it
-        /// (no reopen).
-        /// </summary>
+        // Opens an image file, reads all HDU metadata + the primary header, and returns a FitsFileInfo carrying an IFitsHandle to the still-open file. The handle stays open until disposed; GetHeaderTextAsync reuses it (no reopen).
         Task<FitsFileInfo> OpenImageAsync(string path, CancellationToken ct = default);
 
-        /// <summary>
-        /// Opens a FITS mask file and returns its axis metadata + open handle.
-        /// FileTabViewModel compares the result against the loaded image to validate
-        /// axis compatibility (replaces CanvassDesktop._browseMaskFile axis checks).
-        /// </summary>
+        // Opens a mask file and returns its axis metadata + open handle. The VM compares this against the loaded image to check axis compatibility (replaces the _browseMaskFile axis checks).
         Task<FitsFileInfo> OpenMaskAsync(string path, CancellationToken ct = default);
 
-        /// <summary>
-        /// Returns the formatted header text for the given 1-based HDU index, reusing
-        /// the open handle. Replaces CanvassDesktop.ChangeHduSelection (line 1435) which
-        /// reopened the file from disk on every dropdown selection.
-        /// </summary>
+        // Returns the formatted header text for a 1-based HDU index, reusing the open handle. Replaces CanvassDesktop.ChangeHduSelection (line 1435), which reopened the file from disk on every dropdown selection.
         Task<string> GetHeaderTextAsync(IFitsHandle handle, int hduIndex, CancellationToken ct = default);
     }
 }

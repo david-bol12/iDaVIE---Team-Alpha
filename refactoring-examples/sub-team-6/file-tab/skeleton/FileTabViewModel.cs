@@ -1,29 +1,37 @@
-// WE1-3 | File tab AFTER skeleton — FileTabViewModel
-// Replaces the File-tab responsibilities of CanvassDesktop (lines ~200–700).
+// brief §6.6 | File tab AFTER skeleton — FileTabViewModel
+// Replaces the File-tab responsibilities of CanvassDesktop 
+// These were scattered across lines 306–1133 (BrowseImageFile→LoadCubeCoroutine) plus ChangeHduSelection (1435).
 // No UnityEngine dependency. Satisfies NFR-MOD-2, ADR-009 (MVVM), ADR-002 (ACL).
+
+
+// gives us INotifyPropertyChanged so the View can bind without us touching Unity
 using System.ComponentModel;
+// for [CallerMemberName] so Notify() figures out which property changed on its own
 using System.Runtime.CompilerServices;
+
+// equivalent to a package in java
 namespace iDaVIE.Desktop.FileTab
 {
-    /// <summary>
-    /// Concrete ViewModel for the File tab panel.
-    /// Owns file-path state, HDU selection, subset configuration, validation, and
-    /// the commands that drive file browsing and cube loading.
-    ///
-    /// All external dependencies are constructor-injected — no FindObjectOfType,
-    /// no MonoBehaviour lifecycle coupling, no transform.Find chains.
-    /// The composition root (a thin Unity MonoBehaviour) builds this and calls
-    /// FileTabView.BindTo(vm) once.
-    /// </summary>
+    // This is the "brain" of the File tab. It holds all the state (which files are picked, which HDU/axis is selected, the subset bounds) and the actions the user can trigger.
+    // It's plain C# — it never touches Unity directly, so we can test it on its own. The View just reflects whatever this class says.
+    //
+    // 'sealed': nothing is allowed to inherit from this class. It's a leaf — you change its behaviour by passing in different services, not by subclassing.
+    //
+    // The ': IFileTabViewModel, IDisposable' part lists the contracts it fulfils. There's no base class here on purpose).
+    // IFileTabViewModel is what the View binds against, so the View never sees this concrete type.
+    // IDisposable means it owns something that must be cleaned up (open FITS file handles) — hence the Dispose() method.
     public sealed class FileTabViewModel : IFileTabViewModel, IDisposable
     {
-        // ── Injected services (all behind interfaces) ─────────────────────────
+        // The 4 things this class needs to do its job. They're  handed in through the constructor ("dependency injection").
+        // These interfaces lets us pass real adapters at runtime and fakes in tests
+        // and keeps Unity/server code out of here entirely (ADR-002).
+        // 'readonly' = set once.
         private readonly IFitsService       _fitsService;
         private readonly IFileDialogService _dialogService;
         private readonly IVolumeService     _volumeService;
         private readonly IMemoryProbe      _memoryProbe;
 
-        // ── Private backing state ──────────────────────────────────────────────
+        // Private memory
         private string? _imagePath;
         private string? _maskPath;
         private readonly List<HduInfo> _hduOptions    = new();
@@ -36,21 +44,16 @@ namespace iDaVIE.Desktop.FileTab
         private string?  _validationMessage;
         private RatioMode _ratioMode = RatioMode.Isotropic;
 
-        // Fixed display labels for the Ratio_Dropdown — index-aligned with RatioMode.
-        // Mirrors the two options on the original Ratio_Dropdown UI element
-        // (scope §1 / §10 Anomaly #5).
+        // Human Readable Lookup Table.
         private static readonly string[] RatioLabels = { "X=Y=Z", "X=Y" };
 
         private FitsFileInfo? _currentImageInfo;
         private FitsFileInfo? _currentMaskInfo;
 
-        // ── Constructor ────────────────────────────────────────────────────────
-        public FileTabViewModel(
-            IFitsService       fitsService,
-            IFileDialogService dialogService,
-            IVolumeService     volumeService,
-            IMemoryProbe       memoryProbe)
+        // Constructor
+        public FileTabViewModel(IFitsService fitsService, IFileDialogService dialogService, IVolumeService volumeService, IMemoryProbe memoryProbe)
         {
+            // throw an argument if (fitsService) is null
             _fitsService   = fitsService   ?? throw new ArgumentNullException(nameof(fitsService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _volumeService = volumeService ?? throw new ArgumentNullException(nameof(volumeService));
@@ -58,23 +61,28 @@ namespace iDaVIE.Desktop.FileTab
 
             Subset = new SubsetBoundsViewModel();
 
+            // The 4 button actions. Each command pairs a method to run with a rule ("() => ...") that decides whether the button is currently clickable
+            // Async versions are for slow file I/O (and auto-disable while running so you can't double-fire);
+            //   BrowseImage : only when not already busy
+            //   BrowseMask  : not busy AND an image is open (can't mask before an image)
+            //   Load        : the file is a valid cube AND not busy
+            //   ClearMask   : only when a mask is actually selected
             BrowseImageCommand = new AsyncRelayCommand(BrowseImageAsync, () => !IsLoading);
             BrowseMaskCommand  = new AsyncRelayCommand(BrowseMaskAsync,  () => !IsLoading && _currentImageInfo != null);
             LoadCommand        = new AsyncRelayCommand(LoadAsync,        () => IsLoadable && !IsLoading);
             ClearMaskCommand   = new RelayCommand(ClearMask,             () => _maskPath != null);
         }
 
-        // ── INotifyPropertyChanged ─────────────────────────────────────────────
+        // Fires whenever a bound property changes so the View can update itself.
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        private void Notify([CallerMemberName] string? name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private void Notify([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        // ── File path properties ───────────────────────────────────────────────
+        // Currently loaded image and mask files (null until one is opened).
         public string? ImagePath { get => _imagePath; private set { _imagePath = value; Notify(); } }
         public string? MaskPath  { get => _maskPath;  private set { _maskPath  = value; Notify(); } }
 
-        // ── HDU dropdown ───────────────────────────────────────────────────────
+        // HDUs available in the open file, shown in the selection dropdown.
         public IReadOnlyList<HduInfo> HduOptions => _hduOptions;
 
         public int SelectedHduIndex
@@ -89,7 +97,7 @@ namespace iDaVIE.Desktop.FileTab
             }
         }
 
-        // ── Z-axis selection (4+ axis cubes) ──────────────────────────────────
+        // For cubes with 4+ axes, lets the user pick which axis is the depth (Z) axis.
         public IReadOnlyList<string> ZAxisOptions => _zAxisOptions;
 
         public int SelectedZAxisIndex
@@ -105,23 +113,25 @@ namespace iDaVIE.Desktop.FileTab
             }
         }
 
-        // ── Subset properties ──────────────────────────────────────────────────
+        // "Load only part of the cube" toggle.
         public bool SubsetEnabled
         {
             get => _subsetEnabled;
             set { _subsetEnabled = value; Notify(); }
         }
+        // Nested VM holding the 6 subset bound values (X/Y/Z min+max).
         public SubsetBoundsViewModel Subset { get; }
 
-        // ── Aspect-ratio (Ratio_Dropdown on file-load modal) ──────────────────
+        // Read-only label list for the aspect-ratio dropdown.
         public IReadOnlyList<string> RatioModeOptions => RatioLabels;
+        // The chosen ratio; guard skips notifying if it didn't actually change.
         public RatioMode RatioMode
         {
             get => _ratioMode;
             set { if (_ratioMode == value) return; _ratioMode = value; Notify(); }
         }
 
-        // ── Derived / computed state ───────────────────────────────────────────
+        // Derived States
         public bool IsLoading
         {
             get => _isLoading;
@@ -140,16 +150,8 @@ namespace iDaVIE.Desktop.FileTab
             private set { _validationMessage = value; Notify(); }
         }
 
-        /// <summary>
-        /// Pure computed property — replaces CanvassDesktop.IsLoadable().
-        /// No Unity types; fully unit-testable in isolation.
-        /// Rules:
-        ///   1. An image file must be open.
-        ///   2. NAXIS must be ≥ 3.
-        ///   3. At least 3 axes must have size > 1.
-        ///   4. For 4+ non-trivial axes the user must have a Z-axis selection available.
-        ///   5. If a mask was selected its axes 1, 2, 3 must match the image.
-        /// </summary>
+        // Pure, Unity-free replacement for CanvassDesktop.IsLoadable()
+        // true when an image is open with NAXIS ≥ 3, ≥ 3 non-trivial axes (a Z-axis selection is required beyond 3), and any selected mask's axes 1–3 match the image.
         public bool IsLoadable
         {
             get
@@ -168,18 +170,16 @@ namespace iDaVIE.Desktop.FileTab
             }
         }
 
-        // ── Commands ───────────────────────────────────────────────────────────
+        // User triggerable actions on File tab
         public IAsyncCommand BrowseImageCommand { get; }
         public IAsyncCommand BrowseMaskCommand  { get; }
         public IAsyncCommand LoadCommand        { get; }
         public ICommand      ClearMaskCommand   { get; }
 
-        // ── Command implementations ────────────────────────────────────────────
+        // Implementations
 
-        /// <summary>
-        /// Replaces CanvassDesktop.BrowseImageFile() + _browseImageFile().
-        /// No direct P/Invoke, no transform.Find — everything behind interfaces.
-        /// </summary>
+        // Replaces CanvassDesktop.BrowseImageFile() + _browseImageFile().
+        // No direct P/Invoke, no transform.Find — everything behind interfaces.
         private async Task BrowseImageAsync()
         {
             var path = await _dialogService.PickFileAsync(
@@ -233,22 +233,23 @@ namespace iDaVIE.Desktop.FileTab
             }
         }
 
-        /// <summary>
-        /// Replaces CanvassDesktop.BrowseMaskFile() + _browseMaskFile().
-        /// Axis validation is pure C# (MaskAxesMatchImage); no Unity calls.
-        /// </summary>
+        // Replaces CanvassDesktop.BrowseMaskFile() + _browseMaskFile().
+        // Axis validation is pure C# (MaskAxesMatchImage); no Unity calls.
         private async Task BrowseMaskAsync()
         {
+            // Pop up a file picker (interface call, no Unity). Null = user hit Cancel, so bail.
             var path = await _dialogService.PickFileAsync(
                 "Select FITS mask", string.Empty, new[] { "fits", "fit" });
             if (path is null) return;
 
-            IsLoading = true;
-            ValidationMessage = null;
+            IsLoading = true; 
+            ValidationMessage = null;  // clear any old error text
             try
             {
+                // Open the mask via the gateway; returns metadata + an open handle.
                 var info = await _fitsService.OpenMaskAsync(path);
 
+                // A mask overlays the image cube, so its axes must line up. Pure-C# check.
                 if (_currentImageInfo != null && !FitsMetadataHelper.MaskAxesMatchImage(_currentImageInfo, info))
                 {
                     info.Dispose();   // mismatched mask — release its handle immediately
@@ -256,26 +257,25 @@ namespace iDaVIE.Desktop.FileTab
                     return;
                 }
 
-                _currentMaskInfo?.Dispose();
+                _currentMaskInfo?.Dispose();   // close the previously loaded mask, if any
                 _currentMaskInfo = info;
-                MaskPath = path;
-                NotifyIsLoadable();
+                MaskPath = path;               // notifies the View to show the new path
+                NotifyIsLoadable();            // re-check whether Load should be enabled
             }
             catch (Exception ex)
             {
+                // Any failure → friendly message instead of a crash.
                 ValidationMessage = $"Failed to read mask file: {ex.Message}";
             }
             finally
             {
-                IsLoading = false;
+                IsLoading = false;   // always runs, so the UI never gets stuck loading
             }
         }
 
-        /// <summary>
-        /// Replaces CanvassDesktop.LoadFileFromFileSystem() + LoadCubeCoroutine().
-        /// Builds a plain LoadCubeRequest DTO and delegates to IVolumeService —
-        /// no coroutine management, no scene hierarchy writes.
-        /// </summary>
+        // Replaces CanvassDesktop.LoadFileFromFileSystem() + LoadCubeCoroutine().
+        // Builds a plain LoadCubeRequest DTO and delegates to IVolumeService
+        // There is no coroutine management or no scene hierarchy writes now.
         private async Task LoadAsync()
         {
             if (_imagePath is null) return;
@@ -284,9 +284,7 @@ namespace iDaVIE.Desktop.FileTab
             ValidationMessage = null;
             try
             {
-                // Non-blocking RAM warning — replaces CanvassDesktop.CheckMemSpaceForCubes
-                // (CanvassDesktop.cs:995-1013). Matches BEFORE behaviour: warn the user,
-                // continue with the load.
+                // Non-blocking RAM warning — replaces CanvassDesktop.CheckMemSpaceForCubes (CanvassDesktop.cs:995-1013). Matches BEFORE behaviour: warn the user, continue with the load.
                 var warning = BuildMemoryWarning();
                 if (warning != null) ValidationMessage = warning;
 
@@ -319,10 +317,8 @@ namespace iDaVIE.Desktop.FileTab
             NotifyIsLoadable();
         }
 
-        /// <summary>
-        /// Releases any open FITS file handles. Called by the composition root on
-        /// OnDestroy so native pointers do not leak when the panel is torn down.
-        /// </summary>
+        // Releases any open FITS file handles. Called by the composition root on
+        // OnDestroy so native pointers do not leak when the panel is torn down.
         public void Dispose()
         {
             _currentImageInfo?.Dispose();
@@ -331,7 +327,7 @@ namespace iDaVIE.Desktop.FileTab
             _currentMaskInfo  = null;
         }
 
-        // ── Private helpers ────────────────────────────────────────────────────
+        // Private helpers
 
         private async Task RefreshHduHeaderAsync(int hduIndex)
         {
@@ -341,18 +337,14 @@ namespace iDaVIE.Desktop.FileTab
                 // Reuse the still-open FITS handle (FITS HDU index is 1-based).
                 // Replaces CanvassDesktop.ChangeHduSelection (line 1435) which
                 // reopened the file from disk on every dropdown selection.
-                HeaderText = await _fitsService.GetHeaderTextAsync(
-                    _currentImageInfo.Handle, hduIndex + 1);
+                HeaderText = await _fitsService.GetHeaderTextAsync(_currentImageInfo.Handle, hduIndex + 1);
             }
             catch { /* non-fatal — keep displaying the previous header */ }
             NotifyIsLoadable();
         }
 
-        /// <summary>
-        /// Computes a human-readable RAM-feasibility warning, or null if the
-        /// projected cube fits in available system memory. Non-blocking — matches
-        /// the CanvassDesktop.CheckMemSpaceForCubes contract (warn, do not gate).
-        /// </summary>
+        // Computes a human-readable RAM-feasibility warning, or null if the projected cube fits in available system memory.
+        // Non-blocking — matches the CanvassDesktop.CheckMemSpaceForCubes contract (warn, do not gate).
         private string? BuildMemoryWarning()
         {
             if (_currentImageInfo is null) return null;
@@ -414,7 +406,7 @@ namespace iDaVIE.Desktop.FileTab
         }
     }
 
-    // ── Minimal command helpers ────────────────────────────────────────────────
+    // Minimal command helpers
     // No WPF / WindowsBase reference — Unity does not link that assembly.
 
     internal sealed class AsyncRelayCommand : IAsyncCommand

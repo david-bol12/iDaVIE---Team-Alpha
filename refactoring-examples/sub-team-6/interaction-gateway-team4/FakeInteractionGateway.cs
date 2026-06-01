@@ -16,15 +16,13 @@ using System.Threading.Tasks;
 
 namespace iDaVIE.Client.Interaction
 {
-    /// <summary>
-    /// In-process <see cref="IInteractionGateway"/> for unit tests. Records issued
-    /// commands in <see cref="Sent"/>; raises notifications via the Raise* helpers.
-    /// </summary>
+    // In-process IInteractionGateway for unit tests. Records issued
+    // commands in Sent; raises notifications via the Raise* helpers.
     public sealed class FakeInteractionGateway : IInteractionGateway
     {
         private readonly List<SentCommand> _sent = new();
 
-        /// <summary>Ordered log of every command issued through this gateway.</summary>
+        // Ordered log of every command issued through this gateway.
         public IReadOnlyList<SentCommand> Sent => _sent;
 
         public event Action<ThresholdChangedArgs>? ThresholdChanged;
@@ -57,7 +55,7 @@ namespace iDaVIE.Client.Interaction
         public Task ExitAsync(bool confirm, CancellationToken ct = default)
             => Record("app.exit", new { confirm });
 
-        // ---- Notification drivers — simulate VR-originated shared-state changes. ----
+        // Send Notifications on changes
 
         public void RaiseThresholdChanged(string datasetId, float min, float max)
             => ThresholdChanged?.Invoke(new ThresholdChangedArgs(datasetId, min, max));
@@ -80,7 +78,7 @@ namespace iDaVIE.Client.Interaction
             return Task.CompletedTask;
         }
 
-        /// <summary>One recorded command: its wire verb and the args object passed.</summary>
+        //One recorded command: its wire verb and the args object passed.
         public sealed record SentCommand(string Verb, object Args);
     }
 }
