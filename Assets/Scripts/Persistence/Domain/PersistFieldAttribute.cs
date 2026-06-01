@@ -29,6 +29,6 @@ namespace iDaVIE.Persistence.Domain
         /// <summary>
         /// When true, a missing/null value is accepted and no warning is raised.
         /// </summary>
-        public bool Optional { get; init; }
+        public bool Optional { get; set; }
     }
 }
