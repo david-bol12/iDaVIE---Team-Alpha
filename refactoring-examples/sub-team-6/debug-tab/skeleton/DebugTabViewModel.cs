@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 namespace iDaVIE.Desktop.DebugTab
 {
-    /// <summary>
     /// Observes an <see cref="ILogStream"/> and exposes entries for the View.
     /// Call Dispose() from OnDestroy to unsubscribe.
-    /// </summary>
     public sealed class DebugTabViewModel : IDebugTabViewModel, ILogObserver, IDisposable
     {
         // 4× the View's display cap so scroll-back history survives a view rebind.
@@ -21,13 +19,10 @@ namespace iDaVIE.Desktop.DebugTab
             _logStream.Subscribe(this);
         }
 
-        /// <inheritdoc/>
         public IReadOnlyList<LogEntry> LogEntries => _entries.AsReadOnly();
 
-        /// <inheritdoc/>
         public event Action? EntriesChanged;
 
-        /// <inheritdoc/>
         public void AppendEntry(LogEntry entry)
         {
             if (entry is null) throw new ArgumentNullException(nameof(entry));
@@ -38,7 +33,6 @@ namespace iDaVIE.Desktop.DebugTab
             EntriesChanged?.Invoke();
         }
 
-        /// <inheritdoc/>
         public void ClearEntries()
         {
             _entries.Clear();

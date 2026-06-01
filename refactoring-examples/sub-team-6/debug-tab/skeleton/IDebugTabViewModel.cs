@@ -3,13 +3,16 @@ namespace iDaVIE.Desktop.DebugTab
 {
     public interface IDebugTabViewModel
     {
-        /// <summary>Snapshot of current entries; rebind after each <see cref="EntriesChanged"/>.</summary>
+        //Get all the current set of debug logs
         IReadOnlyList<LogEntry> LogEntries { get; }
 
+        //add entry to logs
         void AppendEntry(LogEntry entry);
+
+        //clear entries from logs
         void ClearEntries();
 
-        /// <summary>Raised when <see cref="LogEntries"/> changes; the View subscribes to refresh its display.</summary>
+        //The view refreshes when the log entries changes
         event System.Action? EntriesChanged;
     }
 }
