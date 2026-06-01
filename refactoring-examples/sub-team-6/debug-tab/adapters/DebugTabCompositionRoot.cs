@@ -6,9 +6,8 @@ using UnityEngine;
 
 namespace iDaVIE.Desktop.Adapters.DebugTab
 {
-    /// Wires <see cref="GatewayLogStreamAdapter"/>, <see cref="DebugTabViewModel"/>,
-    /// and <see cref="DebugTabView"/> for the Debug tab panel.
-    /// Attach to the panel root; assign <see cref="_view"/> in the Inspector.
+    // Wires GatewayLogStreamAdapter, DebugTabViewModel, and DebugTabView for the Debug tab panel.
+    // Attach to the panel root; assign _view in the Inspector.
     [DisallowMultipleComponent]
     public sealed class DebugTabCompositionRoot : MonoBehaviour
     {
