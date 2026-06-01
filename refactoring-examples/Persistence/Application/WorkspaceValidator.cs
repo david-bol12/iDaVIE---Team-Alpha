@@ -195,7 +195,7 @@ public class WorkspaceValidator
                 bool hasMin = feature.CornerMin is not null;
                 bool hasMax = feature.CornerMax is not null;
 
-                if (hasMin != hasMax)
+                if (!feature.IsTemporary && hasMin != hasMax)
                 {
                     result.AddWarning($"Feature '{feature.Name}' (Id={feature.Id}) has incomplete CornerMin/Max pair; excluded.");
                     toExclude.Add(feature);

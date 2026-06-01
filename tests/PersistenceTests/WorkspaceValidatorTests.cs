@@ -296,6 +296,30 @@ public class WorkspaceValidatorTests
         Assert.That(set.Features.Select(f => f.Id), Contains.Item(2));
     }
 
+    [Test]
+    public void Validate_TemporaryFeature_WithoutCorners_IsNotExcluded()
+    {
+        var snapshot = ValidSnapshot();
+        snapshot.Features = new FeatureStateDto
+        {
+            FeatureSets = new List<FeatureSetDto>
+            {
+                new FeatureSetDto
+                {
+                    FeatureSetType = "New",
+                    Features = new List<FeatureDto>
+                    {
+                        new FeatureDto { Id = 1, IsTemporary = true, CornerMin = null, CornerMax = null }
+                    }
+                }
+            }
+        };
+
+        var result = _validator.Validate(snapshot);
+
+        Assert.That(result.ExcludedFeatureIds, Does.Not.Contain(1));
+    }
+
     // ── GUI ──────────────────────────────────────────────────────────────────
 
     [Test]

@@ -5,7 +5,8 @@ namespace iDaVIE.Persistence.Domain.Dtos;
 /// <summary>
 /// Persistent state for all feature sets managed by FeatureSetManager.
 /// Source: FeatureSetManager.MaskFeatureSetList, NewFeatureSetList, ImportedFeatureSetList.
-/// NOT persisted: Selected, Temporary, mask bounding boxes, mask statistics, GPU refs.
+/// NOT persisted: Selected, mask bounding boxes, mask statistics, GPU refs.
+/// Temporary features are now persisted with IsTemporary = true for crash recovery.
 /// Recomputed on restore: mask bboxes/stats (DataAnalysis), imported RawData (catalog reader).
 /// </summary>
 public class FeatureStateDto
@@ -77,4 +78,7 @@ public class FeatureDto
 
     /// <summary>Feature.RawData string[] — New features only; absent for Mask/Imported.</summary>
     [PersistField(Optional = true)] public string[]? RawData { get; set; }
+
+    /// <summary>Feature.Temporary — true when the feature is mid-paint at save time (crash recovery).</summary>
+    [PersistField(Optional = true)] public bool IsTemporary { get; set; } = false;
 }

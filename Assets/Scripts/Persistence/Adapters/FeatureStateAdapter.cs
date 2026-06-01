@@ -36,7 +36,7 @@ namespace iDaVIE.Persistence.Adapters
     /// <summary>
     /// Captures and restores feature set state.
     ///
-    /// NOT captured: Selected, Temporary, mask bounding boxes, mask statistics, GPU refs.
+    /// NOT captured: Selected, mask bounding boxes, mask statistics, GPU refs.
     /// ColumnMapping is serialised as Dictionary&lt;string, string&gt; (SourceMappingOptions.ToString() → column name).
     ///
     /// Restore ordering:
@@ -107,6 +107,8 @@ namespace iDaVIE.Persistence.Adapters
                     if (fsr.FeatureSetType == FeatureSetType.New)
                         fDto.RawData = feature.RawData;
 
+                    fDto.IsTemporary = feature.Temporary;
+
                     setDto.Features.Add(fDto);
                 }
 
@@ -164,7 +166,8 @@ namespace iDaVIE.Persistence.Adapters
                         index:    fsr.FeatureList.Count,
                         id:       fDto.Id,
                         rawData:  fDto.RawData,
-                        startVisible: fDto.Visible
+                        startVisible: fDto.Visible,
+                        temporary: fDto.IsTemporary
                     ));
                 }
             }
