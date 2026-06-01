@@ -3,7 +3,7 @@
 // Adapts IServiceGateway to IFitsService. Per the brief §6.6 ("direct file I/O
 // that belongs server-side"), FITS reading happens in a server-side plug-in;
 // this client-side adapter only translates IFitsService method calls into the
-// JSON-RPC method catalogue defined in ADR-0002 §"Method catalogue (v1)":
+// JSON-RPC method catalogue defined in Gateway Contract v1 §"Method catalogue (v1)":
 //
 //   IFitsService.OpenImageAsync(path)              →  file.open       + dataset.getAxes
 //   IFitsService.OpenMaskAsync(path)               →  file.open       + dataset.getAxes
@@ -14,7 +14,7 @@
 // and opaque to the ViewModel — RemoteFitsHandle carries it round-trip.
 //
 // Satisfies ADR-009 Decision §1 ("ViewModel commands → server calls via the
-// transport contract"), ADR-0003 (ACL — Unity-side coupling eliminated), and
+// transport contract"), ADR-002 (ACL — Unity-side coupling eliminated), and
 // brief §6.6 ("from direct native-plugin call → ViewModel command via service
 // gateway").
 
@@ -36,7 +36,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
     /// </summary>
     public sealed class FitsServiceAdapter : IFitsService
     {
-        // ADR-0002 method names — single source of truth so a rename here matches
+        // Gateway Contract v1 method names — single source of truth so a rename here matches
         // both the spec text and the unit tests in step 4.
         internal const string MethodFileOpen        = "file.open";
         internal const string MethodFileClose       = "file.close";
@@ -58,7 +58,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
 
         private async Task<FitsFileInfo> OpenAsync(string path, bool isMask, CancellationToken ct)
         {
-            // 1. file.open → datasetId (ADR-0002 method catalogue v1).
+            // 1. file.open → datasetId (Gateway Contract v1 method catalogue).
             var openResult = await _gateway
                 .SendAsync<FileOpenResult>(MethodFileOpen, new FileOpenParams(path, isMask), ct)
                 .ConfigureAwait(false);
@@ -122,7 +122,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab
         //
         // These are private to the adapter — they exist only to shape the JSON
         // on the wire and never escape. System.Text.Json with the gateway's
-        // camelCase policy produces the field names documented in ADR-0002
+        // camelCase policy produces the field names documented in Gateway Contract v1
         // §"Message shape" (e.g. params: { "path": "...", "isMask": false }).
 
         private sealed record FileOpenParams(string Path, bool IsMask);

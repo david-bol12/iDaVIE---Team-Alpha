@@ -1,4 +1,4 @@
-// Sub-team 6 — JsonRpcException (ADR-0002 §"Error model").
+// Sub-team 6 — JsonRpcException (Gateway Contract v1 §"Error model").
 //
 // Wraps the server's structured error object so callers can distinguish
 // "FITS header invalid" (-32011) from "Dataset id unknown" (-32012) without
@@ -13,7 +13,7 @@ namespace iDaVIE.Client.Gateway
     /// <summary>
     /// Thrown by <see cref="IServiceGateway.SendAsync{TResult}"/> when the server
     /// returns a JSON-RPC error object. <see cref="Code"/> matches the table in
-    /// ADR-0002 §"Error model"; <see cref="ErrorData"/> carries the optional
+    /// Gateway Contract v1 §"Error model"; <see cref="ErrorData"/> carries the optional
     /// structured payload (e.g. <c>{ "axis": 2 }</c> on a FITS-header error).
     /// </summary>
     /// <remarks>
@@ -23,7 +23,7 @@ namespace iDaVIE.Client.Gateway
     /// </remarks>
     public sealed class JsonRpcException : Exception
     {
-        /// <summary>Server-side error code (see ADR-0002 §Error model).</summary>
+        /// <summary>Server-side error code (see Gateway Contract v1 §Error model).</summary>
         public int Code { get; }
 
         /// <summary>Optional structured payload attached by the server. May be null.</summary>

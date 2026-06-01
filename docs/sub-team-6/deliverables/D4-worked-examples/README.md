@@ -125,7 +125,7 @@ CK metric deltas for both examples side-by-side: [**metrics.md**](metrics.md)
 
 1. **Testability Driven:** Both refactors are primarily testability plays, not metric-driven. BEFORE already passes 5/6 CK thresholds individually; the case is structural.
 2. **Domain Extraction:** Both achieve clean domain/adapter split with ACL boundaries enforced by assembly-level dependency rules.
-3. **Zero Unit Tests → Full Coverage:** Example 1 goes 0 → 34 tests; Example 2 goes 0 → 29 tests. Both run without Unity.
+3. **Zero Unit Tests → Full Coverage:** Example 1 goes 0 → 47 tests; Example 2 goes 0 → 29 tests. Both run without Unity.
 4. **Production Unchanged:** Example 2's producer side (all `Debug.Log*` call sites) remains untouched — non-invasive refactor.
 
 ---
@@ -139,5 +139,5 @@ CK metric deltas for both examples side-by-side: [**metrics.md**](metrics.md)
 | Dependency graphs — text-based DSM with Section 4.2 compliance | ✅ |
 | CK metrics — hand-counted (pending Day 13 tool verification) | ✅ |
 | Skeleton code — `FileTabViewModel`, `DebugTabViewModel`, adapters, composition roots | ✅ |
-| Unit tests — 34 file-tab tests, 29 debug-tab tests | ✅ |
+| Unit tests — 47 file-tab tests, 29 debug-tab tests | ✅ |
 | Tool verification — NDepend, Understand, DV8, CodeScene (Day 13) | ⏳ |

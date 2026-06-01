@@ -1,28 +1,5 @@
-// WE2-4 | Debug tab AFTER — GatewayLogStreamAdapter (client-side gateway proxy)
-//
-// Replaces the previous UnityLogStreamAdapter, which subscribed to Unity's
-// static Application.logMessageReceived event. Per the brief §6.6 ("Debug tab
-// as Observer of a structured logging stream") and ADR-0002 §"Method
-// catalogue (v1)", log records arrive as server-pushed log.emit notifications
-// on the JSON-RPC transport.
-//
-// This adapter:
-//   1. Subscribes to IServiceGateway.OnNotification on construction.
-//   2. Filters for method == "log.emit".
-//   3. Deserialises the params into a (level, msg, ts) triple per ADR-0002.
-//   4. Republishes through an inner LogStream so the existing ILogStream
-//      subscriber contract (DebugTabViewModel + future observers) is preserved.
-//
-// No UnityEngine, no [DllImport]. Compiles in isolation against
-// GatewayContracts + DebugTabSkeleton.
-//
-// Threading: gateway notifications fire on the gateway's read-loop thread.
-// LogStream.Publish is thread-safe; observers that touch UI state must marshal
-// to the UI thread themselves (see D3 §IUIDispatcher).
-//
-// Satisfies ADR-009 Decision §1 (ViewModel → server via transport), ADR-009
-// "Debug tab as Observer of structured stream", and ADR-0003 (ACL).
-
+// Gateway notifications fire on the read-loop thread; UI-bound observers must
+// marshal to the main thread themselves before touching Unity state.
 using System;
 using System.Text.Json;
 using iDaVIE.Client.Gateway;
@@ -31,17 +8,12 @@ using iDaVIE.Desktop.DebugTab;
 namespace iDaVIE.Desktop.Adapters.DebugTab
 {
     /// <summary>
-    /// Client-side <see cref="ILogStream"/> implementation that receives entries
-    /// from the server via <c>log.emit</c> JSON-RPC notifications and fans them
-    /// out to local observers (the Debug tab ViewModel and any future siblings).
-    ///
-    /// Constructor-injected with the gateway. <see cref="Dispose"/> unsubscribes
-    /// from gateway notifications and releases all observers.
+    /// <see cref="ILogStream"/> that receives entries via <c>log.emit</c> JSON-RPC
+    /// notifications and fans them out to local observers.
     /// </summary>
     public sealed class GatewayLogStreamAdapter : ILogStream, IDisposable
     {
-        // ADR-0002 method name — single source of truth so a rename here matches
-        // the spec text and the unit tests in step 4.
+        // Single source of truth — tests reference this constant too.
         internal const string MethodLogEmit = "log.emit";
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -70,9 +42,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
             if (payload is null) return;
 
             var level = ParseLevel(payload.Level);
-            // ADR-0002 example uses ISO 8601: "2026-05-21T09:14:02Z". Tolerate
-            // missing or unparseable timestamps — fall back to client time and
-            // keep the message rather than dropping it.
+            // Fall back to client time on a missing/bad ts; prefer keeping the entry.
             var ts = DateTime.TryParse(payload.Ts, null,
                                        System.Globalization.DateTimeStyles.RoundtripKind,
                                        out var parsed)
@@ -84,9 +54,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
 
         private static LogLevel ParseLevel(string? wire)
         {
-            // ADR-0002 example shows "WARN"; be lenient on case and accept the
-            // common aliases so the server-side log producer can use either
-            // short or long forms without breaking the client.
+            // Accept both short ("WARN") and long ("WARNING") forms case-insensitively.
             if (string.IsNullOrEmpty(wire)) return LogLevel.Info;
             return wire.Trim().ToUpperInvariant() switch
             {
@@ -96,12 +64,8 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
             };
         }
 
-        // ── ILogStream delegation ─────────────────────────────────────────────
-        //
-        // Publish overloads are useful for tests and for any client-side
-        // emitter that wants to bypass the gateway (e.g. a fallback bridge for
-        // UI Toolkit warnings). They never round-trip back through the gateway —
-        // log.emit is server → client only.
+        // Publish overloads let tests and client-side emitters inject entries directly;
+        // log.emit is server→client only so these never round-trip through the gateway.
 
         public void Publish(LogLevel level, string message)
             => _inner.Publish(level, message);
@@ -122,7 +86,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab
             _gateway.OnNotification -= _handler;
         }
 
-        /// <summary>Wire-shape DTO for <c>log.emit</c> params (ADR-0002 §"Message shape").</summary>
+        /// <summary>Wire-shape DTO for <c>log.emit</c> params (Gateway Contract v1 §"Message shape").</summary>
         private sealed record LogEmitParams(string? Level, string? Msg, string? Ts);
     }
 }

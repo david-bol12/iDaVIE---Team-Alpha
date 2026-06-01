@@ -33,12 +33,12 @@ pure-C# (`net8.0`, zero `UnityEngine` references) projects. **All ten build clea
 
 | Project | csproj | Build |
 |---|---|---|
-| Gateway contracts | `contracts/GatewayContracts.csproj` | ✅ 0 errors |
+| Gateway contracts | `contracts-team1/GatewayContracts.csproj` | ✅ 0 errors |
 | File-tab ViewModel | `file-tab/skeleton/FileTabSkeleton.csproj` | ✅ 0 errors |
 | Debug-tab ViewModel | `debug-tab/skeleton/DebugTabSkeleton.csproj` | ✅ 0 errors |
 | File-tab adapter | `file-tab/adapters/FileTabAdapters.csproj` | ✅ 0 errors |
 | Debug-tab adapter | `debug-tab/adapters/DebugTabAdapters.csproj` | ✅ 0 errors |
-| Gateway tests | `contracts/tests/GatewayContractsTests.csproj` | ✅ 0 errors |
+| Gateway tests | `contracts-team1/tests/GatewayContractsTests.csproj` | ✅ 0 errors |
 | File-tab tests | `file-tab/tests/FileTabTests.csproj` | ✅ 0 errors |
 | Debug-tab tests | `debug-tab/tests/DebugTabTests.csproj` | ✅ 0 errors |
 | File-tab adapter tests | `file-tab/adapters/tests/FileTabAdaptersTests.csproj` | ✅ 0 errors |
@@ -89,7 +89,7 @@ on the ViewModel. Topologically sortable ⇒ acyclic. This is consistent with th
 
 ```
 cd refactoring-examples/sub-team-6
-for p in contracts/GatewayContracts.csproj \
+for p in contracts-team1/GatewayContracts.csproj \
          file-tab/skeleton/FileTabSkeleton.csproj \
          debug-tab/skeleton/DebugTabSkeleton.csproj \
          file-tab/adapters/FileTabAdapters.csproj \

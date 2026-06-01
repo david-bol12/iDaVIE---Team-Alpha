@@ -308,9 +308,10 @@ classDiagram
             +Awake() void
         }
         class FitsServiceAdapter {
+            -IServiceGateway _gateway
             +OpenImageAsync(path) Task~FitsFileInfo~
             +OpenMaskAsync(path)  Task~FitsFileInfo~
-            +GetHeaderTextAsync(path,hdu) Task~string~
+            +GetHeaderTextAsync(handle,hdu) Task~string~
         }
         class FileDialogServiceAdapter {
             +PickFileAsync(title,dir,exts) Task~string?~
@@ -349,20 +350,21 @@ classDiagram
     IFileDialogService <|.. FileDialogServiceAdapter  : implements (ACL)
     IVolumeService     <|.. VolumeServiceAdapter      : implements (ACL)
     IMemoryProbe       <|.. MemoryProbeAdapter        : implements (ACL)
-    IFitsHandle        <|.. FitsServiceAdapter        : private FitsHandle nested
+    IFitsHandle        <|.. FitsServiceAdapter        : private RemoteFitsHandle nested
+    FitsServiceAdapter ..> IServiceGateway            : forwards (JSON-RPC)
 
     %% Composition root wires everything once
     FileTabCompositionRoot --> FileTabViewModel : new + Dispose
-    FileTabCompositionRoot --> FitsServiceAdapter : new
+    FileTabCompositionRoot --> FitsServiceAdapter : new(gateway)
     FileTabCompositionRoot --> FileDialogServiceAdapter : new
     FileTabCompositionRoot --> MemoryProbeAdapter : new
     FileTabCompositionRoot --> VolumeServiceAdapter : [SerializeField]
     FileTabCompositionRoot --> FileTabView : [SerializeField]
     FileTabView --> IFileTabViewModel : binds via interface
 
-    note for FileTabViewModel "~480 LOC · ~30 methods including private helpers\nIDisposable — owns FITS handle lifetime.\nNo using UnityEngine; no using System.Runtime.InteropServices.\nFully unit-testable: 34 NUnit tests in tests/FileTabViewModelTests.cs"
+    note for FileTabViewModel "~480 LOC · ~30 methods including private helpers\nIDisposable — owns FITS handle lifetime.\nNo using UnityEngine; no using System.Runtime.InteropServices.\nFully unit-testable: 47 NUnit tests in tests/FileTabViewModelTests.cs"
 
-    note for FitsServiceAdapter "All [DllImport]/IntPtr usage confined here.\nPrivate FitsHandle nested type carries IntPtr;\nVM disposes the handle when replacing the image\nor on its own Dispose — no IntPtr escapes."
+    note for FitsServiceAdapter "No [DllImport]/IntPtr — FITS read is server-side.\nForwards file.open / dataset.getAxes / dataset.getHeader\nover IServiceGateway (JSON-RPC, ADR-0002).\nPrivate RemoteFitsHandle nested type carries an opaque datasetId;\nVM disposes it on image swap or teardown — no native handle escapes."
 
     note for VolumeServiceAdapter "Owns coroutine lifecycle + prefab instantiation.\nRaises CubeLoaded(DTO) once per successful load —\nreplaces postLoadFileFileSystem cross-tab cascade.\nS6 (busy-wait) eliminated: yields the renderer's _startFunc\ncoroutine handle directly. S5 (field writes onto VDSR)\nremains contained inside LoadCubeCoroutine — see after-trace.md."
 ```
@@ -384,9 +386,9 @@ classDiagram
 | `FileTabViewModel` | — | ~480 | 4 (interfaces only) |
 | `SubsetBoundsViewModel` | — | 117 | 1 (`SubsetBounds`) |
 | `FileTabView` | — | ~255 | 1 (`IFileTabViewModel`) |
-| `FitsServiceAdapter` | — | ~165 | 3 (`IFitsService`, `IFitsHandle`, `FitsReader`) |
+| `FitsServiceAdapter` | — | ~165 | 3 (`IFitsService`, `IFitsHandle`, `IServiceGateway`) |
 | `FileDialogServiceAdapter` | — | 59 | 2 (`IFileDialogService`, SFB+PlayerPrefs) |
 | `VolumeServiceAdapter` | — | ~175 | 4 (`IVolumeService`, `CubeLoadedEventArgs`, `VCC`, `VDSR`) |
 | `MemoryProbeAdapter` | — | 18 | 2 (`IMemoryProbe`, `SystemInfo`) |
 
-Single 1899-line god-class → eight small focused classes. The **domain layer** (`FileTabViewModel` + helpers + DTOs) is reachable from a unit-test runner without Unity present (34 NUnit tests).
+Single 1899-line god-class → eight small focused classes. The **domain layer** (`FileTabViewModel` + helpers + DTOs) is reachable from a unit-test runner without Unity present (47 NUnit tests).

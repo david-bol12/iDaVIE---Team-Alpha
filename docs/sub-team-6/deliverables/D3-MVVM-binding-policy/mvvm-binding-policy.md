@@ -105,10 +105,12 @@ Reverse-direction references are a CI failure. This enforces §4.2.2 (no cycles)
                      │ calls IServiceGateway interfaces
 ┌────────────────────▼─────────────────────────────────────┐
 │  Service Gateway  (interface + adapter)                  │
-│  IFitsService  ·  IVolumeService  ·  ILogService         │
+│  IFitsService  ·  IVolumeService  ·  ILogStream          │
 │  Translates domain calls → server RPC / native plugin    │
 └──────────────────────────────────────────────────────────┘
 ```
+
+> **Where is the Model?** This is a client–server MVVM: the authoritative domain model lives **server-side** (Sub-team 1's kernel + native plugins), so there is **no client `Model` assembly**. On the client the Model appears only as the immutable DTOs returned through the Gateway (`FitsFileInfo`, `LogEntry`, etc.); the Gateway is the access path to a remote Model, not the Model itself. Moving the Model off the client is precisely the §6.6 "direct file I/O that belongs server-side" goal — and the fix for B-02 / B-08.
 
 ---
 
@@ -142,17 +144,17 @@ Reverse-direction references are a CI failure. This enforces §4.2.2 (no cycles)
 
 ### 3.2 DebugTabViewModel (Observer Pattern)
 
-The debug console becomes a **passive observer of a structured log stream**, not a direct writer.
+The debug console becomes a **passive observer of a structured log stream**, not a direct writer. It uses the GoF Observer pattern (matching D2 §6 and the debug-tab worked-example skeleton), not a C# `event`.
 
 ```
 ILogStream  ──publishes──►  DebugTabViewModel  ──binds──►  DebugTabView
-                             (subscribes via event/Rx)     (scrolling text area)
+                             (ILogObserver subscriber)     (scrolling text area)
 ```
 
-- `ILogStream` exposes `event Action<LogEntry> OnLogEntry`
-- `DebugTabViewModel` subscribes; maintains `ObservableCollection<LogEntry> Entries`
-- The View scrolls to bottom when `Entries` changes — no manual scroll logic in ViewModel
-- Existing `Debug.Log` calls in CanvassDesktop are replaced by injecting `ILogStream` and calling `ILogStream.Publish(level, message)`
+- `ILogStream` exposes `Subscribe(ILogObserver)` / `Unsubscribe(ILogObserver)` / `Publish(level, message)` / `Publish(level, message, timestamp)`.
+- `DebugTabViewModel` implements `ILogObserver`; it calls `_logStream.Subscribe(this)` in its constructor, and `ILogObserver.OnNext(LogEntry)` appends to the bound `Entries` collection (exposed as `IReadOnlyList<LogEntry> LogEntries`).
+- The View scrolls to bottom when `Entries` changes — no manual scroll logic in ViewModel.
+- Existing `Debug.Log` calls in CanvassDesktop are replaced by injecting `ILogStream` and calling `ILogStream.Publish(level, message)`.
 
 **Split from current code:**
 
@@ -160,7 +162,7 @@ ILogStream  ──publishes──►  DebugTabViewModel  ──binds──►  D
 |---|---|
 | `Debug.Log(...)` scattered across CanvassDesktop | `ILogStream.Publish()` calls |
 | Manual scroll/text updates | `DebugTabView` reactive binding |
-| No structured log context | `LogEntry { Level, Source, Message, Timestamp }` |
+| No structured log context | `LogEntry { Level, Message, Timestamp }` (record — see D2 §6 / debug-tab skeleton) |
 
 ### 3.3 RenderingTabViewModel
 
@@ -170,7 +172,7 @@ ILogStream  ──publishes──►  DebugTabViewModel  ──binds──►  D
 - `RestFrequencyOptions` list
 - Commands: `ApplyThreshold`, `ChangeColorMap`
 
-The current `Update()` loop polls `firstActiveRenderer.ThresholdMin` every frame and pushes it to a slider. In the refactored design:
+The current `Update()` (Unity's per-frame `MonoBehaviour.Update()` engine-lifecycle callback — *not* an MVU/Elm `update` function) loop polls `firstActiveRenderer.ThresholdMin` every frame and pushes it to a slider. In the refactored design:
 - `IVolumeService` raises a `ThresholdChanged` event
 - `RenderingTabViewModel` subscribes and updates its own properties
 - `RenderingTabView` binds sliders to those properties — no per-frame sync needed
@@ -379,10 +381,10 @@ await gateway.ConnectAsync();
 var fitsService    = new FitsServiceAdapter(gateway);              // gateway proxy
 var logStream      = new GatewayLogStreamAdapter(gateway);         // gateway proxy
 var volumeService  = new VolumeServiceAdapter();                   // Unity adapter
-var dialogService  = new StandaloneFileDialogAdapter();            // Unity adapter
+var dialogService  = new FileDialogAdapter();                      // Unity adapter (wraps StandaloneFileBrowser)
 var memoryProbe    = new MemoryProbeAdapter();                     // Unity adapter
 var catalogue     = new CatalogueServiceAdapter(gateway);          // gateway proxy (gesture — §3.5)
-var dispatcher     = new UnityMainThreadDispatcher();
+var dispatcher     = new UnityUIDispatcher();                      // IUIDispatcher impl (View assembly) — NOT the forbidden static singleton (§4.4)
 
 var fileVM     = new FileTabViewModel(fitsService, dialogService, volumeService, memoryProbe);
 var debugVM    = new DebugTabViewModel(logStream, dispatcher);
@@ -422,7 +424,7 @@ Domain code (ViewModels)         Service adapters (Gateway Layer, ACL)
 IFitsService                ◄──── FitsServiceAdapter         (gateway proxy — JSON-RPC)
 ILogStream                  ◄──── GatewayLogStreamAdapter    (gateway proxy — JSON-RPC notifications)
 IVolumeService              ◄──── VolumeServiceAdapter       (Unity adapter — VolumeCommandController)
-IFileDialogService          ◄──── StandaloneFileDialogAdapter (Unity adapter — SFB)
+IFileDialogService          ◄──── FileDialogAdapter           (Unity adapter — SFB)
 IConfigService              ◄──── ConfigServiceAdapter       (Unity adapter — PlayerPrefs)
 ```
 
@@ -485,14 +487,16 @@ Debug.Log(val + " is less than the minimum...");
 **After:**
 
 ```csharp
-// In ViewModels / Services:
-_logStream.Publish(LogLevel.Error, "FitsOpen", $"Open failure status={status}");
+// In ViewModels / Services (producer side):
+_logStream.Publish(LogLevel.Error, $"Open failure status={status}");
 
-// DebugTabViewModel (pure C#, no Unity):
-_logStream.OnLogEntry += entry => _dispatcher.Post(() => Entries.Add(entry));
+// DebugTabViewModel (pure C#, no Unity) — Observer of the stream:
+//   sealed class DebugTabViewModel : IDebugTabViewModel, ILogObserver
+//   ctor: _logStream.Subscribe(this);
+void ILogObserver.OnNext(LogEntry entry) => _dispatcher.Post(() => AppendEntry(entry));
 
 // DebugTabView (Unity):
-// Bound to DebugTabViewModel.Entries — ScrollView refreshes automatically
+// Bound to DebugTabViewModel.LogEntries — ScrollView refreshes automatically
 ```
 
 Full before/after UML and dependency graph: [`refactoring-examples/sub-team-6/debug-tab/`](../../../../refactoring-examples/sub-team-6/debug-tab/)
@@ -506,7 +510,7 @@ Full before/after UML and dependency graph: [`refactoring-examples/sub-team-6/de
 | Class | WMC now | WMC after | CBO now | CBO after | Source |
 |---|---|---|---|---|---|
 | CanvassDesktop (shell only) | 63 | ~15 (projected) | 47 | ~4 (projected) | projection |
-| **FileTabViewModel** | — | **27 (measured)** | — | **9 (measured)** | hand-count, Day 6 (`D4/metrics.md §2.2`) |
+| **FileTabViewModel** | — | **27 (measured)** | — | **9 (measured)** | hand-count |
 | SubsetBoundsViewModel | — | 12 (measured) | — | 1 (measured) | hand-count, Day 6 |
 | FitsServiceAdapter | — | 6 (measured) | — | 5 (measured) | hand-count, Day 6 (post-gateway-rewire) |
 | **DebugTabViewModel** | — | **7 (projected)** | — | **3 (projected)** | `D4/metrics.md §3.2` |

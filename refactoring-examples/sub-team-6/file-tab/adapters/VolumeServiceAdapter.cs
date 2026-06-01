@@ -1,8 +1,8 @@
 // WE1-3 | File tab AFTER — VolumeServiceAdapter (Unity-assembly adapter)
 // Owns coroutine lifecycle, prefab instantiation, and native memory cleanup.
 // The ViewModel never touches VolumeCommandController, VolumeDataSetRenderer,
-// or any Unity coroutine directly. Satisfies ADR-0002 (transport contract) and
-// ADR-0003 (ACL).
+// or any Unity coroutine directly. Satisfies ADR-009 (transport contract) and
+// ADR-002 (ACL).
 using System;
 using System.Collections;
 using System.Threading;

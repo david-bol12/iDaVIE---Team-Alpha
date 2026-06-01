@@ -1,5 +1,5 @@
 // WE1-3 | File tab AFTER skeleton — DTOs
-// No UnityEngine dependency. Satisfies NFR-MOD-2 and ADR-0001.
+// No UnityEngine dependency. Satisfies NFR-MOD-2 and ADR-009 (MVVM).
 namespace iDaVIE.Desktop.FileTab
 {
     /// <summary>Immutable descriptor for a single HDU in a FITS file.</summary>

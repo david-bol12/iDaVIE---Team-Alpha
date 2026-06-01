@@ -3,7 +3,7 @@
 // These tests are the answer to the audit's F9 ("transport contract has no
 // consumer"). They prove that calling IFitsService through the rewired
 // adapter produces exactly the JSON-RPC methods and params shape mandated
-// by ADR-0002 §"Method catalogue (v1)" — using FakeGateway in place of a
+// by Gateway Contract v1 §"Method catalogue (v1)" — using FakeGateway in place of a
 // real named pipe, so the suite runs in 10s of ms under standard CI.
 //
 // What each test pins:
@@ -87,7 +87,7 @@ namespace iDaVIE.Desktop.Adapters.FileTab.Tests
 
             gateway.SetResponse("file.open", new { datasetId = "ds-orphan" });
             // dataset.getAxes raises a JSON-RPC error — code -32030 = native
-            // plug-in failure per ADR-0002 §"Error model".
+            // plug-in failure per Gateway Contract v1 §"Error model".
             gateway.SetError("dataset.getAxes", code: -32030, message: "plug-in panicked");
             gateway.SetResponse<object?>("file.close", null);
 

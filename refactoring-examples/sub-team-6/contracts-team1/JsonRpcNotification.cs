@@ -1,4 +1,4 @@
-// Sub-team 6 — JsonRpcNotification DTO (ADR-0002 §"Message shape").
+// Sub-team 6 — JsonRpcNotification DTO (Gateway Contract v1 §"Message shape").
 //
 // A server-initiated JSON-RPC message — no id, no response expected.
 // Carries the raw params element so the subscriber can deserialise lazily

@@ -150,7 +150,7 @@ Note: the committed skeleton uses `GatewayLogStreamAdapter` (JSON-RPC gateway ad
 
 - WMC: **6** (tool-verified). Well under the ≤ 20 domain threshold.
 - CBO: **2** (tool-verified) — `ILogStream` (injected), `LogEntry` (held). Under ≤ 14. (Hand-estimate was 3; tool excludes `IDisposable` as a BCL interface.)
-- DIT: **1**. Implements four interfaces (`IDebugTabViewModel`, `ILogObserver`, `IDisposable`, `INotifyPropertyChanged`) — interfaces don't increase DIT.
+- DIT: **1**. Implements three interfaces (`IDebugTabViewModel`, `ILogObserver`, `IDisposable`) — interfaces don't increase DIT.
 - LCOM %: **66%** — exceeds the ≤50% threshold. Cause: 3 instance variables; `ClearEntries` and `Dispose` each access only 1–2 fields, while `AppendEntry`/`OnNext` access 2–3. Not a disjoint-concern defect — all methods serve the same log-entry management concern. (See LCOM note above table.)
 - **★ Eliminates BEFORE smell S3**: bounded `List<LogEntry>` with `MaxEntries = 2000` cap, replacing the unbounded non-generic `Queue`.
 

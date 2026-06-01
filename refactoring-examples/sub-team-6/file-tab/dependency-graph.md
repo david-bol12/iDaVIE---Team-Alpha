@@ -103,16 +103,23 @@ graph LR
         MPA[MemoryProbeAdapter]:::unity
     end
 
-    subgraph SubsystemAsm["Out-of-scope subsystems (Sub-team 1 + 3 own these)"]
-        FR[FitsReader<br/>static P/Invoke wrapper]:::unity
+    subgraph SubsystemAsm["In-process subsystems (Sub-team 1 + 3 own these — local mode)"]
         VCC[VolumeCommandController]:::unity
         VDSR[VolumeDataSetRenderer]:::unity
         VIC[VolumeInputController]:::unity
     end
 
+    subgraph ContractsAsm["GatewayContracts (Sub-team 1 transport contract — pure C#)"]
+        GW[IServiceGateway<br/>JSON-RPC over named pipe]:::domain
+    end
+
+    subgraph ServerAsm["iDaVIE server — separate process (Sub-team 1 kernel)"]
+        FRS[FITS plug-in<br/>server-side P/Invoke]:::native
+        Native[idavie_native<br/>C/C++ DLL]:::native
+    end
+
     UE[UnityEngine.*]:::unity
     SFB[SFB.StandaloneFileBrowser]:::external
-    Native[idavie_native DLL]:::native
 
     %% Domain → Domain (allowed)
     FTVM --> IFS
@@ -135,7 +142,7 @@ graph LR
     FTV  --> IFTVM
 
     %% Adapter → external (allowed; this is what adapters are for)
-    FSA --> FR
+    FSA --> GW
     FDA --> SFB
     FDA --> UE
     VSA --> VCC
@@ -145,7 +152,9 @@ graph LR
     MPA --> SysInfo[SystemInfo<br/>UnityEngine]:::unity
     FTV --> UE
     FTCR --> UE
-    FR  -->|DllImport| Native
+    FTCR --> GW
+    GW  -.->|named pipe / JSON-RPC| FRS
+    FRS -->|DllImport| Native
 
     %% Composition root is the ONLY edge from Adapters that touches concrete Domain classes
     FTCR --> FTVM
@@ -160,8 +169,9 @@ graph LR
 
 1. **Three assemblies with a single direction of dependency.** `Adapters` references `Domain`; `Domain` does **not** reference `Adapters`. The arrow direction is enforced by the assembly references themselves — flipping it would not compile.
 2. **Section 4.2 satisfied for the slice.** No solid arrow leaves `Domain` toward `UnityEngine`, `SteamVR`, `idavie_native`, `SFB`, or `TMPro`. The transitive reach is broken: `FileTabViewModel` cannot, even by accident, end up calling a native function.
-3. **One composition root** (`FileTabCompositionRoot`) is the only class permitted to reference both layers — and it is itself an adapter. It instantiates the domain object graph and hands it to the view.
-4. **Test reachability.** `dotnet test refactoring-examples/sub-team-6/file-tab/tests/FileTabTests.csproj` compiles and runs against the `Domain` assembly alone, with no Unity present. The 34 NUnit tests in `tests/FileTabViewModelTests.cs` exercise the slice end-to-end via test doubles.
+3. **FITS native code is server-side, behind the transport seam.** `FitsServiceAdapter` reaches `idavie_native` only by sending JSON-RPC over `IServiceGateway` to a *separate process*. There is no in-process `FitsReader → idavie_native` edge in the client at all — the only client-side native reach is the volume subsystem (`VolumeServiceAdapter → VCC/VDSR`, in-process local mode), which is Sub-team 1/3 scope.
+4. **One composition root** (`FileTabCompositionRoot`) is the only class permitted to reference both layers — and it is itself an adapter. It instantiates the domain object graph (injecting the session `IServiceGateway`) and hands it to the view.
+5. **Test reachability.** `dotnet test refactoring-examples/sub-team-6/file-tab/tests/FileTabTests.csproj` compiles and runs against the `Domain` assembly alone, with no Unity present. The 47 NUnit tests in `tests/FileTabViewModelTests.cs` exercise the slice end-to-end via test doubles.
 
 ### Cycles in the AFTER graph
 
@@ -183,11 +193,11 @@ No back-edges. No `Adapters → Domain.concrete` edges except via the compositio
 
 | Property | BEFORE | AFTER |
 |---|---|---|
-| Assemblies on critical path | 1 (`Assembly-CSharp`) | 3 (`Domain` + `Adapters` + `Subsystem`) |
+| Assemblies on critical path | 1 (`Assembly-CSharp`) | `Domain` + `Adapters` + `GatewayContracts` + in-process `Subsystem` (FITS native lives in a separate **server process**) |
 | `Domain → UnityEngine` edges | direct: many | **zero** |
 | `Domain → idavie_native` edges | transitive (via `FitsReader`) | **zero** |
 | `Domain → SteamVR` edges | direct | **zero** |
-| Interfaces on critical path | 0 | 8 (`IFileTabViewModel`, `IFitsService`, `IFitsHandle`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IAsyncCommand`, `ICommand`) |
+| Interfaces on critical path | 0 | 8 file-tab interfaces (`IFileTabViewModel`, `IFitsService`, `IFitsHandle`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`, `IAsyncCommand`, `ICommand`) + `IServiceGateway` (Sub-team 1 transport contract) |
 | Composition root | absent (`Start()` does ad-hoc `FindObjectOfType<>`) | explicit (`FileTabCompositionRoot.Awake()`) |
 | Cycles | 2 instance-level (`CanvassDesktop ↔ TabsManager`, `CanvassDesktop ↔ MenuBarBehaviour`) | **0** |
 | Test-runner reach | Unity required | `dotnet test` from any CI runner |

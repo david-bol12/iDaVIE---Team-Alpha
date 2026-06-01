@@ -34,6 +34,19 @@ The four-tier pyramid below mirrors the architectural layer boundaries. Each tie
 
 **Why this split?** The before-state `CanvassDesktop` scores 205 on the mocking-difficulty index (BNCH-6: 163 scene-graph traversals + 36 static P/Invoke calls) — it cannot be unit-tested without a live Unity Editor session. The MVVM split drives that score to **zero** in the ViewModel layer by construction: the standalone `.NET` project does not reference `UnityEngine`, so any leakage is a build error, not a runtime surprise.
 
+### 2.1 Which tiers the brief requires (and which we added)
+
+A "tier" is a **level in the test pyramid** (how much of the system a test touches), **not** a brief requirement. The §6.6 *Software Testing* section lists exactly **two** mandatory test types; the spec's testability learning outcome (LO6) and the standalone test-strategy deliverable (§9.2.4) then require a *full* strategy around them. So two of our four tiers discharge the §6.6 bullets directly, and two are value-adds the broader strategy and our own audit pulled in.
+
+| Tier | In the brief? | Mandate | Why it exists |
+|---|---|---|---|
+| **1 — ViewModel unit** | ✅ **Required** | §6.6 ST bullet 1: *"ViewModel unit tests (no Unity required)."* | The core testability claim — proves the extracted logic runs with zero Unity. Carries the ≥70 % gate (§7). |
+| **2 — Gateway & adapter** | ➕ **Added by us** | Not a §6.6 bullet. Satisfies §4.2 #4 (*"every public API boundary expressed as an interface and covered by ≥1 test double"*) and LO6 (*dependency isolation*). | Closes audit findings **F9/F10** — proves the JSON-RPC transport contract has a real consumer, not just a defined shape. Added Day 8 after the gateway rewire. |
+| **3 — View integration** | ✅ **Required** | §6.6 ST bullet 2: *"UI-Toolkit page-object pattern for required integration tests."* | Exercises the View↔ViewModel binding through stable page objects. Design-only (no `Assets/` changes), spec in [`ui-toolkit.md`](ui-toolkit.md). |
+| **4 — Smoke** | ➕ **Added by us** | Not a §6.6 bullet. Supports LO6's end-to-end quality story. | A manual pass/fail checklist (SM-1…SM-7, §6) run on a reference build before any demo — catches whole-shell regressions the lower tiers can't see. |
+
+**In one line:** the brief's two required test types are **Tier 1 + Tier 3**; **Tier 2 + Tier 4** are deliberate additions, each with a documented justification above (not padding).
+
 ---
 
 ## 3. Tier 1 — ViewModel Unit Tests
@@ -97,38 +110,37 @@ public class FileTabViewModelTests
 }
 ```
 
-The committed suite at `refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs` carries 34 such tests covering happy paths, error paths, axis-mismatch validation, RAM-feasibility (`IMemoryProbe`), the `CubeLoaded` event on `IVolumeService`, and the `IsLoadable` gate.
+The committed suite at `refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs` carries 47 such tests covering happy paths, error paths, axis-mismatch validation, RAM-feasibility (`IMemoryProbe`), the `CubeLoaded` event on `IVolumeService`, and the `IsLoadable` gate.
 
 ### 3.3 Test shapes — Debug tab ViewModel (Observer pattern)
 
-The Debug tab ViewModel subscribes to `ILogStream.OnLogEntry`. Tests fire events via Moq's `Raise` — no Unity, no static logger, no thread.
+The Debug tab ViewModel implements `ILogObserver` and subscribes to `ILogStream` via `Subscribe(this)` (the Observer pattern, matching D2 §6 and the committed skeleton). Tests publish through a concrete `LogStream` — no Unity, no static logger, no thread.
 
 ```csharp
 [Category("ViewModel")]
 public class DebugTabViewModelTests
 {
     [Test]
-    public void OnLogEntry_SingleWarning_AppendsToEntries()
+    public void Publish_SingleWarning_AppendsToLogEntries()
     {
-        var logStream = new Mock<ILogStream>();
-        var vm = new DebugTabViewModel(logStream.Object);
+        var logStream = new LogStream();            // concrete ILogStream — pure C#, no Unity
+        var vm = new DebugTabViewModel(logStream);  // ctor calls logStream.Subscribe(this)
 
-        logStream.Raise(l => l.OnLogEntry += null,
-            new LogEntry { Level = LogLevel.Warning, Message = "VR init slow" });
+        logStream.Publish(LogLevel.Warning, "VR init slow");
 
-        Assert.That(vm.Entries, Has.Count.EqualTo(1));
-        Assert.That(vm.Entries[0].Message, Is.EqualTo("VR init slow"));
+        Assert.That(vm.LogEntries, Has.Count.EqualTo(1));
+        Assert.That(vm.LogEntries[0].Message, Is.EqualTo("VR init slow"));
     }
 
     [Test]
-    public void ClearEntries_EmptiesCollection() { ... }
+    public void MultipleEntries_PreserveArrivalOrder() { ... }
 
     [Test]
-    public void MultipleEntries_PreserveArrivalOrder() { ... }
+    public void LogEntries_ExposedAsReadOnlyList() { ... }
 }
 ```
 
-### 3.4 Delivered test count (Day 8 snapshot, post-F14 follow-up)
+### 3.4 Delivered test count
 
 | Class | Required | **Delivered** | Evidence |
 |---|---:|---:|---|
@@ -136,7 +148,7 @@ public class DebugTabViewModelTests
 | `DebugTabViewModel` + `LogStream` | ≥ 3 | **29** | [`debug-tab/tests/DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) |
 | **Tier 1 total** | — | **76** | `dotnet test` runtime ~37 + ~17 ms — zero Unity dependency |
 
-Tier-2 counts (19 tests across framing, gateway double, and the two gateway-proxy adapters) are in §4.4. **Combined Tier 1 + Tier 2: 95 / 95 green, ~200 ms total.**
+Tier-2 counts (19 tests across framing, gateway double, and the two gateway-proxy adapters) are in §4.4. **Combined Tier 1 + Tier 2: 95 tests, ~200 ms total** — see §4.4 for the Smart App Control caveat on the 19 Tier-2 tests.
 
 ---
 
@@ -148,7 +160,7 @@ The gateway is the load-bearing seam that the audit's F9 / F10 findings flagged 
 
 ```
 refactoring-examples/sub-team-6/
-  contracts/
+  contracts-team1/
     GatewayContracts.csproj             ← IServiceGateway, JsonRpcPipeGateway, LengthPrefixFraming, FakeGateway
     tests/
       GatewayContractsTests.csproj      ← LengthPrefixFramingTests + FakeGatewayTests (11 tests)
@@ -175,7 +187,7 @@ refactoring-examples/sub-team-6/
 - **Real named-pipe end-to-end** between `JsonRpcPipeGateway` and a server-side handler. `JsonRpcPipeGateway` is implemented as a production-shaped skeleton (real `NamedPipeClientStream`, real read loop, real concurrent request dispatch); a Sub-team-1-owned server handler does not yet exist, so end-to-end tests are deferred to integration sprints. The framing tests do exercise the wire bytes against `MemoryStream`, which is the load-bearing correctness check available without a server.
 - **Server-side `log.emit` production**, FITS plug-in compatibility, and JSON-RPC error-code semantics on the producing side are Sub-team 1 concerns; their tests live with their code.
 
-### 4.4 Delivered test count (Day 8)
+### 4.4 Delivered test count
 
 | Project | Required | Delivered | Runtime |
 |---|---:|---:|---:|
@@ -184,7 +196,9 @@ refactoring-examples/sub-team-6/
 | `DebugTabAdaptersTests` | — | **4** | ~29 ms |
 | **Tier 2 total** | — | **19** | ~140 ms |
 
-Combined with the 76 tier-1 tests this brings the no-Unity suite to **95 / 95 green** in under 200 ms total — a credible PR-time gate, and the gate currently passes on every gated assembly.
+Combined with the 76 tier-1 tests this brings the no-Unity suite to **95 tests** in under 200 ms total — a credible PR-time gate.
+
+> **Reproducibility caveat (added 2026-05-31).** All 95 pass on a host where the locally-built `iDaVIE.Client.Gateway.dll` is allowed to load. On a Windows host with **Smart App Control enforced**, the 19 Tier-2 tests — the only ones that load that unsigned assembly — fail at assembly-load time with `FileLoadException … An Application Control policy has blocked this file (0x800711C7)`. That is an OS code-integrity policy, not a logic failure: the 76 Tier-1 tests (which do not reference the gateway DLL) pass on the same host. Run the Tier-2 tests on the Linux CI image or a host with SAC disabled, or sign the assembly. Note that the CI `build-dotnet` job compiles all five projects under `-warnaserror` but does **not** currently execute `dotnet test`, so CI proves the suite *builds*, not that it runs green — wiring a `dotnet test` step into CI would anchor this claim on the SAC-free runner.
 
 ---
 
@@ -250,10 +264,10 @@ SM-1 through SM-7 map directly to the five rows in the [requirements behaviour c
 
 | Assembly / namespace | Branch target | Line target | Gated in CI? | Measured by |
 |---|---|---|---|---|
-| `iDaVIE.Client.ViewModel` (`FileTabSkeleton`, `DebugTabSkeleton`) | **≥ 70 %** | **≥ 70 %** | Yes — build fails below threshold | Coverlet + ReportGenerator |
+| `iDaVIE.Client.ViewModel` (`FileTabSkeleton`, `DebugTabSkeleton`) | **≥ 70 %** | **≥ 70 %** | **Not yet — measured locally (§7.3); target met (89.4/77.2 %, 100/100 %), but no CI coverage job exists (planned Day-10, see §7.2)** | Coverlet + ReportGenerator |
 | `iDaVIE.Client.Gateway` (Tier 2 surface) | tracked | tracked | No | Coverlet + ReportGenerator |
 | `iDaVIE.Client.View` (UI Toolkit) | tracked | tracked | No | Unity Test Framework + Coverlet |
-| **Overall (client slice)** | **≥ 50 %** | **≥ 50 %** | Yes | SonarQube aggregate |
+| **Overall (client slice)** | **≥ 50 %** | **≥ 50 %** | **Not yet — `sonar` job runs build-only (no test execution), so it collects no coverage; skipped entirely unless `SONAR_TOKEN` is set** | SonarQube aggregate |
 
 The View layer and the Gateway transport (`JsonRpcPipeGateway`) are tracked but not gated. View justification: UI Toolkit binding boilerplate and UXML configuration are framework-heavy; a strict gate would force testing of the framework itself. Gateway-transport justification: `JsonRpcPipeGateway` requires a real named pipe with a Sub-team 1 server handler — see §4.3.
 
@@ -278,7 +292,7 @@ foreach ($p in @(
     'file-tab/adapters/tests/FileTabAdaptersTests',
     'debug-tab/tests/DebugTabTests',
     'debug-tab/adapters/tests/DebugTabAdaptersTests',
-    'contracts/tests/GatewayContractsTests')) {
+    'contracts-team1/tests/GatewayContractsTests')) {
     dotnet test "refactoring-examples/sub-team-6/$p.csproj" `
         --collect:'XPlat Code Coverage' `
         --results-directory $env:TEMP\cov\$($p -replace '/','_')
@@ -342,25 +356,7 @@ The Quality Guild owns the team-wide CI/CD pipeline (`T6`). Sub-team 6 plugs int
 
 ---
 
-## 11. Testability-Improvement Evidence
-
-Every row below points at an artefact a panel reviewer can open in this repo.
-
-| Artefact | What it shows |
-|---|---|
-| [BNCH-6 — Mocking-difficulty count](../other/T2-baseline-benchmark/BNCH-6.md) | Before: 205 call sites in `CanvassDesktop` that require a live Unity scene or native DLL to test. After: 0 in the ViewModel layer (205 → 0 static/Unity; 6 → 0 `FindObjectOfType`; 36 → 0 P/Invoke / `StandaloneFileBrowser`). |
-| [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) | **47 NUnit tests** on `FileTabViewModel` — zero `using UnityEngine`, mocks four split service interfaces. |
-| [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) | **29 NUnit tests** on `DebugTabViewModel` + `LogStream` — zero `using UnityEngine`, `dotnet test` runtime **~17 ms**. |
-| [`contracts/tests/LengthPrefixFramingTests.cs`](../../../../refactoring-examples/sub-team-6/contracts/tests/LengthPrefixFramingTests.cs) + [`FakeGatewayTests.cs`](../../../../refactoring-examples/sub-team-6/contracts/tests/FakeGatewayTests.cs) | **11 NUnit tests** pinning the wire framing (ADR-0002 §"Framing") and the gateway double's contract. Zero Unity dependency. |
-| [`FitsServiceAdapterTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/adapters/tests/FitsServiceAdapterTests.cs) | **4 NUnit tests** asserting `FitsServiceAdapter` dispatches `file.open` → `dataset.getAxes` → `dataset.getHeader` → `file.close` through `IServiceGateway` with the params shape mandated by ADR-0002. **Closes audit F9** ("transport contract has no consumer"). |
-| [`GatewayLogStreamAdapterTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/adapters/tests/GatewayLogStreamAdapterTests.cs) | **4 NUnit tests** asserting `log.emit` notifications materialise as `LogEntry` with level/msg/ts preserved; method-name filtering; lifecycle hygiene. **Closes audit F10** ("server-pushed stream has no consumer"). |
-| [`debug-tab/dependency-graph.md`](../../../../refactoring-examples/sub-team-6/debug-tab/dependency-graph.md) | `dotnet build` on `DebugTabSkeleton.csproj` completes with **0 warnings, 0 errors, zero `UnityEngine` references** — §4.2 #3 enforced structurally. The same holds for `FileTabSkeleton.csproj`, `GatewayContracts.csproj`, and the two `*Adapters.csproj` gateway-proxy projects. |
-| CK metric projection ([metrics.md](../D4-worked-examples/metrics.md), [file-tab/ck-metrics.md](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md), [debug-tab/ck-metrics.md](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md)) | WMC, RFC, LCOM, CBO deltas for `FileTabViewModel` and `DebugTabViewModel` vs the monolithic `CanvassDesktop`. |
-| Interface-size audit (in [`debug-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/debug-tab/ck-metrics.md) and [`file-tab/ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md)) | Every interface produced by the MVVM split has ≤ 7 public members (ISP target). Each has ≥ 1 Moq test double or `FakeGateway` programmation in the committed tier-1 and tier-2 suites. |
-
----
-
-## 12. Traceability
+## 11. Traceability
 
 | Item | Reference |
 |---|---|
@@ -368,12 +364,12 @@ Every row below points at an artefact a panel reviewer can open in this repo.
 | Transport contract | [D2 Architecture §4 — ADR-0002](../D2-Architecture/architecture.md) (wire spec, method catalogue, error model) |
 | File-tab worked example | [`refactoring-examples/sub-team-6/file-tab/`](../../../../refactoring-examples/sub-team-6/file-tab/) |
 | Debug-tab worked example | [`refactoring-examples/sub-team-6/debug-tab/`](../../../../refactoring-examples/sub-team-6/debug-tab/) |
-| Gateway contracts and test double | [`refactoring-examples/sub-team-6/contracts/`](../../../../refactoring-examples/sub-team-6/contracts/) |
+| Gateway contracts and test double | [`refactoring-examples/sub-team-6/contracts-team1/`](../../../../refactoring-examples/sub-team-6/contracts-team1/) |
 | ViewModel unit-test detail spec (Tier 1) | [`viewmodel-unit-tests.md`](viewmodel-unit-tests.md) |
 | Gateway and adapter test detail (Tier 2) | §4 of this document |
 | UI Toolkit page-object detail spec (Tier 3) | [`ui-toolkit.md`](ui-toolkit.md) |
 | Mocking-difficulty baseline | [`BNCH-6.md`](../other/T2-baseline-benchmark/BNCH-6.md) |
 | CK metric baseline + projection | [`D4-worked-examples/metrics.md`](../D4-worked-examples/metrics.md) |
 | Testability NFRs | [`D1-requirements/requirements.md` §3 — NFR-TST-1/2/3](../D1-requirements/requirements.md) |
-| Audit close (F9 / F10 — transport has real consumer) | [`docs/sub-team-6/deliverables/adr-009-audit.md`](../adr-009-audit.md) |
+| Audit close (F9 / F10 — transport has real consumer) | [`docs/sub-team-6/archived/adr-009-audit.md`](../../archived/adr-009-audit.md) — *archived Day-8 snapshot* |
 | Assignment spec | §6.6 ST · §9.2.4 · §4.2 #4 · §7.1–7.2 · LO6 |

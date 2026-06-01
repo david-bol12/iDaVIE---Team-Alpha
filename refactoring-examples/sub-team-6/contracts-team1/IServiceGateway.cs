@@ -1,4 +1,4 @@
-// Sub-team 6 — IServiceGateway (ADR-009 Decision §1 · ADR-0002 wire spec).
+// Sub-team 6 — IServiceGateway (ADR-009 Decision §1 · Gateway Contract v1 wire spec).
 //
 // The single transport-agnostic seam between the ViewModel layer and the server
 // kernel. Every cross-process call from the desktop client passes through this
@@ -32,7 +32,7 @@ namespace iDaVIE.Client.Gateway
 
         /// <summary>
         /// Send a JSON-RPC request and await the strongly-typed result. The wire
-        /// format and method-name discipline are defined by ADR-0002 §"Method
+        /// format and method-name discipline are defined by Gateway Contract v1 §"Method
         /// catalogue (v1)" — namespaces are <c>file.*</c>, <c>dataset.*</c>,
         /// <c>log.*</c>, <c>progress.*</c>.
         /// Server errors surface as <see cref="JsonRpcException"/>.

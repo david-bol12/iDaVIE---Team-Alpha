@@ -158,10 +158,10 @@ After the gateway rewire (ADR-009 / ADR-0002), several smells previously *contai
 
 | Smell ID | Status now | Where it lives |
 |---|---|---|
-| **S5** field writes onto `VolumeDataSetRenderer` (`renderer.FileName = ...`) | ⚠ contained inside `VolumeServiceAdapter.cs` | Phase B, `Note right of Vol`. Fix vector: when Sub-team 3 introduces `IRendererCommand`, swap field writes for a command emit. ViewModel and 34 unit tests do not change. |
+| **S5** field writes onto `VolumeDataSetRenderer` (`renderer.FileName = ...`) | ⚠ contained inside `VolumeServiceAdapter.cs` | Phase B, `Note right of Vol`. Fix vector: when Sub-team 3 introduces `IRendererCommand`, swap field writes for a command emit. ViewModel and 47 unit tests do not change. |
 | **S6** busy-wait on `renderer.started` flag | ✓ eliminated | Replaced by `yield return StartCoroutine(renderer._startFunc())` coroutine suspension. |
 | **FITS P/Invoke leakage** (BEFORE `FitsOpenFile` / `FitsGetHduCount` / `FitsMovabsHdu` etc. on the client) | ✓ eliminated client-side | Server-side native plug-in (Sub-team 1 kernel). Client speaks only JSON-RPC. |
 | **Native `IntPtr` lifetime** (BEFORE coroutine vs. callback ordering bugs) | ✓ eliminated | Server owns the dataset; the client carries an opaque string id and `file.close` for cleanup. |
 | **`ChangeHduSelection` file-reopen-per-switch** (BEFORE line 1435) | ✓ eliminated | `dataset.getHeader(datasetId, hduIndex)` is a single server call; no client-side reopen. |
 
-The S5 fix is a pure adapter-side edit — none of the 34 file-tab ViewModel unit tests need to change. The eliminated smells have direct test coverage in `refactoring-examples/sub-team-6/file-tab/adapters/tests/FitsServiceAdapterTests.cs` (gateway-routed assertions) and `refactoring-examples/sub-team-6/contracts/tests/` (wire framing).
+The S5 fix is a pure adapter-side edit — none of the 47 file-tab ViewModel unit tests need to change. The eliminated smells have direct test coverage in `refactoring-examples/sub-team-6/file-tab/adapters/tests/FitsServiceAdapterTests.cs` (gateway-routed assertions) and `refactoring-examples/sub-team-6/contracts-team1/tests/` (wire framing).

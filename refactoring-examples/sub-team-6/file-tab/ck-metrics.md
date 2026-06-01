@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-**Tool-verified (Day 13, Understand static analysis export — authoritative). Updated after skeleton refactor (Day 10): three pure-static helpers extracted from `FileTabViewModel` into `FitsMetadataHelper`; `Clamp` inlined in `SubsetBoundsViewModel`.** **BEFORE `CanvassDesktop`:** WMC 63 ❌ (≤40), CBO 30 ❌ (≤25), LCOM 95% ❌ (≤50%), DIT 2 ✅, LOC 1899. Note: the tool defines RFC = total method count (63); traditional CK RFC (methods + external calls) ≈ 210. **AFTER** splits into 11 classes. `FileTabViewModel` re-classified as orchestrator (coordinates 4 services): WMC=40 ≤40 ✅, CBO=19 ≤25 ✅. `SubsetBoundsViewModel` WMC=20 ≤20 ✅. LCOM violations remain on 5 classes — structural artifact of the MVVM property-backing-field pattern. Headline deltas (god-class → worst successor class): **WMC 63→40 (−37%), CBO 30→19 (−37%)**. The unit-testable surface goes from **0** (Unity required) to **34** NUnit tests running with zero Unity dependency.
+**Tool-verified (Day 13, Understand static analysis export — authoritative). Updated after skeleton refactor (Day 10): three pure-static helpers extracted from `FileTabViewModel` into `FitsMetadataHelper`; `Clamp` inlined in `SubsetBoundsViewModel`.** **BEFORE `CanvassDesktop`:** WMC 63 ❌ (≤40), CBO 30 ❌ (≤25), LCOM 95% ❌ (≤50%), DIT 2 ✅, LOC 1899. Note: the tool defines RFC = total method count (63); traditional CK RFC (methods + external calls) ≈ 210. **AFTER** splits into 11 classes. `FileTabViewModel` re-classified as orchestrator (coordinates 4 services): WMC=40 ≤40 ✅, CBO=19 ≤25 ✅. `SubsetBoundsViewModel` WMC=20 ≤20 ✅. LCOM violations remain on 5 classes — structural artifact of the MVVM property-backing-field pattern. Headline deltas (god-class → worst successor class): **WMC 63→40 (−37%), CBO 30→19 (−37%)**. The unit-testable surface goes from **0** (Unity required) to **47** NUnit tests running with zero Unity dependency.
 
 ---
 
@@ -98,10 +98,11 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 - **Smell S5 (field writes onto `VolumeDataSetRenderer`) remains contained** inside `LoadCubeCoroutine`. This is the natural seam where Sub-team 3 introduces an `IRendererCommand`; the VM is not affected.
 - New surface: the `CubeLoaded` event. Adds one delegate field; no impact on cohesion (still LCOM hs ≈ 0).
 
-**`FitsServiceAdapter` (RAII / handle ownership)**
+**`FitsServiceAdapter` (transport proxy / handle ownership)**
 
-- CBO bumped from 4 → 5 with the addition of the nested private `FitsHandle` class implementing `IFitsHandle`. The class is sealed inside the adapter so it does not contribute to the public domain surface.
-- The handle lifetime fix (one open per file, reused across HDU reads) eliminates the per-dropdown-selection reopen at `CanvassDesktop.cs:1435` — visible in WMC count (one method `OpenAndReadMetadata` replaces the previous open-per-call pattern).
+- CBO **7** (tool-verified): `IFitsService`, `IServiceGateway`, `FitsFileInfo`, `HduInfo`, `IFitsHandle`, the nested private `RemoteFitsHandle`, and the private wire-DTO records (`FileOpenParams`, `DatasetAxesResult`, …) it serialises onto the JSON-RPC `params`. The handle type is sealed inside the adapter, so it adds no public domain surface.
+- **No `[DllImport]`/`IntPtr`.** The adapter forwards `file.open` → `dataset.getAxes` → `dataset.getHeader` over `IServiceGateway` (ADR-0002 catalogue v1); the native FITS read is server-side. The client holds only an opaque `RemoteFitsHandle` wrapping a server-assigned `datasetId`.
+- Handle-reuse fix: `dataset.getHeader(datasetId, hduIndex)` reads any HDU header from the already-open server dataset, eliminating the per-dropdown-selection file reopen at `CanvassDesktop.cs:1435`. A failed `dataset.getAxes` fires a best-effort `file.close` so an orphaned dataset never leaks server-side.
 
 **`MemoryProbeAdapter` (new — Gap 2)**
 
@@ -131,7 +132,7 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 
 **Unit-testable surface (NFR-TST-1 evidence):**
 - BEFORE: 0 file-tab tests possible without a live Unity scene.
-- AFTER: **34** NUnit tests in `tests/FileTabViewModelTests.cs` exercise the domain layer with no Unity dependency.
+- AFTER: **47** NUnit tests in `tests/FileTabViewModelTests.cs` exercise the domain layer with no Unity dependency.
 
 ---
 

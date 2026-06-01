@@ -34,7 +34,7 @@ Tests live in plain **.NET class library projects** under [`refactoring-examples
 - the ViewModel skeleton csproj (no `UnityEngine` dependency — `dotnet build` succeeds with 0 warnings, 0 errors);
 - `NUnit`, `Moq`, `Coverlet` NuGet packages.
 
-Unity is never imported. This is the hard guarantee that enforces the anti-corruption layer. The 63 committed tests (34 file-tab + 29 debug-tab) run in **~20 ms total** on the debug-tab side; the file-tab side has not yet been timed but uses the same stack.
+Unity is never imported. This is the hard guarantee that enforces the anti-corruption layer. The 76 committed tests (47 file-tab + 29 debug-tab) run in **~20 ms total** on the debug-tab side; the file-tab side has not yet been timed but uses the same stack.
 
 ---
 
@@ -65,7 +65,7 @@ public class FileTabViewModelTests
 ```
 
 Categories:
-- `ViewModel` — pure ViewModel logic (the committed 63 tests)
+- `ViewModel` — pure ViewModel logic (the committed 76 tests)
 - `LogStream` — `LogStream` Observer-dispatch class (debug tab)
 
 ---
@@ -116,19 +116,18 @@ Assert.That(vm.IsLoadable,   Is.False);
 
 ### 6.3 Observer test — `ILogStream` (Debug tab)
 
-This pattern tests the Debug tab's role as a **passive observer** of the application's logging infrastructure. `DebugTabViewModel` subscribes to `ILogStream.OnLogEntry` and appends each entry to a bindable `Entries` collection. It must not poll or own the log source — it simply reacts to events.
+This pattern tests the Debug tab's role as a **passive observer** of the application's logging infrastructure. `DebugTabViewModel` implements `ILogObserver` and subscribes to `ILogStream` via `Subscribe(this)`; each `OnNext(LogEntry)` appends to a bindable `LogEntries` collection. It must not poll or own the log source — it simply reacts.
 
-Moq's `Raise` method fires the event directly on the mock, simulating the log infrastructure emitting a warning. The test then asserts that the ViewModel's `Entries` collection contains exactly one item with the correct message. This confirms that the subscription is wired up, that the entry is appended (not replaced), and that the ViewModel does not filter or silently drop the event. Running this without Unity proves the Observer wiring is pure C# with no scene or engine dependency.
+The test publishes through a concrete `LogStream` (a pure-C# `ILogStream`); the ViewModel, having subscribed itself, receives the entry via `OnNext`. The test then asserts that the ViewModel's `LogEntries` collection contains exactly one item with the correct message. This confirms that the subscription is wired up, that the entry is appended (not replaced), and that the ViewModel does not filter or silently drop the event. Running this without Unity proves the Observer wiring is pure C# with no scene or engine dependency.
 
 ```csharp
-var logStream = new Mock<ILogStream>();
-var vm = new DebugTabViewModel(logStream.Object);
+var logStream = new LogStream();            // concrete ILogStream — pure C#, no Unity
+var vm = new DebugTabViewModel(logStream);  // ctor calls logStream.Subscribe(this)
 
-logStream.Raise(l => l.OnLogEntry += null,
-    new LogEntry { Level = LogLevel.Warning, Message = "VR init slow" });
+logStream.Publish(LogLevel.Warning, "VR init slow");
 
-Assert.That(vm.Entries, Has.Count.EqualTo(1));
-Assert.That(vm.Entries[0].Message, Is.EqualTo("VR init slow"));
+Assert.That(vm.LogEntries, Has.Count.EqualTo(1));
+Assert.That(vm.LogEntries[0].Message, Is.EqualTo("VR init slow"));
 ```
 
 ---
@@ -168,7 +167,7 @@ CI (Quality Guild pipeline) will fail the build if either gate is missed on `mai
 | MVVM split decision | [D2 architecture doc](../D2-Architecture/architecture.md) (ADR rationale lives there — no separate ADR files) |
 | Interface contracts | [`file-tab/skeleton/IFileTabViewModel.cs`](../../../../refactoring-examples/sub-team-6/file-tab/skeleton/IFileTabViewModel.cs), [`debug-tab/skeleton/IDebugTabViewModel.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/skeleton/IDebugTabViewModel.cs) |
 | Parent test strategy | [`test-strategy.md`](test-strategy.md) |
-| Worked test suites | [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) (34), [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) (29) |
+| Worked test suites | [`FileTabViewModelTests.cs`](../../../../refactoring-examples/sub-team-6/file-tab/tests/FileTabViewModelTests.cs) (47), [`DebugTabTests.cs`](../../../../refactoring-examples/sub-team-6/debug-tab/tests/DebugTabTests.cs) (29) |
 | CK thresholds this strategy defends | §7.1 — RFC ≤ 50, LCOM ≤ 0.5 on ViewModel classes |
 | Assignment spec reference | §9.2.4, §6.6 ST, LO6 |
 

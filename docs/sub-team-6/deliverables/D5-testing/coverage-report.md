@@ -1,6 +1,6 @@
 # D5 — Branch and Line Coverage Report
 
-**Generated:** 2026-05-27 (Day 8) · **Tool:** Coverlet 6.0.2 + ReportGenerator 5.5.10 · **Source:** merged Cobertura from all 5 test projects (95 / 95 tests green)
+**Generated:** 2026-05-27 (Day 8) · **Tool:** Coverlet 6.0.2 + ReportGenerator 5.5.10 · **Source:** merged Cobertura from all 5 test projects (95 tests; all green on a host without Smart App Control — the 19 Tier-2 tests are blocked at load on SAC-enforced Windows hosts, see [`test-strategy.md` §4.4](test-strategy.md))
 
 **Reproduce locally:**
 
@@ -11,7 +11,7 @@ foreach ($p in @(
     'file-tab/adapters/tests/FileTabAdaptersTests',
     'debug-tab/tests/DebugTabTests',
     'debug-tab/adapters/tests/DebugTabAdaptersTests',
-    'contracts/tests/GatewayContractsTests')) {
+    'contracts-team1/tests/GatewayContractsTests')) {
     dotnet test "refactoring-examples/sub-team-6/$p.csproj" `
         --collect:'XPlat Code Coverage' `
         --results-directory $env:TEMP\cov\$($p -replace '/','_')

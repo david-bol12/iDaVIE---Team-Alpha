@@ -3,7 +3,7 @@
 // RAM availability without referencing Unity. Replaces the direct
 // SystemInfo.systemMemorySize / FileInfo.Length calls in
 // CanvassDesktop.CheckMemSpaceForCubes (lines 995-1013, Responsibility Group 6).
-// No UnityEngine dependency. Satisfies ADR-0001 (DIP) and ADR-0003 (ACL).
+// No UnityEngine dependency. Satisfies ADR-003 (DI) and ADR-002 (ACL).
 namespace iDaVIE.Desktop.FileTab
 {
     /// <summary>

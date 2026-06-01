@@ -1,4 +1,4 @@
-// Sub-team 6 — JsonRpcPipeGateway (ADR-0002 §"Wire specification — local mode").
+// Sub-team 6 — JsonRpcPipeGateway (Gateway Contract v1 §"Wire specification — local mode").
 //
 // The real-transport implementation of IServiceGateway. Connects to a Windows
 // named pipe at \\.\pipe\idavie.<session-id> and speaks JSON-RPC 2.0 framed
@@ -46,7 +46,7 @@ namespace iDaVIE.Client.Gateway
         /// <param name="pipeName">
         /// Pipe name without the <c>\\.\pipe\</c> prefix. The server writes the
         /// canonical name to <c>%LOCALAPPDATA%\iDaVIE\session.pipe</c> at startup
-        /// (see ADR-0002 §"Pipe naming"); the composition root reads it from
+        /// (see Gateway Contract v1 §"Pipe naming"); the composition root reads it from
         /// there and constructs this gateway.
         /// </param>
         public JsonRpcPipeGateway(string pipeName)
@@ -131,7 +131,7 @@ namespace iDaVIE.Client.Gateway
             using var doc = JsonDocument.Parse(payload);
             var root = doc.RootElement;
 
-            // Notification: ADR-0002 — "no id, no response expected."
+            // Notification: Gateway Contract v1 — "no id, no response expected."
             if (!root.TryGetProperty("id", out var idEl) || idEl.ValueKind == JsonValueKind.Null)
             {
                 if (!root.TryGetProperty("method", out var methodEl)) return;
