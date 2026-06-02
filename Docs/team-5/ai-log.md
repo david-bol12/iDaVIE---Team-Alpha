@@ -14,7 +14,6 @@
 | 2026-05-28 | Harry Kennedy | Claude Code / Sonnet 4.6 | Drafted `IFeatureSystemPort` and `FeatureSystemPort` adapter for the team4 interface contract | |
 | 2026-06-02 | Harry Kennedy | Claude Code / Opus 4.8 | Drafted `SubTeam5_CK_Metrics.md`: mapped SciTools Understand CSV columns onto the CK suite (WMC/DIT/NOC/CBO/LCOM) and explained the before/after deltas for the Moment Maps and VOTable Export examples | Understand's export has no native RFC column, so RFC had to be estimated/flagged manually; mapping caveats needed human confirmation against the actual project |
 | 2026-06-02 | Harry Kennedy | Claude Code / Opus 4.8 | Drafted `SubTeam5_Testing_Strategy.md` documenting the three test levels (example-based unit, FsCheck property-based, scenario) for `SubTeam5_Tests`, the tooling table, and coverage gaps | Tooling versions and the passing test count had to be verified against `SubTeam5_Tests.csproj` and an actual test run |
-| 2026-06-02 | Harry Kennedy | Claude Code / Opus 4.8 | Drafted the `SubTeam5_Pitch_Practice_QA.md` rehearsal Q&A bank (God-class rationale, Clean-Architecture split, CK evidence) as private practice prep | Practice aid only — §10.5.6 forbids AI in the live pitch/interview defence |
 
 **Policy reminders:**
 - AI output must be reviewed, understood, and defensible by a named human author.
