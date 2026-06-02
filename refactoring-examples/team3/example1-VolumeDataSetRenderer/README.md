@@ -158,6 +158,44 @@ Test doubles: `NullRenderPipeline` (`stubs/NullRenderPipeline.cs`), `StubGazePro
 
 ---
 
+## Integration with Sub-Team 5 (Feature Rendering)
+
+Sub-Team 5 has published the `IFeatureRenderer` interface contract (v1.0, 2026-05-28) defining how their GPU rendering layer integrates with the domain. Our refactoring follows the same architectural pattern:
+
+| Aspect | Sub-Team 5 (Features) | Sub-Team 3 (Volumes) | Pattern |
+|--------|----------------------|----------------------|---------|
+| **Domain layer** | `Feature`, `FeatureSet`, `FeatureCatalog` | `VolumeDataSet` (future) | Pure C#, no Unity |
+| **Adapter** | `FeatureVisualiser` (MonoBehaviour) | `VolumeRendererBehaviour` | Scene integration + wiring |
+| **Renderer boundary** | `IFeatureRenderer` | `IVolumeRenderer` (see below) | Events → GPU updates |
+| **Dirty notification** | `FeatureSet.FeatureDirty` event | Texture/Camera change events | Event-driven updates |
+| **Implementation** | `FeatureSetRenderer` | `VolumeRenderCoordinator` + four classes | Interface-based delegation |
+
+Both systems use **event-driven architecture**: domain state changes fire events that the adapter wires to renderer methods, eliminating direct coupling between domain and GPU layers. No renderer mutates domain state.
+
+### IVolumeRenderer Interface
+
+Our refactored renderer surfaces the same shape as `IFeatureRenderer` — a minimal interface for domain-to-renderer communication:
+
+```csharp
+public interface IVolumeRenderer
+{
+    // Analogous to IFeatureRenderer.AddFeature
+    void LoadDataSet(VolumeDataSet dataSet);
+    
+    // Analogous to IFeatureRenderer.SetFeatureAsDirty
+    void SetTextureAsDirty(int cubeIndex);
+    void SetCameraAsDirty();
+    void SetFoveationAsDirty();
+    
+    // Analogous to IFeatureRenderer.FeatureColor
+    void ApplyColorMap(ColorMapData colorMap);
+}
+```
+
+Both interfaces define the rendering boundary: the GPU layer is a **consumer** of domain state, never a **mutator**. See `refactoring-examples/team3/stubs/IVolumeRenderer.cs` for the full definition.
+
+---
+
 ## Open Items (blocked on cross-team interface confirmation)
 
 | Item | Blocker |

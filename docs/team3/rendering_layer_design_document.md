@@ -256,7 +256,47 @@ Each phase has a single-file rollback cost (restore the previous seam). Phase 6 
 
 ---
 
-### 4.10 Shader/Asset Organisation Policy
+### 4.10 Sub-Team 5 Integration (Feature Rendering Interface Alignment)
+
+**Alignment with IFeatureRenderer Contract v1.0 (2026-05-28)**
+
+Sub-Team 5 (Feature System & Domain Model) published the `IFeatureRenderer` interface contract defining their domain/rendering boundary. Our refactoring follows the same architectural pattern, validating the approach across two independent systems:
+
+| Aspect | IFeatureRenderer (Sub-Team 5) | IVolumeRenderer (Sub-Team 3) | Pattern |
+|--------|---------|---------|---------|
+| **Domain layer** | `Feature`, `FeatureSet`, `FeatureCatalog` (pure C#) | `VolumeDataSet` (future; pure C#) | Unity-free domain model |
+| **Adapter** | `FeatureVisualiser` (MonoBehaviour shell) | `VolumeRendererBehaviour` (≤ 30 lines) | Event wiring + composition root |
+| **Renderer boundary** | 5 methods + 1 property | 4 methods (see below) | Minimal interface |
+| **Dirty notification** | `FeatureSet.FeatureDirty` event | Texture/Camera/Foveation change events | Event-driven updates |
+| **Implementation** | `FeatureSetRenderer` (GPU layer) | `VolumeRenderCoordinator` + four classes | Interface-based delegation |
+| **Mutation rule** | Renderer is consumer, never mutator | Renderer is consumer, never mutator | Clear responsibility boundary |
+
+Both systems use **event-driven architecture**: domain state changes fire events that the adapter wires to renderer methods. Neither renderer mutates domain state; rendering is purely a response to domain events.
+
+**The IVolumeRenderer interface** (defined in `refactoring-examples/stubs/IVolumeRenderer.cs`):
+
+```csharp
+public interface IVolumeRenderer
+{
+    void LoadDataSet(VolumeDataSet dataSet);        // Analogous to AddFeature
+    void SetTextureAsDirty(int cubeIndex);          // Analogous to SetFeatureAsDirty
+    void SetCameraAsDirty();                        // Coordinate frame refresh
+    void SetFoveationAsDirty();                      // Sampling rate refresh
+    void ApplyColorMap(ColorMapData colorMap);      // Colour mapping (like FeatureColor property)
+}
+```
+
+This minimal interface ensures that:
+1. Domain and rendering concerns are separated by a wire protocol, not a monolithic class
+2. Test doubles (null/stub implementations) enable unit testing without GPU context
+3. The rendering layer is a passive observer of domain changes, not an active mutator
+4. Future rendering pipelines or GPU frameworks can be swapped by implementing a new interface
+
+**Reference documentation:** See `docs/team3/integration/WP3_IFeatureRenderer_Interface_Contract.pdf` (Sub-Team 5 handoff document) for the complete contract, dirty-notification chain, and acceptance criteria.
+
+---
+
+### 4.11 Shader/Asset Organisation Policy
 
 See `docs/shader-asset-policy.md` for the complete shader and asset organisation policy for Unity 6.
 
@@ -268,7 +308,7 @@ See `docs/team3/test-strategy.md` for the detailed phased migration plan, entry/
 
 ---
 
-## 5. Class and Sequence Diagrams
+## 6. Class and Sequence Diagrams
 
 All diagrams are PlantUML source in `diagrams/`:
 
@@ -279,11 +319,11 @@ All diagrams are PlantUML source in `diagrams/`:
 
 ---
 
-## 6. SOLID/GRASP Audit
+## 7. SOLID/GRASP Audit
 
 *Full evidence with code line references: `docs/Codebase Exploration/SOLID_GRASP_Violations.md`*
 
-### 6.1 Violations in Current Code
+### 7.1 Violations in Current Code
 
 | ID | Principle | Violation | Severity |
 |----|-----------|-----------|----------|
@@ -301,7 +341,7 @@ All diagrams are PlantUML source in `diagrams/`:
 
 *6 Critical, 8 High, 1 Medium total — see `SOLID_GRASP_Violations.md` for full 17-row table including V-02, V-03, V-05, V-09, V-11, V-12.*
 
-### 6.2 Fixes in Proposed Design
+### 7.2 Fixes in Proposed Design
 
 | Violation | Resolved By | How |
 |-----------|------------|-----|
@@ -313,7 +353,7 @@ All diagrams are PlantUML source in `diagrams/`:
 | V-15 (Prot. Variations) | DD-01 | `IRenderPipeline` is the stable seam around the render pipeline variation point |
 | V-16/V-17 | DD-01 + DD-03 | Per-class CBO ≤ 11; per-class LCOM ≤ 0.05 |
 
-### 6.3 Remaining Trade-offs
+### 7.3 Remaining Trade-offs
 
 **T-01 — Coordinator coupling (CBO ~6):** `VolumeRenderCoordinator` couples to four interfaces — acceptable (CBO ≤ 25 for orchestrators per brief). Coupling is to interfaces, not concrete classes.
 
@@ -321,7 +361,7 @@ All diagrams are PlantUML source in `diagrams/`:
 
 ---
 
-## 7. Sub-team Dependencies
+## 8. Sub-team Dependencies
 
 | Dependency | Interface | Status |
 |---|---|---|
@@ -332,9 +372,9 @@ Sub-team 3 exposes camera state via `VolumeCameraDriver` (available to Sub-team 
 
 ---
 
-## 8. Risks
+## 9. Risks
 
-### 8.1 Performance Overhead of the Abstraction Layer
+### 9.1 Performance Overhead of the Abstraction Layer
 
 The primary performance concern is virtual dispatch on the per-frame hot path. `VolumeRenderCoordinator.Update()` calls `IVolumeMaterialBinder.Apply()`, `IVolumeCameraDriver.ComputeFrame()`, and `IFoveatedSamplingPolicy.Evaluate()` every frame at 90 fps. Three virtual calls per frame at 90 fps is negligible in isolation, but the concern is the *chain* of calls each triggers.
 
@@ -345,7 +385,7 @@ Mitigations:
 
 The 90 fps invariant (INV-01) is non-negotiable. If the gate fails at any phase during migration, the phase is rolled back — not the gate.
 
-### 8.2 Coordinator Complexity (God Class Recurrence)
+### 9.2 Coordinator Complexity (God Class Recurrence)
 
 `VolumeRenderCoordinator` is at structural risk of becoming a new God Class if domain logic migrates into it over time. This is a known failure mode of Strangler Fig migrations: the coordinator starts thin and accumulates logic as the team takes shortcuts.
 
@@ -354,7 +394,7 @@ Mitigations:
 - WMC target ≤ 10 for the coordinator. If WMC approaches this cap, the team reviews whether a new domain class is warranted before adding methods.
 - A `CoordinatorWiringTest` integration test verifies that the coordinator constructs, runs one frame, and tears down without errors — it never tests domain correctness, which belongs to the domain class unit tests.
 
-### 8.3 Interface Versioning Risk
+### 9.3 Interface Versioning Risk
 
 Three cross-team interfaces (`IGazeProvider`, `IRawVolumeDataSource`, `ISessionPersistenceService`) are agreed verbally but not yet formally signed off. A signature change after either side has coded to it causes rework.
 
@@ -363,7 +403,7 @@ Mitigations:
 - Contract tests (one per cross-team interface) verify that our stub implementations remain consistent with the agreed signatures. These run in edit mode with no Unity context required.
 - Interface freeze target: end of Sprint 2 (29 May). Changes after freeze require sign-off from both sub-team leads.
 
-### 8.4 Risk Register
+### 9.4 Risk Register
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 |----|------|-----------|--------|------------|
@@ -378,10 +418,10 @@ Mitigations:
 
 ---
 
-## 9. Appendices
+## 10. Appendices
 
 **Appendix A — Diagram Source Files:** `diagrams/class-before.puml`, `class-after.puml`, `architecture.puml`, `sequence-render-frame.puml`, `vdsr-dependencies.puml`.
 
-**Appendix B — Interface Stubs:** `refactoring-examples/stubs/IRenderPipeline.cs`, `NullRenderPipeline.cs`, `IMaskMode.cs`, `NullMaskMode.cs`, `IGazeProvider.cs`, `IRawVolumeDataSource.cs`.
+**Appendix B — Interface Stubs:** `refactoring-examples/stubs/IRenderPipeline.cs`, `NullRenderPipeline.cs`, `IMaskMode.cs`, `NullMaskMode.cs`, `IGazeProvider.cs`, `IVolumeRenderer.cs`, `IRawVolumeDataSource.cs`.
 
-**Appendix C — References:** iDaVIE GitHub: https://github.com/idia-astro/iDaVIE. Brief §4.2 (Architectural Constraints), §6.3 (Deliverables), §9.2 (Deliverable 2). CK thresholds: `docs/requirements.md`.
+**Appendix C — Integration References:** Sub-Team 5 IFeatureRenderer contract (v1.0, 2026-05-28): `docs/team3/integration/WP3_IFeatureRenderer_Interface_Contract.pdf`. iDaVIE GitHub: https://github.com/idia-astro/iDaVIE. Brief §4.2 (Architectural Constraints), §6.3 (Deliverables), §9.2 (Deliverable 2). CK thresholds: `docs/requirements.md`.
