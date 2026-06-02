@@ -1,3 +1,7 @@
+// SUPERSEDED STUB — canonical finalised version is at:
+//   refactoring-examples/team3/example2-MaskModes/after/InverseMaskMode.cs
+// This file can be removed with: git rm refactoring-examples/team3/stubs/InverseMaskMode.cs
+//
 // InverseMaskMode.cs
 // Concrete implementation of IMaskMode — Strategy 2 of 3.
 //

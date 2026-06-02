@@ -168,38 +168,57 @@ All diagrams must be in PlantUML, Mermaid, or .drawio XML format — no binary-o
 
 ```
 idavie-subteam3/
-├── CLAUDE.md                    ← YOU ARE HERE — read this first every session
-├── CONTEXT.md                   ← Detailed technical context about iDaVIE rendering
-├── PROGRESS.md                  ← Running log of what's done / in progress / blocked
+├── CLAUDE.md                         ← YOU ARE HERE — read this first every session
+├── CONTEXT.md                        ← Detailed technical context about iDaVIE rendering
+├── PROGRESS.md                       ← Running log of what's done / in progress / blocked
 ├── docs/team3/
-│   ├── requirements.md          ← Deliverable 1: requirements doc
-│   ├── design-document.md       ← Deliverable 2: design doc (5–10 pages)
-│   ├── test-strategy.md         ← Deliverable 4: test strategy
-│   ├── rendering-layer-design.md
-│   ├── shader-asset-policy.md
-│   └── metrics-worksheet.md
+│   ├── README.md                     ← Document index — maps every file to a brief section
+│   ├── deliverables/                 ← ALL ASSESSED DELIVERABLES (canonical, one file each)
+│   │   ├── requirements.md           ← §9.2 D1: requirements doc (1–2 pages)
+│   │   ├── design-document.md        ← §9.2 D2 + §6.3: design doc (5–10 pages)
+│   │   ├── shader-asset-policy.md    ← §6.3: shader/asset policy for Unity 6
+│   │   ├── metrics-worksheet.md      ← §6.3: before/after CK metrics worksheet
+│   │   └── test-strategy.md          ← §9.2 D4: test strategy (2–4 pages)
+│   ├── integration/                  ← Cross-team interface contracts
+│   │   ├── meeting-subteam2.md       ← RawVolumeData contract (confirmed 2 Jun)
+│   │   ├── meeting-subteam4.md       ← IGaze contract (confirmed 2 Jun)
+│   │   └── meeting-subteam7.md       ← Persistence contract (pending sign-off)
+│   └── exploration/                  ← Background research; cited in deliverables
+│       ├── SOLID_GRASP_Violations.md
+│       ├── RenderFrame_CallSequence(1).md
+│       ├── migration_plan.md
+│       └── ... (other exploration notes)
 ├── refactoring-examples/team3/
 │   ├── example1-VolumeDataSetRenderer/
 │   │   ├── README.md
 │   │   ├── before/
 │   │   └── after/
-│   └── example2-MaskModes/
-│       ├── README.md
-│       ├── before/
-│       └── after/
+│   ├── example2-MaskModes/
+│   │   ├── README.md
+│   │   ├── before/
+│   │   └── after/
+│   ├── stubs/                        ← Shared interfaces and test doubles
+│   │   ├── IRenderPipeline.cs
+│   │   ├── NullRenderPipeline.cs
+│   │   ├── UrpRenderPipeline.cs
+│   │   ├── HdrpRenderPipeline.cs
+│   │   └── StubGazeProvider.cs
+│   └── tests/                        ← NUnit test files
+│       ├── Example1_RendererSplitTests.cs
+│       ├── Example2_MaskModeTests.cs
+│       └── GoldenImageRegressionTests.cs
 ├── diagrams/
 │   ├── architecture.puml
 │   ├── class-before.puml
 │   ├── class-after.puml
-│   └── sequence-render-frame.puml
-├── tests/
-│   └── test-strategy-notes.md
+│   ├── sequence-render-frame.puml
+│   └── vdsr-dependencies.puml
 ├── kanban/
 │   ├── sprint1-snapshot.md
-│   ├── sprint2-snapshot.md
-│   └── sprint3-snapshot.md
+│   ├── sprint2-snapshot.md           ← Fill in end-of-sprint state
+│   └── sprint3-snapshot.md           ← Fill in at artefact freeze
 └── standup/
-    └── standup-log.md
+    └── standup-log.md                ← Fill in Week 3 daily entries
 ```
 
 ---
@@ -210,7 +229,7 @@ Full task breakdown: `kanban/sprint2-greenfield.md` (57 tasks, ~55 person-hours)
 ClickUp import file: `kanban/sprint2-clickup.csv` (import with DD/MM/YYYY date format; time estimates in minutes)
 
 **Sprint 2 carry-overs (close Mon 25 May EOD):**
-- Team review + finalise `docs/team3/requirements.md`
+- Team review + finalise `docs/team3/deliverables/requirements.md`
 - Confirm CBO count in VDSR dependency map
 - Agree two refactoring examples (document in `PROGRESS.md`)
 - Tool smoke-test + version docs
