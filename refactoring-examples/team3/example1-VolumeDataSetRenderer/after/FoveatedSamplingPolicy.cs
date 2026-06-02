@@ -352,6 +352,46 @@ namespace iDaVIE.Rendering
     }
 
     // =========================================================================
+    // FoveationState — persistence snapshot of FoveatedSamplingPolicy config
+    //
+    // PERSISTENCE CONTRACT (Sub-team 7 integration)
+    // ─────────────────────────────────────────────
+    // Owned by FoveatedSamplingPolicy per docs/integration/team7-persistence-contract.md.
+    // Captured by FoveatedSamplingPolicy.CaptureState() → returned to coordinator.
+    // Restored by FoveatedSamplingPolicy.RestoreState(state) → coordinator calls this
+    // after session load.
+    //
+    // Records whether foveation is enabled and the zone radii / sample rates.
+    // =========================================================================
+
+    /// <summary>
+    /// Session-persistent state owned by <see cref="FoveatedSamplingPolicy"/>.
+    /// Captured before save, restored after load. Follows Sub-team 7 contract.
+    /// </summary>
+    public readonly struct FoveationState
+    {
+        public readonly bool  FoveationEnabled;
+        public readonly float FovealRadius;
+        public readonly float ParafovealRadius;
+        public readonly float FovealSampleRate;
+        public readonly float ParafovealSampleRate;
+        public readonly float PeripheralSampleRate;
+
+        public FoveationState(
+            bool foveationEnabled,
+            float fovealRadius, float parafovealRadius,
+            float fovealSampleRate, float parafovealSampleRate, float peripheralSampleRate)
+        {
+            FoveationEnabled       = foveationEnabled;
+            FovealRadius           = fovealRadius;
+            ParafovealRadius       = parafovealRadius;
+            FovealSampleRate       = fovealSampleRate;
+            ParafovealSampleRate   = parafovealSampleRate;
+            PeripheralSampleRate   = peripheralSampleRate;
+        }
+    }
+
+    // =========================================================================
     // FoveatedSamplingPolicy — the main class
     // =========================================================================
 
@@ -607,6 +647,42 @@ namespace iDaVIE.Rendering
             if (dist <= _config.InnerRadius)  return FoveationZone.Foveal;
             if (dist <= _config.OuterRadius)  return FoveationZone.Parafoveal;
             return FoveationZone.Peripheral;
+        }
+
+        // ── Persistence — Sub-team 7 Integration ───────────────────────────────
+        // [§ docs/integration/team7-persistence-contract.md — FoveationState]
+        //
+        // These methods are stubs. The full implementation will be wired in Sprint 3
+        // after the sample rate mapping is confirmed.
+
+        /// <summary>
+        /// Captures the current foveation config for session persistence.
+        /// Called by <c>VolumeRenderCoordinator.SaveSession()</c>.
+        /// </summary>
+        public FoveationState CaptureState()
+        {
+            // TODO Sprint 3: map step counts to sample rates and include foveation
+            // enabled flag. The mapping depends on MaxSteps and zone config.
+            return new FoveationState(
+                foveationEnabled: IsGazeAvailable,
+                fovealRadius: _config.InnerRadius,
+                parafovealRadius: _config.OuterRadius,
+                fovealSampleRate: (float)_config.StepsHigh / (float)_config.MaxSteps,
+                parafovealSampleRate: 0.5f,  // midpoint — placeholder
+                peripheralSampleRate: (float)_config.StepsLow / (float)_config.MaxSteps
+            );
+        }
+
+        /// <summary>
+        /// Restores foveation config after session load.
+        /// Called by <c>VolumeRenderCoordinator.LoadSession()</c>.
+        /// </summary>
+        public void RestoreState(FoveationState state)
+        {
+            // TODO Sprint 3: the config is immutable (passed at construction), so
+            // restoration means saving the enabled flag and radii for the next
+            // frame's ComputeParameters() call if they differ from the current config.
+            // May require adding mutable fields to track user overrides.
         }
     }
 }

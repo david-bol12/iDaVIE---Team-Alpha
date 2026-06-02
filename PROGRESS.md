@@ -145,6 +145,19 @@ Format: date, what was completed, what's in progress, any blockers.
 
 ## Session Log
 
+### 2026-06-02 (session 9 — current)
+
+- [Sprint 2 → Sub-team 7 alignment] Updated refactoring examples to align with persistence contract — added state structs and save/restore methods to all four domain classes and coordinator:
+
+  - `VolumeMaterialBinder`: added `RenderingState` struct and `CaptureState()` / `RestoreState()` methods
+  - `VolumeTextureManager`: added `VolumeDataState` struct and `CaptureState()` / `RestoreState()` methods
+  - `VolumeCameraDriver`: added `SpatialState` struct and `CaptureState()` / `RestoreState()` methods
+  - `FoveatedSamplingPolicy`: added `FoveationState` struct and `CaptureState()` / `RestoreState()` methods
+  - `VolumeRenderCoordinator`: added `VolumeSessionState` root struct, `SaveSession()` and `LoadSession()` orchestration methods
+  - All methods are commented as stubs with TODO notes for Sprint 3 wire-up to `ISessionPersistenceService`
+  - Contract reference: `docs/team3/integration/team7-persistence-contract.md`
+  - Status: refactoring examples now **match the Sub-team 7 contract fully**; integration test wire-up deferred to Sprint 3
+
 ### 2026-05-28 (session 1)
 - **PROGRESS.md reconciliation** — audited all files marked pending against actual disk state; found 7 items already done but not recorded. Marked S2-D02 (Problem Statement §2), S2-D04 (IRenderPipeline §5.3), S2-D06 (SOLID/GRASP §8), S2-S01–S2-S03 (rendering-layer-design.md), S2-S04–S2-S05 (shader-asset-policy.md), S2-E1-11, S2-E2-05, S2-E2-06, S2-E2-07 all complete.
 - [S2-S06–S2-S07] `docs/metrics-worksheet.md` Sections 2–5 filled — all Day 13 projected CK values from after/ code headers; delta summary; WMC/CBO/LCOM justification paragraphs; dependency cycle check completed.

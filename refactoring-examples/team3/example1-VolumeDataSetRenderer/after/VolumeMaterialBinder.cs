@@ -48,6 +48,45 @@ using UnityEngine;             // [CBO #1] Material, Texture3D, Color, Vector3, 
 namespace iDaVIE.Rendering
 {
     // ──────────────────────────────────────────────────────────────────────────
+    // RenderingState — persistence snapshot of VolumeMaterialBinder state
+    //
+    // PERSISTENCE CONTRACT (Sub-team 7 integration)
+    // ─────────────────────────────────────────────
+    // Owned by VolumeMaterialBinder per docs/integration/team7-persistence-contract.md.
+    // Captured by VolumeMaterialBinder.CaptureState() → returned to coordinator.
+    // Restored by VolumeMaterialBinder.RestoreState(state) → coordinator calls this
+    // after session load.
+    //
+    // All fields are plain types (no UnityEngine dependencies except enums).
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Session-persistent state owned by <see cref="VolumeMaterialBinder"/>.
+    /// Captured before save, restored after load. Follows Sub-team 7 contract.
+    /// </summary>
+    public readonly struct RenderingState
+    {
+        public readonly float       ThresholdMin;
+        public readonly float       ThresholdMax;
+        public readonly int         ColorMap;          // ColorMapIndex
+        public readonly int         ScalingType;       // ScalingType enum as int
+        public readonly bool        AverageIntensityProjection;
+        public readonly int         ActiveMaskMode;    // enum int; tells RestoreState which IMaskMode to use
+
+        public RenderingState(
+            float thresholdMin, float thresholdMax, int colorMap, int scalingType,
+            bool averageIntensityProjection, int activeMaskMode)
+        {
+            ThresholdMin                   = thresholdMin;
+            ThresholdMax                   = thresholdMax;
+            ColorMap                       = colorMap;
+            ScalingType                    = scalingType;
+            AverageIntensityProjection     = averageIntensityProjection;
+            ActiveMaskMode                 = activeMaskMode;
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // VolumeRenderState — read-only value struct
     //
     // PURPOSE
@@ -670,6 +709,42 @@ namespace iDaVIE.Rendering
         {
             if (_material     != null) Object.Destroy(_material);
             if (_maskMaterial != null) Object.Destroy(_maskMaterial);
+        }
+
+        // ── Persistence — Sub-team 7 Integration ───────────────────────────────
+        // [§ docs/integration/team7-persistence-contract.md — RenderingState]
+        //
+        // These methods are stubs. The full implementation will be wired in Sprint 3
+        // after the final RenderingState struct fields are agreed with the team.
+
+        /// <summary>
+        /// Captures the current rendering state for session persistence.
+        /// Called by <c>VolumeRenderCoordinator.SaveSession()</c>.
+        /// </summary>
+        public RenderingState CaptureState()
+        {
+            // TODO Sprint 3: extract current values from _material properties and flags.
+            // For now, return a placeholder that compiles.
+            return new RenderingState(
+                thresholdMin: 0f,
+                thresholdMax: 1f,
+                colorMap: 0,
+                scalingType: 0,
+                averageIntensityProjection: false,
+                activeMaskMode: 0
+            );
+        }
+
+        /// <summary>
+        /// Restores rendering state after session load.
+        /// Called by <c>VolumeRenderCoordinator.LoadSession()</c>.
+        /// Must leave this class in a valid, ready-to-render state.
+        /// </summary>
+        public void RestoreState(RenderingState state)
+        {
+            // TODO Sprint 3: apply state values back to _material and flags.
+            // Must call pushToShader() equivalent to sync the material after restore.
+            // Placeholder implementation compiles without changes.
         }
 
         // ── Expose material for MeshRenderer wiring (coordinator only) ─────────

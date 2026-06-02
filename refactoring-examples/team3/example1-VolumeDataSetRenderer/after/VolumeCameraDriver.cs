@@ -202,6 +202,66 @@ namespace iDaVIE.Rendering
     }
 
     // =========================================================================
+    // SpatialState — persistence snapshot of VolumeCameraDriver state
+    //
+    // PERSISTENCE CONTRACT (Sub-team 7 integration)
+    // ─────────────────────────────────────────────
+    // Owned by VolumeCameraDriver per docs/integration/team7-persistence-contract.md.
+    // Captured by VolumeCameraDriver.CaptureState() → returned to coordinator.
+    // Restored by VolumeCameraDriver.RestoreState(state) → coordinator calls this
+    // after session load.
+    //
+    // Records volume object position, rotation (Euler angles), scale, and
+    // optional region/clipping bounds. No UnityEngine types.
+    // =========================================================================
+
+    /// <summary>
+    /// Session-persistent state owned by <see cref="VolumeCameraDriver"/>.
+    /// Captured before save, restored after load. Follows Sub-team 7 contract.
+    /// </summary>
+    public readonly struct SpatialState
+    {
+        public readonly float PositionX;
+        public readonly float PositionY;
+        public readonly float PositionZ;
+        public readonly float RotationX;      // Euler angles
+        public readonly float RotationY;
+        public readonly float RotationZ;
+        public readonly float Scale;
+        public readonly int   RegionMinX;
+        public readonly int   RegionMinY;
+        public readonly int   RegionMinZ;
+        public readonly int   RegionMaxX;
+        public readonly int   RegionMaxY;
+        public readonly int   RegionMaxZ;
+        public readonly bool  HasRegion;
+
+        public SpatialState(
+            float posX, float posY, float posZ,
+            float rotX, float rotY, float rotZ,
+            float scale,
+            int regionMinX, int regionMinY, int regionMinZ,
+            int regionMaxX, int regionMaxY, int regionMaxZ,
+            bool hasRegion)
+        {
+            PositionX   = posX;
+            PositionY   = posY;
+            PositionZ   = posZ;
+            RotationX   = rotX;
+            RotationY   = rotY;
+            RotationZ   = rotZ;
+            Scale       = scale;
+            RegionMinX  = regionMinX;
+            RegionMinY  = regionMinY;
+            RegionMinZ  = regionMinZ;
+            RegionMaxX  = regionMaxX;
+            RegionMaxY  = regionMaxY;
+            RegionMaxZ  = regionMaxZ;
+            HasRegion   = hasRegion;
+        }
+    }
+
+    // =========================================================================
     // CameraFrameState — immutable value type returned to VolumeRenderCoordinator
     // =========================================================================
     //
@@ -524,6 +584,43 @@ namespace iDaVIE.Rendering
         /// </summary>
         // [WMC] CC = 1. Contributes 1 to WMC total.
         public bool IsAverageIntensityProjection => _averageIntensityProjection;
+
+        // ── Persistence — Sub-team 7 Integration ───────────────────────────────
+        // [§ docs/integration/team7-persistence-contract.md — SpatialState]
+        //
+        // These methods are stubs. The full implementation will be wired in Sprint 3
+        // after the volume object Transform is passed to the driver.
+
+        /// <summary>
+        /// Captures the current spatial (transform) state for session persistence.
+        /// Called by <c>VolumeRenderCoordinator.SaveSession()</c>.
+        /// </summary>
+        public SpatialState CaptureState()
+        {
+            // TODO Sprint 3: extract position, rotation (Euler), and scale from
+            // _camera.transform.parent (the volume object's transform).
+            // Region bounds come from VolumeTextureManager.CurrentCrop*.
+            return new SpatialState(
+                posX: 0f, posY: 0f, posZ: 0f,
+                rotX: 0f, rotY: 0f, rotZ: 0f,
+                scale: 1f,
+                regionMinX: 0, regionMinY: 0, regionMinZ: 0,
+                regionMaxX: 0, regionMaxY: 0, regionMaxZ: 0,
+                hasRegion: false
+            );
+        }
+
+        /// <summary>
+        /// Restores spatial state after session load.
+        /// Called by <c>VolumeRenderCoordinator.LoadSession()</c>.
+        /// Must update the volume object's transform and set region bounds.
+        /// </summary>
+        public void RestoreState(SpatialState state)
+        {
+            // TODO Sprint 3: apply position, rotation, and scale back to the volume
+            // object's transform. Must update _camera.transform.parent.
+            // The region bounds restoration happens in VolumeTextureManager.RestoreState.
+        }
     }
 
     // =========================================================================

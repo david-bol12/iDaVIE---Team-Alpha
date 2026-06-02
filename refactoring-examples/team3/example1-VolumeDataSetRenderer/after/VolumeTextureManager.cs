@@ -96,6 +96,51 @@ namespace iDaVIE.Rendering
 
 
     // ──────────────────────────────────────────────────────────────────────────
+    // VolumeDataState — persistence snapshot of VolumeTextureManager state
+    //
+    // PERSISTENCE CONTRACT (Sub-team 7 integration)
+    // ─────────────────────────────────────────────
+    // Owned by VolumeTextureManager per docs/integration/team7-persistence-contract.md.
+    // Captured by VolumeTextureManager.CaptureState() → returned to coordinator.
+    // Restored by VolumeTextureManager.RestoreState(state) → coordinator calls this
+    // after session load.
+    //
+    // Records FITS file path, crop region bounds, and crop-active flag.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Session-persistent state owned by <see cref="VolumeTextureManager"/>.
+    /// Captured before save, restored after load. Follows Sub-team 7 contract.
+    /// </summary>
+    public readonly struct VolumeDataState
+    {
+        public readonly string FitsFilePath;
+        public readonly int    CropMinX;
+        public readonly int    CropMinY;
+        public readonly int    CropMinZ;
+        public readonly int    CropMaxX;
+        public readonly int    CropMaxY;
+        public readonly int    CropMaxZ;
+        public readonly bool   IsCropped;
+
+        public VolumeDataState(
+            string fitsFilePath,
+            int cropMinX, int cropMinY, int cropMinZ,
+            int cropMaxX, int cropMaxY, int cropMaxZ,
+            bool isCropped)
+        {
+            FitsFilePath = fitsFilePath;
+            CropMinX     = cropMinX;
+            CropMinY     = cropMinY;
+            CropMinZ     = cropMinZ;
+            CropMaxX     = cropMaxX;
+            CropMaxY     = cropMaxY;
+            CropMaxZ     = cropMaxZ;
+            IsCropped    = isCropped;
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // VolumeTextureConfig — immutable construction-time parameters
     //
     // PURPOSE
@@ -613,6 +658,43 @@ namespace iDaVIE.Rendering
         {
             if (_dataTexture != null) Object.Destroy(_dataTexture);
             if (_maskTexture != null) Object.Destroy(_maskTexture);
+        }
+
+        // ── Persistence — Sub-team 7 Integration ───────────────────────────────
+        // [§ docs/integration/team7-persistence-contract.md — VolumeDataState]
+        //
+        // These methods are stubs. The full implementation will be wired in Sprint 3
+        // after the file path resolution is confirmed with the team.
+
+        /// <summary>
+        /// Captures the current texture/crop state for session persistence.
+        /// Called by <c>VolumeRenderCoordinator.SaveSession()</c>.
+        /// </summary>
+        public VolumeDataState CaptureState()
+        {
+            // TODO Sprint 3: obtain FitsFilePath from _dataSet and extract crop bounds.
+            return new VolumeDataState(
+                fitsFilePath: "",
+                cropMinX: _cropMin.x,
+                cropMinY: _cropMin.y,
+                cropMinZ: _cropMin.z,
+                cropMaxX: _cropMax.x,
+                cropMaxY: _cropMax.y,
+                cropMaxZ: _cropMax.z,
+                isCropped: _isCropped
+            );
+        }
+
+        /// <summary>
+        /// Restores texture/crop state after session load.
+        /// Called by <c>VolumeRenderCoordinator.LoadSession()</c>.
+        /// May trigger texture re-upload depending on crop bounds.
+        /// </summary>
+        public void RestoreState(VolumeDataState state)
+        {
+            // TODO Sprint 3: reload the FITS file from state.FitsFilePath, then apply
+            // crop bounds if state.IsCropped. Must leave this class in a valid,
+            // ready-to-render state with updated CurrentDataTexture.
         }
     }
 

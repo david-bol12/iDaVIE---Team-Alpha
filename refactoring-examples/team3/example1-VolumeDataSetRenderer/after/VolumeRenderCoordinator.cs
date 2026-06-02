@@ -86,6 +86,34 @@ using UnityEngine;   // [CBO] Matrix4x4, Vector3, Vector4, Color — value types
 namespace iDaVIE.Rendering
 {
     // =========================================================================
+    // VolumeSessionState — persistence snapshot of entire rendering state
+    //
+    // PERSISTENCE CONTRACT (Sub-team 7 integration)
+    // ─────────────────────────────────────────────
+    // Shared struct per docs/integration/team7-persistence-contract.md.
+    // Assembled by VolumeRenderCoordinator.SaveSession() from the four domain
+    // classes' CaptureState() returns. Passed to Team 7's ISessionPersistenceService.
+    // Returned by service on load; VolumeRenderCoordinator distributes slices back
+    // to each class via RestoreState().
+    //
+    // No UnityEngine types. Pure C#, serialisable by Team 7 (JSON, binary, etc).
+    // =========================================================================
+
+    /// <summary>
+    /// Complete session state snapshot for save/load operations.
+    /// Assembled from four domain classes' state slices by VolumeRenderCoordinator.
+    /// Owned by Team 7's persistence service; VolumeRenderCoordinator is the client.
+    /// </summary>
+    public readonly struct VolumeSessionState
+    {
+        public string          FitsFilePath  { get; init; }
+        public RenderingState  Rendering     { get; init; }
+        public VolumeDataState VolumeData    { get; init; }
+        public SpatialState    Spatial       { get; init; }
+        public FoveationState  Foveation     { get; init; }
+    }
+
+    // =========================================================================
     // IFoveatedSamplingPolicy — interface (1 member)
     // =========================================================================
     //
@@ -531,6 +559,62 @@ namespace iDaVIE.Rendering
         {
             _materialBinder.Dispose();
             _renderPipeline.Dispose();
+        }
+
+        // ── Persistence — Sub-team 7 Integration ───────────────────────────────
+        // [§ docs/integration/team7-persistence-contract.md]
+        //
+        // SaveSession() assembles VolumeSessionState from the four domain classes'
+        // CaptureState() returns and passes the struct to ISessionPersistenceService.
+        // LoadSession() inverts the flow: receives the struct, distributes slices
+        // to each class via RestoreState().
+        //
+        // These methods are stubs. Sprint 3 will wire them to the real service.
+
+        /// <summary>
+        /// Saves the current session state to disk via the persistence service.
+        /// Called by UI (e.g. File > Save Session). Assembles VolumeSessionState
+        /// from the four domain classes' CaptureState() returns.
+        /// </summary>
+        public void SaveSession(string path)
+        {
+            // Step 1: Assemble VolumeSessionState from the four domain classes
+            var state = new VolumeSessionState
+            {
+                FitsFilePath = "",   // TODO Sprint 3: obtain from VolumeTextureManager
+                Rendering    = _materialBinder.CaptureState(),
+                VolumeData   = _textureManager.CaptureState(),
+                Spatial      = _cameraDriver.CaptureState(),
+                Foveation    = _foveatedPolicy.CaptureState(),
+            };
+
+            // Step 2: Pass to Team 7's persistence service
+            // TODO Sprint 3: inject ISessionPersistenceService in constructor;
+            // uncomment the line below.
+            // _sessionService.Save(state, path);
+        }
+
+        /// <summary>
+        /// Loads a previously saved session from disk via the persistence service.
+        /// Called by UI (e.g. File > Load Session). Distributes the loaded
+        /// VolumeSessionState back to each domain class via RestoreState().
+        /// </summary>
+        public void LoadSession(string path)
+        {
+            // Step 1: Fetch the state from Team 7's persistence service
+            // TODO Sprint 3: inject ISessionPersistenceService in constructor;
+            // uncomment the line below.
+            // VolumeSessionState state = _sessionService.Load(path);
+
+            // Step 2: Distribute slices back to each domain class
+            // _materialBinder.RestoreState(state.Rendering);
+            // _textureManager.RestoreState(state.VolumeData);
+            // _cameraDriver.RestoreState(state.Spatial);
+            // _foveatedPolicy.RestoreState(state.Foveation);
+
+            // Step 3: Sync UI / camera / rendering state (e.g. refresh material bindings)
+            // After RestoreState calls complete, the rendering system is ready
+            // to continue from the saved point on the next Update().
         }
 
         // ── Public API — external controllers ─────────────────────────────────
