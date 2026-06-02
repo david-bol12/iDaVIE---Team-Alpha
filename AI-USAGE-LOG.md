@@ -39,6 +39,7 @@
 **Task:** Two questions: (1) what is golden image regression testing and can AI produce one; (2) how to document that CK metrics tools failed.
 **Prompt summary:** Asked what "golden image regression suite across mask modes and colour maps" means and whether it could be done. Also asked how to honestly document that Understand, NDepend, and SonarQube free trials failed to work with the Unity project structure.
 **Output:** Explanation of golden image testing and its scope.
+
 ---
 
 ### Session 5 — CK Metrics in NDepend
