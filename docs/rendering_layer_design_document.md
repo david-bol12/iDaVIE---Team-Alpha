@@ -199,9 +199,66 @@ public interface IGazeProvider
 
 The domain assembly never names `SteamVRGazeProvider`. Swapping HMD SDK or targeting a non-SteamVR platform = new `IGazeProvider` implementation, zero domain changes. Resolves V-07 and V-15.
 
-### 4.7 Shader/Asset Organisation Policy
+### 4.7 DD-05 — Constructor Injection / Composition Root
 
-See `docs/team3/shader-asset-policy.md` for the complete shader and asset organisation policy for Unity 6.
+All four domain classes (`VolumeMaterialBinder`, `VolumeTextureManager`, `VolumeCameraDriver`, `FoveatedSamplingPolicy`) receive every collaborator through their constructor. No class calls `FindObjectOfType`, `Camera.main`, `Config.Instance`, or any other ambient locator at runtime. This resolves V-07 and V-08 (§6.1).
+
+`VolumeRenderCoordinator` is the single **composition root**: the only place in the rendering layer where concrete types are named. It instantiates each domain class, injects interfaces, and holds the resulting references. All other classes see only interfaces.
+
+```csharp
+// VolumeRenderCoordinator.Awake() — sole point where concrete types are named
+_pipeline   = new UrpRenderPipeline();
+_binder     = new VolumeMaterialBinder(_pipeline, _material);
+_texManager = new VolumeTextureManager(_memoryBudget);
+_camera     = new VolumeCameraDriver(Camera.main);
+_foveation  = new FoveatedSamplingPolicy(_gazeProvider, _foveationConfig);
+```
+
+**Why this matters for testability:** every class can be exercised in edit-mode by substituting a stub at construction — no Unity player loop needed. `NullRenderPipeline`, `StubGazeProvider`, and `NullMaskMode` are injected in tests; nothing else changes.
+
+**Trade-off:** the coordinator's `Awake()` method names all concrete types, making it the one file that changes when a concrete implementation is swapped. This is intentional and contained — it is the definition of a composition root.
+
+---
+
+### 4.8 DD-06 — Zero-Allocation Per-Frame Value Types
+
+Domain methods that are called every frame return **readonly structs** rather than classes, eliminating per-frame heap allocation and GC pressure on the 90 fps hot path.
+
+| Struct | Produced by | Consumed by | Size target |
+|---|---|---|---|
+| `FoveationParameters` | `FoveatedSamplingPolicy.Evaluate()` | `VolumeMaterialBinder` | ≤ 32 bytes |
+| `CameraFrameState` | `VolumeCameraDriver.ComputeFrame()` | `VolumeMaterialBinder`, `VolumeRenderCoordinator` | ≤ 64 bytes |
+| `VolumeRenderState` | `VolumeRenderCoordinator` (assembled) | `VolumeMaterialBinder.Apply()` | ≤ 64 bytes |
+
+The 64-byte cap is enforced by NFR-08 and a SonarQube custom rule: any struct in the `iDaVIE.Rendering` namespace that exceeds 64 bytes fails the build. This prevents the structs from growing over time into hidden allocation sources.
+
+**IL2CPP consideration:** Unity's IL2CPP compiler de-virtualises interface calls on sealed classes in release builds, eliminating virtual dispatch cost on the hot path. All four domain classes are `sealed` explicitly to enable this optimisation and to communicate that they are not designed for subclassing.
+
+---
+
+### 4.9 DD-07 — Strangler Fig Migration Strategy
+
+The refactor uses the **Strangler Fig pattern**: new classes are introduced alongside the monolith and activated incrementally, so `VolumeDataSetRenderer` continues to function throughout the migration. A Big Bang rewrite — deleting the monolith and replacing it in one step — was rejected because the codebase has no integration test harness, making it impossible to verify correctness after a wholesale replacement.
+
+The migration proceeds in seven phases (full phase detail, entry/exit conditions, and performance gates in `docs/test-strategy.md`):
+
+| Phase | What is introduced | Monolith role |
+|---|---|---|
+| 1 | Seam + `IRenderPipeline` | Still active |
+| 2 | `IMaskMode` strategies | Still active |
+| 3 | `FoveatedSamplingPolicy` | Still active |
+| 4 | `VolumeMaterialBinder` | Still active |
+| 5 | `VolumeCameraDriver` | Still active |
+| 6 | `VolumeTextureManager` + shadow mode | Runs in parallel for frame comparison |
+| 7 | `VolumeRenderCoordinator` takes over; `VolumeDataSetRenderer` retired | Removed |
+
+Each phase has a single-file rollback cost (restore the previous seam). Phase 6 shadow mode runs both the old and new texture path for one sprint, comparing output frame-by-frame before the monolith is retired. This is the highest-risk phase due to the 90fps invariant (INV-01).
+
+---
+
+### 4.10 Shader/Asset Organisation Policy
+
+See `docs/shader-asset-policy.md` for the complete shader and asset organisation policy for Unity 6.
 
 ---
 
@@ -277,16 +334,47 @@ Sub-team 3 exposes camera state via `VolumeCameraDriver` (available to Sub-team 
 
 ## 8. Risks
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| R-01: `IGazeProvider` not delivered before freeze | Medium | Low | `MockGazeProvider` covers all unit tests |
-| R-02: `RawVolumeData` struct changes post-implementation | Medium | Medium | Interface adaptor — one conversion point to update |
-| R-03: URP command buffer API changes in Unity 6 LTS | Low | High | `IRenderPipeline` isolates changes to `UrpRenderPipeline` only |
-| R-04: `VolumeRenderState` struct grows beyond 64 bytes | Low | Medium | NFR-08 caps size; SonarQube flags field additions |
-| R-05: `VolumeRenderCoordinator` accumulates domain logic | Medium | High | WMC ≤ 10 + CC > 2 = build failure in SonarQube |
-| R-06: Interface semantic drift across sub-teams | Medium | Medium | `[InterfaceVersion]` attribute + contract test suite |
-| R-07: CK targets not achievable within 90 fps | Low | High | CI performance gate: fail build if per-frame CPU > 2 ms |
-| R-08: Proposal rejected by maintainer panel | Low | Medium | Data-driven case; all trade-offs documented |
+### 8.1 Performance Overhead of the Abstraction Layer
+
+The primary performance concern is virtual dispatch on the per-frame hot path. `VolumeRenderCoordinator.Update()` calls `IVolumeMaterialBinder.Apply()`, `IVolumeCameraDriver.ComputeFrame()`, and `IFoveatedSamplingPolicy.Evaluate()` every frame at 90 fps. Three virtual calls per frame at 90 fps is negligible in isolation, but the concern is the *chain* of calls each triggers.
+
+Mitigations:
+- All four domain classes are `sealed`, enabling IL2CPP to de-virtualise interface dispatch in release builds (no vtable lookup at runtime).
+- Per-frame return values use readonly structs (DD-06) — zero heap allocation, zero GC pressure.
+- A CI performance gate fails the build if per-frame CPU time on the rendering layer exceeds 2 ms. This gate runs in Unity Play Mode on a reference headset configuration.
+
+The 90 fps invariant (INV-01) is non-negotiable. If the gate fails at any phase during migration, the phase is rolled back — not the gate.
+
+### 8.2 Coordinator Complexity (God Class Recurrence)
+
+`VolumeRenderCoordinator` is at structural risk of becoming a new God Class if domain logic migrates into it over time. This is a known failure mode of Strangler Fig migrations: the coordinator starts thin and accumulates logic as the team takes shortcuts.
+
+Mitigations:
+- SonarQube gate: any method in `VolumeRenderCoordinator` with cyclomatic complexity > 2 fails the build. A method that only delegates has CC = 1; any branching is a signal that domain logic is leaking in.
+- WMC target ≤ 10 for the coordinator. If WMC approaches this cap, the team reviews whether a new domain class is warranted before adding methods.
+- A `CoordinatorWiringTest` integration test verifies that the coordinator constructs, runs one frame, and tears down without errors — it never tests domain correctness, which belongs to the domain class unit tests.
+
+### 8.3 Interface Versioning Risk
+
+Three cross-team interfaces (`IGazeProvider`, `IRawVolumeDataSource`, `ISessionPersistenceService`) are agreed verbally but not yet formally signed off. A signature change after either side has coded to it causes rework.
+
+Mitigations:
+- `[InterfaceVersion("1.0")]` attribute on all cross-team interfaces. A reflection-based guard in the test suite asserts the attribute is present and that its value matches the expected version string. Any unannounced change to a method signature triggers a build failure on both sides.
+- Contract tests (one per cross-team interface) verify that our stub implementations remain consistent with the agreed signatures. These run in edit mode with no Unity context required.
+- Interface freeze target: end of Sprint 2 (29 May). Changes after freeze require sign-off from both sub-team leads.
+
+### 8.4 Risk Register
+
+| ID | Risk | Likelihood | Impact | Mitigation |
+|----|------|-----------|--------|------------|
+| R-01 | `IGazeProvider` not delivered before freeze | Medium | Low | `MockGazeProvider` covers all unit tests |
+| R-02 | `RawVolumeData` struct changes post-implementation | Medium | Medium | Interface adaptor — one conversion point to update |
+| R-03 | URP command buffer API changes in Unity 6 LTS | Low | High | `IRenderPipeline` isolates changes to `UrpRenderPipeline` only |
+| R-04 | `VolumeRenderState` struct grows beyond 64 bytes | Low | Medium | NFR-08 cap; SonarQube custom rule flags additions |
+| R-05 | `VolumeRenderCoordinator` accumulates domain logic | Medium | High | WMC ≤ 10 + CC > 2 = build failure (§8.2) |
+| R-06 | Interface semantic drift across sub-teams | Medium | Medium | `[InterfaceVersion]` attribute + contract test suite (§8.3) |
+| R-07 | CK targets not achievable within 90 fps | Low | High | CI gate: fail build if per-frame CPU > 2 ms (§8.1) |
+| R-08 | Proposal rejected by maintainer panel | Low | Medium | Data-driven case; all trade-offs documented |
 
 ---
 
