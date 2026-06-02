@@ -27,7 +27,7 @@
 | Singleton hunting | `FindObjectOfType<VolumeInputController>()` etc. in `Start()` |
 | Paint-mode state | `inPaintMode`, `PaintSelectionContainer` toggle logic |
 
-### 1.2 Measured CK Violations (Day 2 Baseline)
+### 1.2 Measured CK Violations
 
 The Day 2 CK measurement (SK_BNCH Sprint 1) confirms the problem is not just qualitative:
 
