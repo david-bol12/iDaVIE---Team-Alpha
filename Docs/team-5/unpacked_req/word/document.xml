@@ -1,0 +1,3265 @@
+<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:oel="http://schemas.microsoft.com/office/2019/extlst" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16sdtfl="http://schemas.microsoft.com/office/word/2024/wordml/sdtformatlock" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh w16sdtfl w16du wp14">
+  <w:body>
+    <w:p w14:paraId="25CE813A" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="80"/>
+        <w:jc w:val="center"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="28"/>
+          <w:szCs w:val="28"/>
+        </w:rPr>
+        <w:t>Requirements Document</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="7E405ACB" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="160"/>
+        <w:jc w:val="center"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="2E5C8A"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>Feature System &amp; Domain Model</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10204" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+        <w:tblCellMar>
+          <w:left w:w="10" w:type="dxa"/>
+          <w:right w:w="10" w:type="dxa"/>
+        </w:tblCellMar>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="2857"/>
+        <w:gridCol w:w="7347"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="002A202A" w14:paraId="6E805789" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2857" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="05E81DF4" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>Project</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7347" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="34D1C506" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            
+            <w:r>
+              <w:t>iDaVIE (immersive Data Visualisation Interactive Explorer)</w:t>
+            </w:r>
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="600BDA35" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2857" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="4CAB133D" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>Sub-team</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7347" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="5A0DD75C" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>5: Feature System &amp; Domain Model</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="2676268B" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2857" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="41BF11C6" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>Version</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7347" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="5A19AFB2" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>1.0</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="299A0667" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2857" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="1DB16509" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>Date</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7347" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="397DC923" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>2026-05-20</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p w14:paraId="14F46A39" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="7F9BC726" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:before="180" w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>1. Introduction</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1633F0B9" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      
+      <w:r>
+        <w:t>iDaVIE is a VR application for exploring 3D astronomical data cubes. The Feature System lets researchers mark regions of interest within a volume using SoFiA mask files, imported catalogues, or interactive VR drawing. The current design has some structural problems: it mixes Unity types into the domain, packs too many concerns into a single manager, and fetches statistics externally at export time. This document sets out the requirements for a refactor that breaks FeatureSetManager into three focused components: FeatureCatalog, FeatureSetService, and FeatureVisualiser.</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="61A69CAE" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="4FD5B73F" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:before="180" w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>2. Feature Flavours (FR-1 to FR-4)</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10204" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+        <w:tblCellMar>
+          <w:left w:w="10" w:type="dxa"/>
+          <w:right w:w="10" w:type="dxa"/>
+        </w:tblCellMar>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="1633"/>
+        <w:gridCol w:w="2857"/>
+        <w:gridCol w:w="5714"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="002A202A" w14:paraId="0D9D8705" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="1633" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="54E3C546" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Flavour</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2857" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="41140305" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>How Created</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="5714" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="37C4A292" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Key Constraint</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="7F45BE1F" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="1633" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="6F518555" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>Masked</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2857" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="257508C3" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Generated from SoFiA mask file via native source-finding statistics</w:t>
+            </w:r>
+            
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="5714" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="15DDF67C" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Statistics owned by domain object after construction; no external native struct access</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="48209738" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="1633" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="319BAB9D" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>Imported</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2857" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3C1385B8" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Loaded from VOTable or FITS catalogue</w:t>
+            </w:r>
+            
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="5714" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="53FDBBF5" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Raw column data retained as key-value pairs on the feature object</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="5153112B" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="1633" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="25562ACB" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>User-defined</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2857" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="75B4735A" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Created interactively in VR as a selection box; promotable to a named feature</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="5714" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="26BA3A15" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Lifecycle (create, edit, promote, discard) must not depend on any Unity rendering component</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p w14:paraId="7AC67AC8" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="2B613488" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      <w:r>
+        <w:t>All three flavours implement a common IFeature interface that exposes id, name, flag, centre, bounding-box corners, size, visibility, selection state, and raw data. Code outside the domain should never need to type-check or cast a feature object (NFR-6 LSP). Only one feature can be selected at a time (FR-9).</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="4B291235" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="01AC5C11" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:before="180" w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>3. Feature Statistics: Masked Flavour (FR-2 / NFR-7)</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4C549F5D" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Statistics are stored directly on the MaskedFeature object when it is constructed, following the GRASP Information Expert principle. Once the factory call completes, nothing outside the domain should hold a reference to the native interop struct (IR-1).</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="65728C8D" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10204" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+        <w:tblCellMar>
+          <w:left w:w="10" w:type="dxa"/>
+          <w:right w:w="10" w:type="dxa"/>
+        </w:tblCellMar>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="4082"/>
+        <w:gridCol w:w="6122"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="002A202A" w14:paraId="724BA707" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="4082" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="7686DEED" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Statistic</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="6122" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="2F2324E8" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Constraint</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="10444FF1" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="4082" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="5B53B413" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Voxel count</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="6122" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3530128C" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&gt;= 0</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="794E3526" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="4082" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="27BB842E" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Total flux / Peak flux</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="6122" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="5FCA91F4" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&gt;= 0</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="6F7E9909" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="4082" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="4859E824" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Flux-weighted centroid (X/Y/Z)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="6122" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3C2B984D" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Must lie within the feature bounding box</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="1FCC0F09" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="4082" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="66C1F104" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>W20 &lt;= W50 (channel &amp; velocity units)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="6122" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3948254F" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Invariant enforced at feature level</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="5D7A515C" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="4082" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="72697CBF" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Bounding box min/max</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="6122" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="53E3993B" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Required for export and display</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p w14:paraId="389029F6" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="0DA69FA8" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:before="180" w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>4. VOTable Export (FR-5 to FR-7)</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="4C47A8FA" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The IVoTableExporter interface acts as a plug-in seam: it takes a collection of features and a file path, and writes out each feature&#x2019;s id, centre coordinates, bounding-box corners, sky coordinates (RA, Dec), spectral coordinate, flag, and any imported catalogue columns. The empty export stub in the legacy manager will be replaced by a call through IVoTableExporter routed via FeatureCatalog. No renderer or native struct should be touched during export. Column structure must stay backward compatible (C2).</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="742A5A74" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="17DD19F7" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:before="180" w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>5. Target Architecture</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10204" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+        <w:tblCellMar>
+          <w:left w:w="10" w:type="dxa"/>
+          <w:right w:w="10" w:type="dxa"/>
+        </w:tblCellMar>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="2245"/>
+        <w:gridCol w:w="5306"/>
+        <w:gridCol w:w="2653"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="002A202A" w14:paraId="7DB90BB1" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2245" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="1839DC18" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Component</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="5306" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="7EBD4381" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Responsibility</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3DD3B44F" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Unity Dep.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="73CE53D1" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2245" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3F029311" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>FeatureCatalog</w:t>
+            </w:r>
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="5306" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="60D0C020" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Persistence and identity management; owns VOTable export via IVoTableExporter</w:t>
+            </w:r>
+            
+            
+            
+            
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="43677A5E" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>None</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="47ED3312" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2245" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="4D7279CD" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>FeatureSetService</w:t>
+            </w:r>
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="5306" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3BB7977F" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Use-case orchestration: create selection feature, promote box, change selection, trigger export, compute moment maps</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="0D3BBDCE" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>None</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="04C5404C" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2245" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="71CD0BF5" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>FeatureVisualiser</w:t>
+            </w:r>
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="5306" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="6250AEB6" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Unity-side adapter only; translates domain events into scene-graph operations (geometry, anchor colliders, GPU overlay)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="4C4B6DEF" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            
+            <w:r>
+              <w:t>MonoBehaviour (the only Unity-aware class)</w:t>
+            </w:r>
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p w14:paraId="1E404840" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="23209246" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      <w:r>
+        <w:lastRenderedPageBreak/>
+        <w:t>Sub-team 4 (Interaction) calls into FeatureSetService to handle VR-triggered creation and selection (IR-3). The factory constructor agreed with Sub-team 2 (Data I/O) is the only place where native statistics can cross into the domain (IR-1). There is also a deprecated Unity 5 graphics API call in FeatureVisualiser that needs to be updated to the Unity 6 equivalent (IR-4).</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="339844CC" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="739416E1" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:before="180" w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>6. Non-Functional Requirements</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10204" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+        <w:tblCellMar>
+          <w:left w:w="10" w:type="dxa"/>
+          <w:right w:w="10" w:type="dxa"/>
+        </w:tblCellMar>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="2653"/>
+        <w:gridCol w:w="7551"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="002A202A" w14:paraId="7B41AAAE" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="133EAE9A" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>NFR</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="66BCFCF8" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Requirement</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="66537B86" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="213DC754" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>NFR-1  Modularity</w:t>
+            </w:r>
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="5A14AD91" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Domain classes (Feature, FeatureCatalog, FeatureSetService) have zero transitive Unity dependency</w:t>
+            </w:r>
+            
+            
+            
+            
+            
+            
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="5FE81518" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="2BB6BA71" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>NFR-2  Testability</w:t>
+            </w:r>
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="1C1B5712" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            
+            <w:r>
+              <w:t>MaskedFeature statistics computable in a unit test with no Unity scene</w:t>
+            </w:r>
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="70B05704" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="657E2577" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>NFR-3  Reusability</w:t>
+            </w:r>
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="337027B7" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            
+            <w:r>
+              <w:t>VOTable export logic reusable with any IEnumerable of features regardless of creation path</w:t>
+            </w:r>
+            
+            
+            
+            
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="1B1E6AE7" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="380735DB" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>NFR-4  Analysability</w:t>
+            </w:r>
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="07A9E0B6" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Cyclomatic complexity &lt;= 10; cognitive complexity &lt;= 15; max 40 LOC per method; XML docs on all public API boundaries</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="05E81A69" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="78F7F003" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>NFR-5  Modifiability</w:t>
+            </w:r>
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="5ABFA9F6" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Adding a new feature flavour touches &lt;= 3 files outside the feature namespace; CBO &lt;= 14 for FeatureCatalog and FeatureSetService</w:t>
+            </w:r>
+            
+            
+            
+            
+            
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="3646ABC5" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3449F208" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>NFR-6  LSP</w:t>
+            </w:r>
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="13D6E61D" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>All feature types substitutable behind IFeature; no runtime type-checks outside the domain</w:t>
+            </w:r>
+            
+            
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="2FFFD5B7" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2653" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="5038781C" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>NFR-7  GRASP</w:t>
+            </w:r>
+            
+            
+            
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="2164B852" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Statistics owned and computed by MaskedFeature; not retrieved externally at export or render time</w:t>
+            </w:r>
+            
+            
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p w14:paraId="04B6A29A" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="6D88AE9B" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      <w:r>
+        <w:t>The following CK metric targets apply to all six classes in this refactor (MaskedFeature, ImportedFeature, UserDefinedFeature, FeatureCatalog, FeatureSetService, and FeatureVisualiser):</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10204" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+        <w:tblCellMar>
+          <w:left w:w="10" w:type="dxa"/>
+          <w:right w:w="10" w:type="dxa"/>
+        </w:tblCellMar>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="2551"/>
+        <w:gridCol w:w="2551"/>
+        <w:gridCol w:w="2551"/>
+        <w:gridCol w:w="2551"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="002A202A" w14:paraId="0BB355EE" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="2F9F6725" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Metric</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="1144D395" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Meaning</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="1875A624" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Domain</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="2E5C8A"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="74737097" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+              </w:rPr>
+              <w:t>Adapter</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="079AD499" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="79F455B6" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>WMC</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="2D89278C" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Weighted Methods per Class</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="01BEE63A" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 20</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="1392F3AC" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 40</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="36140084" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="59DAA428" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>DIT</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="33D883AD" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Depth of Inheritance Tree</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="144041F7" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 4</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="002F6A77" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 4</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="64B56639" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3864A504" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>CBO</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="081B633F" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Coupling Between Objects</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="1DBB24BB" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 14</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="2F7CE04B" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 25</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="41E28E6C" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="1E1F95C4" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>RFC</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="3CC139C0" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Response For a Class</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="5BD14168" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 50</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="05C717A3" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 50</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="6609CA7A" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="2B7EA6A5" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>LCOM</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="34CBC083" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Lack of Cohesion (H-S)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="07A540C1" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 0.5</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2551" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="69B1D373" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>&lt;= 0.5</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p w14:paraId="20A99326" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="247ED0B4" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:before="180" w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>7. Test Strategy</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="30195033" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      <w:r>
+        <w:t>We&#x2019;re targeting branch/line coverage of at least 70% for domain code and at least 50% overall. FeatureVisualiser is excluded from the strict targets. All domain and service tests should run without a Unity runtime.</w:t>
+      </w:r>
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="562680F4" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t xml:space="preserve">Property-based tests (FsCheck, edit-mode): </w:t>
+      </w:r>
+      <w:r>
+        <w:t>voxel count and flux non-negative; centroid within bounding box; W20 &lt;= W50.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1E2DF4F9" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:after="70" w:line="252" w:lineRule="auto"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t xml:space="preserve">End-to-end scenario (pure C#, no Unity): </w:t>
+      </w:r>
+      <w:r>
+        <w:t>load mask, inspect statistics, edit bounding box via FeatureSetService, then export a VOTable via IVoTableExporter. For unit tests, IFeatureExporter is replaced by a test double; the scenario test uses an in-memory implementation.</w:t>
+      </w:r>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </w:p>
+    <w:p w14:paraId="641BB03F" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="002A202A">
+      <w:pPr>
+        <w:spacing w:after="50"/>
+      </w:pPr>
+    </w:p>
+    <w:p w14:paraId="15455F25" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+      <w:pPr>
+        <w:spacing w:before="180" w:after="60"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1F3864"/>
+          <w:sz w:val="22"/>
+          <w:szCs w:val="22"/>
+        </w:rPr>
+        <w:t>8. Constraints</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10204" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+        <w:tblCellMar>
+          <w:left w:w="10" w:type="dxa"/>
+          <w:right w:w="10" w:type="dxa"/>
+        </w:tblCellMar>
+        <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="1020"/>
+        <w:gridCol w:w="9184"/>
+      </w:tblGrid>
+      <w:tr w:rsidR="002A202A" w14:paraId="3896F3C7" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="1020" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="215FC464" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>C1</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="9184" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="71FE01C6" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Native statistics struct field layout cannot be changed without coordinating with native plugin owners.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="3FE08342" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="1020" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="1212F409" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>C2</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="9184" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="7C28AF78" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            
+            <w:r>
+              <w:t>VOTable column names and XML structure must remain backward compatible with downstream research tools.</w:t>
+            </w:r>
+            
+            
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr w:rsidR="002A202A" w14:paraId="39A19040" w14:textId="77777777">
+        <w:tblPrEx>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="1020" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="23184DC6" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:rPr>
+                <w:b/>
+                <w:bCs/>
+              </w:rPr>
+              <w:t>C3</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="9184" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:left w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:bottom w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+              <w:right w:val="single" w:sz="1" w:space="0" w:color="AAAAAA"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>
+            <w:tcMar>
+              <w:top w:w="55" w:type="dxa"/>
+              <w:left w:w="100" w:type="dxa"/>
+              <w:bottom w:w="55" w:type="dxa"/>
+              <w:right w:w="100" w:type="dxa"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p w14:paraId="766C73C0" w14:textId="77777777" w:rsidR="002A202A" w:rsidRDefault="00000000">
+            <w:r>
+              <w:t>Sprint deliverables are design documents, ADRs, and worked code examples; full implementation is not required.</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p w14:paraId="0627B8B3" w14:textId="77777777" w:rsidR="00EA54F1" w:rsidRDefault="00EA54F1"/>
+    <w:sectPr w:rsidR="00EA54F1">
+      <w:footerReference w:type="default" r:id="rId7"/>
+      <w:pgSz w:w="11906" w:h="16838"/>
+      <w:pgMar w:top="851" w:right="851" w:bottom="851" w:left="851" w:header="708" w:footer="708" w:gutter="0"/>
+      <w:cols w:space="720"/>
+      <w:docGrid w:linePitch="360"/>
+    </w:sectPr>
+  </w:body>
+</w:document>
