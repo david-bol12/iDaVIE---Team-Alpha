@@ -13,6 +13,8 @@ namespace iDaVIE.Desktop.DebugTab
         private readonly ILogStream _logStream;
         private bool _disposed;
 
+        public bool AutoScrollEnabled { get; set; } = true;
+
         public DebugTabViewModel(ILogStream logStream)
         {
             _logStream = logStream ?? throw new ArgumentNullException(nameof(logStream));
