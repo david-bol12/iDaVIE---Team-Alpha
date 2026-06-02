@@ -346,7 +346,7 @@ public class CanvassDesktop : MonoBehaviour
             IntPtr fptr;
             int status = 0;
 
-            if (FitsReader.FitsOpenFile(out fptr, _imagePath, out status, true) != 0)
+            if (FitsFile.FitsOpenFile(out fptr, _imagePath, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
@@ -355,18 +355,18 @@ public class CanvassDesktop : MonoBehaviour
             
 
             //if there are more than 1 HDUs in the fits file, enable the dropdown and populate it with names
-            FitsReader.FitsGetHduCount(fptr, out int hduNum, out status);
+            FitsFile.FitsGetHduCount(fptr, out int hduNum, out status);
             var hduNames = new List<string>();
             var hduName = new StringBuilder(80);
             for (var i = 0; i < hduNum; i++)
             {
-                FitsReader.FitsMovabsHdu(fptr, i + 1, out _, out status);
+                FitsFile.FitsMovabsHdu(fptr, i + 1, out _, out status);
                 hduName.Clear();
-                if (FitsReader.FitsReadKey(fptr, (int)FitsReader.DataType.TSTRING, "EXTNAME", hduName,
+                if (FitsHeader.FitsReadKey(fptr, (int)FitsHeader.DataType.TSTRING, "EXTNAME", hduName,
                         IntPtr.Zero, out status) != 0)
                 {
                     status = 0;
-                    if (FitsReader.FitsReadKey(fptr, (int)FitsReader.DataType.TSTRING, "HDUNAME", hduName,
+                    if (FitsHeader.FitsReadKey(fptr, (int)FitsHeader.DataType.TSTRING, "HDUNAME", hduName,
                             IntPtr.Zero, out status) != 0)
                     {
                         Debug.Log("Could not find EXTNAME or HDUNAME in HDU " + (i + 1) +
@@ -378,7 +378,7 @@ public class CanvassDesktop : MonoBehaviour
                 hduNames.Add(hduName.ToString());
             }
             _hduSelectionIndex = 0;
-            FitsReader.FitsMovabsHdu(fptr, _hduSelectionIndex + 1, out _, out status);
+            FitsFile.FitsMovabsHdu(fptr, _hduSelectionIndex + 1, out _, out status);
             var hduContainer = informationPanelContent.gameObject.transform.Find("HeaderTitle_container").transform
                 .Find("Hdu_container").gameObject;
             hduContainer.transform.Find("Hdu_dropdown").GetComponent<TMP_Dropdown>().ClearOptions();   
@@ -404,7 +404,7 @@ public class CanvassDesktop : MonoBehaviour
 
             UpdateHeaderFromFits(fptr);
 
-            FitsReader.FitsCloseFile(fptr, out status);
+            FitsFile.FitsCloseFile(fptr, out status);
             
             //if it is valid enable loading button and subset selector
             if (IsLoadable())
@@ -541,7 +541,7 @@ public class CanvassDesktop : MonoBehaviour
         //visualize the header into the scroll view
         string _header = "";
         _axisSize.Clear();
-        IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
+        IDictionary<string, string> _headerDictionary = FitsHeader.ExtractHeaders(fptr, out status);
 
         foreach (KeyValuePair<string, string> entry in _headerDictionary)
         {
@@ -839,7 +839,7 @@ public class CanvassDesktop : MonoBehaviour
             IntPtr fptr;
             int status = 0;
 
-            if (FitsReader.FitsOpenFile(out fptr, _maskPath, out status, true) != 0)
+            if (FitsFile.FitsOpenFile(out fptr, _maskPath, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
@@ -852,8 +852,8 @@ public class CanvassDesktop : MonoBehaviour
 
 
             //visualize the header into the scroll view
-            IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
-            FitsReader.FitsCloseFile(fptr, out status);
+            IDictionary<string, string> _headerDictionary = FitsHeader.ExtractHeaders(fptr, out status);
+            FitsFile.FitsCloseFile(fptr, out status);
 
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
@@ -1438,13 +1438,13 @@ public class CanvassDesktop : MonoBehaviour
         IntPtr fptr;
         int status = 0;
         _hduSelectionIndex = dropdown.value;
-        if (FitsReader.FitsOpenFile(out fptr, _imagePath, out status, true) != 0)
+        if (FitsFile.FitsOpenFile(out fptr, _imagePath, out status, true) != 0)
         {
             Debug.Log("Fits open failure... code #" + status.ToString());
         }
-        FitsReader.FitsMovabsHdu(fptr, _hduSelectionIndex + 1, out int hdutype, out status);
+        FitsFile.FitsMovabsHdu(fptr, _hduSelectionIndex + 1, out int hdutype, out status);
         UpdateHeaderFromFits(fptr);
-        FitsReader.FitsCloseFile(fptr, out status);
+        FitsFile.FitsCloseFile(fptr, out status);
         //if it is valid enable loading button and subset selector
         if (IsLoadable())
         {

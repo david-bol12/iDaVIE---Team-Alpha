@@ -19,10 +19,27 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
+using fts;
+using UnityEngine;
 
-// FitsReader has been split into focused classes:
-//   FitsFile   — file lifecycle and HDU navigation
-//   FitsHeader — header key read/write and error codes
-//   FitsImage  — image data read/write/copy
-//   FitsTable  — table column read
-//   FitsMask   — mask save/update helpers
+// Attach this component to one persistent GameObject in the first scene.
+// It must be the only place NativePluginLoader is initialised.
+// DefaultExecutionOrder ensures Awake runs before all other scripts.
+[DefaultExecutionOrder(int.MinValue)]
+public class PluginBootstrapper : MonoBehaviour
+{
+    void Awake()
+    {
+        string pluginPath = Application.dataPath + "/Plugins/";
+        if (!Application.isEditor)
+            pluginPath += "x86_64/";
+
+        NativePluginLoader.Initialize(pluginPath);
+        DontDestroyOnLoad(gameObject);
+    }
+
+    void OnDestroy()
+    {
+        NativePluginLoader.Shutdown();
+    }
+}

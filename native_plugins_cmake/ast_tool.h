@@ -22,7 +22,11 @@
 #ifndef NATIVE_PLUGINS_AST_TOOL_H
 #define NATIVE_PLUGINS_AST_TOOL_H
 
-#define DllExport __declspec (dllexport)
+#ifdef _WIN32
+#define DllExport __declspec(dllexport)
+#else
+#define DllExport __attribute__((visibility("default")))
+#endif
 
 #include <cstring>
 #include <iostream>

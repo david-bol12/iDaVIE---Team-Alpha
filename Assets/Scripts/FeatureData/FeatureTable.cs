@@ -52,9 +52,9 @@ namespace DataFeatures
             else if (Path.GetExtension(fileName) == ".fits" || Path.GetExtension(fileName) == ".fit")
             {
                 int status = 0;
-                FitsReader.FitsOpenFile(out IntPtr fitsPtr, fileName, out status, true);
+                FitsFile.FitsOpenFile(out IntPtr fitsPtr, fileName, out status, true);
                 var featureTable = GetFeatureTableFromFits(fitsPtr);
-                FitsReader.FitsCloseFile(fitsPtr, out status);
+                FitsFile.FitsCloseFile(fitsPtr, out status);
                 return featureTable;
             }
             else
@@ -106,40 +106,40 @@ namespace DataFeatures
             int status = 0;
             int hduType = 0;
             int numHdus = 0;
-            FitsReader.FitsGetNumHdus(fitsPtr, out numHdus, out status);
-            FitsReader.FitsGetHduType(fitsPtr, out hduType, out status);
+            FitsFile.FitsGetNumHdus(fitsPtr, out numHdus, out status);
+            FitsFile.FitsGetHduType(fitsPtr, out hduType, out status);
 
             for (int i = 1; i <= numHdus; i++)
             {
-                FitsReader.FitsMovabsHdu(fitsPtr, i, out hduType, out status);
-                if (hduType == (int)FitsReader.HduType.BinaryTbl || hduType == (int)FitsReader.HduType.AsciiTbl)
+                FitsFile.FitsMovabsHdu(fitsPtr, i, out hduType, out status);
+                if (hduType == (int)FitsFile.HduType.BinaryTbl || hduType == (int)FitsFile.HduType.AsciiTbl)
                 {
                     break;
                 }
             }
 
-            if (hduType != (int)FitsReader.HduType.BinaryTbl && hduType != (int)FitsReader.HduType.AsciiTbl)
+            if (hduType != (int)FitsFile.HduType.BinaryTbl && hduType != (int)FitsFile.HduType.AsciiTbl)
             {
                 Debug.LogError("No binary or ASCII table found in FITS file.");
                 return null;
             }
 
-            if (FitsReader.FitsGetNumCols(fitsPtr, out int numCols, out status) != 0)
+            if (FitsFile.FitsGetNumCols(fitsPtr, out int numCols, out status) != 0)
             {
-                Debug.LogError("Error getting number of columns from FITS file: " + FitsReader.ErrorCodes[status]);
+                Debug.LogError("Error getting number of columns from FITS file: " + FitsHeader.ErrorCodes[status]);
                 return null;
             }
 
             for (int i = 0; i < numCols; i++)
             {
-                var colName = FitsReader.FitsTableGetColName(fitsPtr, i);
-                var colUnit = FitsReader.FitsTableGetColUnit(fitsPtr, i);
+                var colName = FitsTable.FitsTableGetColName(fitsPtr, i);
+                var colUnit = FitsTable.FitsTableGetColUnit(fitsPtr, i);
                 FeatureColumn featureColumn = new FeatureColumn(colName, i, colUnit);
                 featureTable.Columns.Add(colName, featureColumn);
                 featureTable.Column.Add(featureColumn);
             }
 
-            FitsReader.FitsGetNumRows(fitsPtr, out long numRows, out status);
+            FitsFile.FitsGetNumRows(fitsPtr, out long numRows, out status);
             for (int i = 0; i < numRows; i++)
             {
                 FeatureRow featureRow = new FeatureRow(featureTable);
@@ -148,10 +148,10 @@ namespace DataFeatures
 
                 for (int j = 0; j < numCols; j++)
                 {
-                    var colFormat = FitsReader.FitsTableGetColFormat(fitsPtr, j);
+                    var colFormat = FitsTable.FitsTableGetColFormat(fitsPtr, j);
                     if (colFormat.Contains("A"))
                     {
-                        FitsReader.FitsReadColString(fitsPtr, j + 1, i + 1, 1, 1, out ptrDataFromColumn, out _,
+                        FitsTable.FitsReadColString(fitsPtr, j + 1, i + 1, 1, 1, out ptrDataFromColumn, out _,
                             out status);
                         IntPtr[] ptrArray = new IntPtr[1];
                         Marshal.Copy(ptrDataFromColumn, ptrArray, 0, 1);
@@ -159,7 +159,7 @@ namespace DataFeatures
                     }
                     else
                     {
-                        FitsReader.FitsReadColFloat(fitsPtr, j + 1, i + 1, 1, 1, out ptrDataFromColumn, out status);
+                        FitsTable.FitsReadColFloat(fitsPtr, j + 1, i + 1, 1, 1, out ptrDataFromColumn, out status);
                         float[] floatArray = new float[1];
                         Marshal.Copy(ptrDataFromColumn, floatArray, 0, 1);
                         //Not a good way of doing this, but makes it compatible with current VOTable functionality.
