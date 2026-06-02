@@ -81,8 +81,7 @@ sequenceDiagram
     View->>VM: get LogEntries  [last 500]
     View->>View: rebuild StringBuilder over slice,<br/>colour-code per Level<br/>(warning=yellow, error=red, info=white)
     Note right of View: ⚠ O(N) rebuild remains —<br/>but N is capped at MaxDisplayLines (500)
-    View->>View: _logText.text = sb.ToString()<br/>_scrollbar.value = 0f
-    Note right of View: ⚠ scroll forced to bottom —<br/>S7 still remaining
+    View->>View: _logText.text = sb.ToString()<br/>if AutoScrollEnabled: _scrollbar.value = 0f
     deactivate View
     View-->>User: log line visible, colour-coded
     end
@@ -137,20 +136,19 @@ Suggested slide layout for the panel:
 | `transform.Find` / Inspector-wired button handlers | Code-side `clearButton.onClick.AddListener(vm.ClearEntries)` in `BindTo` (`adapters/DebugTabView.cs:47`). |
 | Four responsibilities in one 172-line `MonoBehaviour` | Five named types, single responsibility each: `LogStreamAdapter` · `LogStream` · `DebugTabVM` · `DebugTabView` · `CompositionRoot`. |
 | Timestamp never captured | Captured at the moment of `Publish` (`skeleton/LogStream.cs:36`). |
-| Scroll forced to bottom every message | **Unchanged** — still in `DebugTabView` (`⚠` annotation in diagram). S7 is the largest remaining smell; see [`after-trace.md` → Known limitations](after-trace.md#known-limitations). |
+| Scroll forced to bottom every message | **Fixed** — `DebugTabView` gates the scroll on `IDebugTabViewModel.AutoScrollEnabled` (defaults `true`). S7 eliminated. |
 
 ---
 
 ## Mapping of contained smells (honest about what remains)
 
-The two `⚠` annotations in the diagram correspond to items in [`after-trace.md` → Known limitations](after-trace.md#known-limitations):
+One `⚠` annotation remains in the diagram:
 
 | Diagram marker | Smell ID | Location | Fix vector |
 |---|---|---|---|
 | `⚠ O(N) rebuild remains — capped` | S5/S6 | `adapters/DebugTabView.cs:62-82` | Replace TMP text rebuild with a virtualised `ListView` (Unity UI Toolkit). The VM's `LogEntries` contract is unchanged. |
-| `⚠ scroll forced to bottom` | S7 | `adapters/DebugTabView.cs:83` | Add `AutoScrollEnabled` (bool) to `IDebugTabViewModel`; gate the `_scrollbar.value = 0f` line on it. Adds one test. |
 
-Both fixes are pure View/VM-side edits and require no change to `LogStream`, `UnityLogStreamAdapter`, or any of the 29 existing debug-tab tests.
+S7 (scroll forced to bottom) is **eliminated**: `IDebugTabViewModel.AutoScrollEnabled` gates the scroll in `DebugTabView`. The fix required no change to `LogStream` or any of the existing tests; two new tests cover the default and toggle behaviour.
 
 ---
 

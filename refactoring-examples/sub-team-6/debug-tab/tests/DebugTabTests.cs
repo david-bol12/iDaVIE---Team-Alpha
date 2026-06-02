@@ -396,5 +396,22 @@ namespace iDaVIE.Desktop.DebugTab.Tests
 
             Assert.AreEqual(1, vm.LogEntries.Count);
         }
+
+        // ── AutoScrollEnabled ──────────────────────────────────────────────────
+
+        [Test]
+        public void AutoScrollEnabled_DefaultsToTrue()
+        {
+            var (vm, _) = Build();
+            Assert.IsTrue(vm.AutoScrollEnabled);
+        }
+
+        [Test]
+        public void AutoScrollEnabled_CanBeToggledOff()
+        {
+            var (vm, _) = Build();
+            vm.AutoScrollEnabled = false;
+            Assert.IsFalse(vm.AutoScrollEnabled);
+        }
     }
 }

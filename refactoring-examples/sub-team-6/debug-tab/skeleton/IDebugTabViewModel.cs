@@ -14,5 +14,8 @@ namespace iDaVIE.Desktop.DebugTab
 
         //The view refreshes when the log entries changes
         event System.Action? EntriesChanged;
+
+        // When true the View scrolls to the bottom on each new entry.
+        bool AutoScrollEnabled { get; set; }
     }
 }
