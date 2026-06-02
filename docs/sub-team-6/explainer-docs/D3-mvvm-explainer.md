@@ -186,7 +186,7 @@ A panel rewards candour about limits. Be ready with these:
 - "How does the View call the ViewModel?" → Only via `ICommand`; command bodies are private, so direct calls don't compile.
 - "Isn't the `Update()` loop MVU?" → No; Unity engine tick vs MVU pure function. We use event-driven MVVM and explicitly rejected MVU.
 - "Show one defect fixed end-to-end." → B-02 or B-03 from §5.
-- "Did you implement all five tabs?" → File & Debug fully (tested); Render/Stats/Sources are gestures.
+- "Did you implement all six tabs?" → File & Debug fully (tested); Render/Stats/Sources/Paint are gestures.
 - "Why MVVM over MVP/MVU?" → §1.4 / §6.
 - "How is 'no Unity in the ViewModel' enforced?" → Assembly boundary + NDepend CQLinq rule on every PR (§11.1), build fails on `using UnityEngine` in the VM assembly.
 - "What does the Gateway actually do on the wire?" → JSON-RPC 2.0 over named pipes; `FitsServiceAdapter` maps `OpenImageAsync` → `file.open` + `dataset.getAxes` (ADR-0002).

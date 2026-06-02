@@ -431,7 +431,7 @@ The namespace map is a Sub-team 1 deliverable; published by end of Day 3 so all 
 ### Decision
 
 - Decompose CanvassDesktop into the MVVM triad: View (Unity 6 UI Toolkit, no business logic), ViewModel (pure C#, owns presentation state and commands, no UnityEngine dependency), Service Gateway (translates ViewModel commands to server calls via the transport contract).
-- Each panel (File, Render, Stats, Sources, Debug) is a separate View/ViewModel pair. No single God-canvas.
+- Each panel (File, Render, Stats, Sources, Paint, Debug) is a separate View/ViewModel pair. No single God-canvas.
 - Commands in the ViewModel follow the Command pattern (reified, replayable, testable) — consistent with the Interaction sub-team's approach (ADR-010).
 - The client–server transport is specified as JSON-RPC 2.0 over named pipes for local mode, with a gRPC upgrade path for future remote streaming.
 - ViewModels have no UnityEngine imports; they are testable with standard xUnit/NUnit without Unity runtime.

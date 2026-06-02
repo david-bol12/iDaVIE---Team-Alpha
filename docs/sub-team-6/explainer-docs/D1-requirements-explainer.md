@@ -14,7 +14,7 @@ Three requirement classes — 15 NFRs + 2 architectural drivers — plus scope a
 
 | Block | Contents | Backing doc |
 |---|---|---|
-| **REQ-1** | As-is behaviour & coupling catalogue for all five tabs (File, Render, Stats, Sources, Debug), each with its coupling profile + worst-case defect. 13-row defect register B-01…B-13. | `CurrentGUIStateDoc.md` |
+| **REQ-1** | As-is behaviour & coupling catalogue for all six tabs (File, Render, Stats, Sources, Paint, Debug), each with its coupling profile + worst-case defect. 14-row defect register B-01…B-14. | `CurrentGUIStateDoc.md` |
 | **REQ-2** | 15 maintainability NFRs across all five ISO/IEC 25010 maintainability sub-characteristics: Modularity (MOD-1..3), Reusability (REU-1..3), Analysability (ANA-1..3), Modifiability (MOF-1..3), Testability (TST-1..3). Each: statement + acceptance metric + tool + MoSCoW priority + spec cross-reference. | `requirements.md §3` |
 (They are all NFRs and not FRs as it is a refactoring proposal)
 | **REQ-3** | 2 architectural drivers — ARQ-1 (Python console), ARQ-2 (workspace/state saving) — expressed as drivers on the architecture, not features to build. | `Long-Term-Python-Console.md` |
@@ -107,7 +107,7 @@ A requirements deliverable that does not show what was *deliberately left out* r
 - Excluded: **B-01** (Exit, no confirmation), **B-07** (4D dropdown grouping), **B-09/B-10** (log metadata/retention), **B-11** (silent out-of-bounds exclusion), **B-12** (toast notifications, #472).
 - *Why:* these are functional/UX defects, not maintainability defects. Fixing them is a feature change; the assignment is a design-only **maintainability** refactor. They remain in the register as evidence of the cost of the current structure.
 
-**B. Short/medium-term roadmap items from `CurrentGUIStateDoc §12`, left out of REQ-3.**
+**B. Short/medium-term roadmap items from `CurrentGUIStateDoc §13`, left out of REQ-3.**
 - Excluded: **subcube loading**, **HDU selection**, **camera-route video scripting**, **viz/analysis plugin separation**.
 - *Why:* §6.6 names only two long-term features (Python console, workspace save). We scoped REQ-3 to exactly those to stay aligned with the brief and avoid scope creep. Subcube/HDU are short-term *feature* work; viz/analysis separation overlaps Sub-team 2/3.
 

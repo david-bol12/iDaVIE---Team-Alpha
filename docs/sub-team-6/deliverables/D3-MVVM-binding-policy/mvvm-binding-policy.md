@@ -164,87 +164,6 @@ ILogStream  ──publishes──►  DebugTabViewModel  ──binds──►  D
 | Manual scroll/text updates | `DebugTabView` reactive binding |
 | No structured log context | `LogEntry { Level, Message, Timestamp }` (record — see D2 §6 / debug-tab skeleton) |
 
-### 3.3 RenderingTabViewModel
-
-**Owns:**
-- `MinThreshold`, `MaxThreshold` (float, two-way bindable)
-- `ActiveColorMap` (enum)
-- `RestFrequencyOptions` list
-- Commands: `ApplyThreshold`, `ChangeColorMap`
-
-The current `Update()` (Unity's per-frame `MonoBehaviour.Update()` engine-lifecycle callback — *not* an MVU/Elm `update` function) loop polls `firstActiveRenderer.ThresholdMin` every frame and pushes it to a slider. In the refactored design:
-- `IVolumeService` raises a `ThresholdChanged` event
-- `RenderingTabViewModel` subscribes and updates its own properties
-- `RenderingTabView` binds sliders to those properties — no per-frame sync needed
-
-**Split from current code:**
-
-| Current (CanvassDesktop) | Proposed home |
-|---|---|
-| `Update()` polls `firstActiveRenderer.ThresholdMin/Max` every frame | `IVolumeService.ThresholdChanged` event → `RenderingTabViewModel` subscribes |
-| Slider wiring in `Start()` | `RenderingTabView` bound to `MinThreshold` / `MaxThreshold` |
-| `_restFrequency` field (declared, never read) | Removed — dead code confirmed by LCOM field-access analysis |
-| Colormap dropdown wiring in `Start()` | `RenderingTabView.OnColorMapChanged()` → `ChangeColorMapCommand` |
-
-### 3.4 StatsTabViewModel
-
-The Stats tab today is eight methods on `CanvassDesktop` (`populateStatsValue`, `UpdateUI`, `UpdateSigma`, `RestoreDefaults`, `UpdateScale`, `SetMaxMinPercentile`, `UpdateScaleMin`, `UpdateScaleMax`) that read in-memory float buffers and write sliders / labels directly. They share state with the Render tab via `CanvassDesktop` fields — moving the slider in Render silently changes Stats. That cross-tab coupling is the proximate cause of defect **B-03** (slider sync) named in `D1/requirements.md` §2.
-
-**Owns:**
-- `Histogram` (`IReadOnlyList<HistogramBin>`) — bound to the chart control
-- `PercentilePresets` (list of `{Label, Lower, Upper}`) — the quick-pick row
-- `ManualMin`, `ManualMax` (float, two-way bindable)
-- `ScaleMode` (enum: `Linear` / `Log`)
-- `SigmaOverlay` (float — multiplier for the σ band)
-- Commands: `ApplyPercentileCommand`, `RestoreDefaultsCommand`, `RecomputeHistogramCommand`
-
-The `IsExactPercentile` toggle currently freezes the UI on large cubes (defect **B-04**); the ViewModel exposes `IsRecomputing` so the View can show a progress indicator instead.
-
-Histogram and percentile work belong to the same domain as the volume renderer, so `IVolumeService` is the natural producer. Two surface additions over the WE1 contract:
-- `Task<IReadOnlyList<HistogramBin>> ComputeHistogramAsync(int bins, CancellationToken ct)` — exact percentiles on demand.
-- `event Action<HistogramChangedEventArgs>? HistogramChanged` — fires when the loaded cube or thresholds change, replacing the per-frame `Update()` poll.
-
-**Split from current code:**
-
-| Current (CanvassDesktop) | Proposed home |
-|---|---|
-| `populateStatsValue()` reads buffer on tab show | `StatsTabViewModel` subscribes to `IVolumeService.HistogramChanged`; no tab-show side effect |
-| `UpdateUI()` mutates sliders + labels directly | View binds to `Histogram`, `ManualMin`, `ManualMax`, `ScaleMode` — no imperative UI writes |
-| `SetMaxMinPercentile(p)` freezes UI for exact computation | `ApplyPercentileCommand` issues `ComputeHistogramAsync` with `IProgress<float>`; View shows progress |
-| `UpdateScale()` reaches into Render tab's threshold fields | `IVolumeService.SetThresholds(min, max)` — Render tab observes the same event |
-| `RestoreDefaults()` re-reads renderer state | `RestoreDefaultsCommand` calls `IVolumeService.ResetThresholds()` |
-
-### 3.5 SourcesTabViewModel
-
-The Sources tab today is ten methods on `CanvassDesktop` (`BrowseSourcesFile`, `_browseSourcesFile`, `BrowseMappingFile`, `_browseMappingFile`, `SaveMappingFile`, `_saveMappingFile`, `ChangeSourceMapping`, `AreMappingsIncompatible`, `AreMinimalMappingsSet`, `LoadSourcesFile`) that handle two file dialogs, JSON mapping I/O, per-column validation, and a singleton-lookup feature-set load. Mapping-rule logic is intermixed with UI updates. Defect **B-05** (WCS vs (x,y,z) one-voxel offset, open issue #464) sits in this code.
-
-**Owns:**
-- `CataloguePath`, `MappingPath` (observable strings)
-- `AvailableColumns` (`IReadOnlyList<ColumnDescriptor>`) — populated after a catalogue is opened
-- `ColumnMappings` (`IDictionary<MappingRole, string>`) — bound to per-role dropdowns
-- `MinimalMappingsSet` (bool, computed) — gates the Load button
-- `ValidationMessage` (string?) — surfaces "WCS ↔ voxel mismatch" etc.
-- Commands: `BrowseCatalogueCommand`, `BrowseMappingCommand`, `SaveMappingCommand`, `LoadCatalogueCommand`
-
-Catalogue parsing is server-side (VOTable / FITS table — the same brief-§6.6 logic that puts FITS reading server-side). Mapping JSON is small enough to stay client-local but consistent with persistence, it should route through `IConfigService` rather than direct file I/O.
-
-Two domain interfaces are needed (out-of-scope for the worked examples; gestures only):
-- `ICatalogueService` — `OpenCatalogueAsync(path)` returns a `CatalogueInfo { Columns, RowCount, SuggestedMappings }`. Implemented by a `CatalogueServiceAdapter` gateway proxy that dispatches `catalogue.open` / `catalogue.close` over `IServiceGateway`.
-- `IFeatureSetService` — `LoadFromCatalogueAsync(datasetId, mappings)` materialises features in the running session.
-
-**Split from current code:**
-
-| Current (CanvassDesktop) | Proposed home |
-|---|---|
-| `BrowseSourcesFile()` opens dialog, then calls `_browseSourcesFile` | `BrowseCatalogueCommand` → `IFileDialogService.PickFileAsync` → `ICatalogueService.OpenCatalogueAsync` |
-| `_browseSourcesFile()` reads VOTable / FITS catalogue via native reader | `ICatalogueService` server-side; client sees only `CatalogueInfo` DTO |
-| `AreMinimalMappingsSet()` / `AreMappingsIncompatible()` validation | Computed property `MinimalMappingsSet` + private `Validate()` method |
-| `SaveMappingFile()` / `_saveMappingFile()` JSON serialisation | `SaveMappingCommand` → `IConfigService.SaveMappingAsync(path, ColumnMappings)` |
-| `LoadSourcesFile()` via `FindObjectOfType<FeatureSetManager>()` | `LoadCatalogueCommand` → `IFeatureSetService.LoadFromCatalogueAsync` |
-| WCS ↔ voxel offset bug **B-05** | Mapping role enum makes WCS vs voxel coordinate an explicit choice rather than an implicit field-order assumption; `Validate()` rejects incompatible combinations |
-
-These two sections are **design gestures**, not worked examples — the brief mandates only File and Debug as full worked examples (D4). They show the same MVVM split applies, and they identify the new interfaces (`IStatsService` extension, `ICatalogueService`, `IFeatureSetService`) the Architecture Guild needs to ratify before any of these tabs ships.
-
 ---
 
 ## 4. How We Are Doing It: Binding Mechanics
@@ -292,18 +211,9 @@ public sealed class FileTabViewModel : ViewModelBase
 
 **Replay and undo (cross-reference to ADR-010):** ADR-009 names commands as "reified, replayable, testable — consistent with ADR-010". Reified and testable are covered above; **replayability is owned by ADR-010** (Sub-team 4's State and Command Patterns for the Interaction System, see central registry). The desktop tab commands share the GoF `ICommand` shape with the VR-side commands by design, so a command-log observer wired at the `ICommand.Execute` boundary by Sub-team 4 will capture every desktop-tab command without any change in this ViewModel layer. **Undo** — ADR-010 makes Undo *"where applicable"*; most desktop tab commands are not naturally undoable (file open, log filter change). Where a desktop tab adds a reversible operation later (e.g. mask paint stroke) the relevant `ICommand` implementation supplies an `Undo()` method matching the ADR-010 contract. Sub-team 6 does **not** own the command-log mechanism; we own the contract that makes logging possible.
 
-### 4.3 Collections
+### 4.3 Threading Model
 
-`ObservableCollection<T>` is used for all bound lists. The Debug tab is the load test: the log stream can produce ≥ 1k entries/sec under tracing, so a bounded ring-buffer wrapper or virtualised incremental collection may be needed.
-
-**Mutation rules:**
-- All mutations on the UI thread only (see §4.4).
-- Bulk loads: clear + re-add atomically, not item-by-item, to avoid UI thrash.
-- Do not replace the `ObservableCollection<T>` **instance** — prefer in-place mutation. Instance replacement breaks View bindings unless explicitly re-bound.
-
-### 4.4 Threading Model
-
-Every bound property change and collection mutation must fire on the Unity main thread. ViewModels receiving Gateway callbacks on background threads must marshal explicitly via an `IUIDispatcher` interface:
+Every bound property change must fire on the Unity main thread. ViewModels receiving Gateway callbacks on background threads must marshal explicitly via an `IUIDispatcher` interface:
 
 ```csharp
 public interface IUIDispatcher
@@ -318,52 +228,6 @@ The concrete implementation lives in the View assembly; ViewModels take the inte
 **Forbidden:**
 - `UnityMainThreadDispatcher.Instance.Enqueue(...)` — singleton, untestable.
 - Captured `SynchronizationContext` without explicit `ConfigureAwait(false)` discipline at Gateway boundaries.
-
-### 4.5 Data-Binding Approach (Unity Version Transition)
-
-Unity 6 UI Toolkit supports `INotifyValueChanged<T>` and data binding natively. For the legacy Canvas system (current Unity 2021.3) the shim is:
-
-1. ViewModel implements `INotifyPropertyChanged` (standard .NET).
-2. A thin `UnityBinder<T>` helper subscribes to `PropertyChanged` and sets the UI element value.
-3. Views register bindings in `Awake` / `OnEnable` and unregister in `OnDisable`.
-
-```csharp
-// View assembly only — never imported by ViewModel
-public sealed class UnityBinder<T> : IDisposable
-{
-    private readonly INotifyPropertyChanged _source;
-    private readonly string   _propertyName;
-    private readonly Func<T>   _getter;
-    private readonly Action<T> _setter;
-
-    public UnityBinder(
-        INotifyPropertyChanged source, string propertyName,
-        Func<T> getter, Action<T> setter)
-    {
-        _source = source; _propertyName = propertyName;
-        _getter = getter; _setter = setter;
-        source.PropertyChanged += OnChanged;
-    }
-
-    private void OnChanged(object _, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == _propertyName) _setter(_getter());
-    }
-
-    public void Dispose() => _source.PropertyChanged -= OnChanged;
-}
-
-// Usage in FileTabView.Awake():
-_binders = new List<IDisposable>
-{
-    new UnityBinder<bool>(_vm, nameof(_vm.IsLoadable),
-        () => _vm.IsLoadable,   v => _loadButton.interactable = v),
-    new UnityBinder<string>(_vm, nameof(_vm.HeaderText),
-        () => _vm.HeaderText,   v => _headerScrollText.text = v),
-};
-```
-
-This eliminates the manual `transform.Find(...)` chains and the per-frame `Update()` sync.
 
 ---
 
@@ -509,13 +373,15 @@ Full before/after UML and dependency graph: [`refactoring-examples/sub-team-6/de
 
 | Class | WMC now | WMC after | CBO now | CBO after | Source |
 |---|---|---|---|---|---|
-| CanvassDesktop (shell only) | 63 | ~15 (projected) | 47 | ~4 (projected) | projection |
-| **FileTabViewModel** | — | **27 (measured)** | — | **9 (measured)** | hand-count |
-| SubsetBoundsViewModel | — | 12 (measured) | — | 1 (measured) | hand-count, Day 6 |
-| FitsServiceAdapter | — | 6 (measured) | — | 5 (measured) | hand-count, Day 6 (post-gateway-rewire) |
-| **DebugTabViewModel** | — | **7 (projected)** | — | **3 (projected)** | `D4/metrics.md §3.2` |
-| GatewayLogStreamAdapter | — | 5 (projected) | — | 4 (projected) | step-3 rewire |
-| RenderingTabViewModel | — | ~8 (projected) | — | ~4 (projected) | gesture, §3.3 |
+| CanvassDesktop (shell only) | 63 | ~15 (projected) | 30 | ~4 (projected) | Understand Day-13 (now); projection (after) |
+| **FileTabViewModel** | 63 † | **27 (measured)** | 30 † | **9 (measured)** | hand-count |
+| SubsetBoundsViewModel | 63 † | 12 (measured) | 30 † | 1 (measured) | hand-count, Day 6 |
+| FitsServiceAdapter | 63 † | 6 (measured) | 30 † | 5 (measured) | hand-count, Day 6 (post-gateway-rewire) |
+| **DebugTabViewModel** | 63 † | **7 (projected)** | 30 † | **3 (projected)** | `D4/metrics.md §3.2` |
+| GatewayLogStreamAdapter | n/a (new) | 5 (projected) | n/a (new) | 4 (projected) | step-3 rewire |
+| RenderingTabViewModel | 63 † | ~8 (projected) | 30 † | ~4 (projected) | gesture, §3.3 |
+
+> **† "now" = host god-class metric.** None of these concerns is a separate class today — their code is interleaved inside `CanvassDesktop`, sharing the same fields (file I/O, subset maths, rendering, and the `OnGUI`/`ShowGUI` error-popup surface all sit in one class). CK metrics are class-level, so the only measurable "before" is the whole class: **WMC 63 / CBO 30** (Understand Day-13 export). The file-tab slice "cannot be measured in isolation" — see [`ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md). `GatewayLogStreamAdapter` has no "now" value: it is new transport infrastructure with no equivalent in the current codebase.
 
 Notes on the FileTabViewModel WMC = 27 measurement: this is hand-counted from the committed skeleton on Day 6 and is **borderline** against the ≤ 20 domain threshold from brief §7.1. The remediation path is documented in `refactoring-examples/sub-team-6/file-tab/ck-metrics.md`: extracting a `FileTabCommands` helper from the four async command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `ClearMask`) drops the count to ~22. The audit accepts the borderline value rather than masking it because §7 of the brief explicitly bans speculative numbers without evidence. All other measured values fall within §7.1 thresholds. Full before/after delta tables are in the D4 worked examples.
 
@@ -557,66 +423,7 @@ Notes on the FileTabViewModel WMC = 27 measurement: this is hand-counted from th
 
 ---
 
-## 10. Forbidden Patterns
-
-| Pattern | Why forbidden | Replacement |
-|---|---|---|
-| Any `UnityEngine` type in ViewModel (`using UnityEngine`, `Vector3` field, `[SerializeField]`) | Violates §4.2.3; domain code must not depend on Unity | DTO with primitives; plain C# properties; constructor injection |
-| Coroutine in ViewModel | Unity-bound execution model | `async Task` + `IUIDispatcher` |
-| `FindObjectOfType<>` anywhere | Singleton coupling | Constructor injection at composition root |
-| `static` state on ViewModels (mutable field or event) | Breaks test isolation; shared state leaks between test runs | Instance state or instance event; inject shared state via constructor |
-| `viewModel.Property = x` from View code | Bypasses command layer | `ICommand` binding |
-| `Thread.Sleep` / `WaitForSeconds` in ViewModel | Blocks UI thread or Unity-bound | `Task.Delay` + `CancellationToken` |
-| `event EventHandler` on ViewModel as substitute for `ICommand` | Circumvents binding contract | `ICommand` |
-
----
-
-## 11. CI Enforcement
-
-### 11.1 NDepend CQLinq — ViewModel Purity Rule
-
-```csharp
-// warnif count > 0
-from t in Application.Assemblies
-   .WithNameLike("iDaVIE.Client.ViewModel")
-   .ChildTypes()
-where t.IsUsing("UnityEngine")
-   || t.IsUsing("Valve.VR")
-   || t.IsUsing("System.Runtime.InteropServices")
-select new {
-    t,
-    Issue = "ViewModel assembly forbids Unity/SteamVR/native interop (ADR-0001)"
-}
-```
-
-### 11.2 PR Checklist (Reviewer-Facing)
-
-- [ ] No `UnityEngine` / `Valve.VR` / `System.Runtime.InteropServices` import in any file under `iDaVIE.Client.ViewModel`.
-- [ ] Every new public ViewModel property fires `PropertyChanged` (or is a `record` DTO field on a different type).
-- [ ] Every command is bound via `ICommand`, not via direct method invocation from the View.
-- [ ] No `static` mutable state on ViewModels.
-- [ ] All `IDisposable` ViewModel dependencies subscribed in the constructor are disposed in `Dispose()`.
-- [ ] Background-thread Gateway callbacks marshal to UI thread via `IUIDispatcher`.
-
----
-
-## 12. Glossary
-
-| Term | Meaning in this codebase |
-|---|---|
-| View | UI Toolkit `UIDocument` + USS/UXML; the only place `UnityEngine` types are allowed. |
-| ViewModel | Pure C# class implementing `INotifyPropertyChanged`. No Unity, no SteamVR, no `DllImport`. |
-| Model | Domain data; in our slice usually a DTO returned by the Gateway. |
-| Gateway | The `IServiceGateway` adapter; talks to the server over the transport defined in ADR-0002. |
-| DTO | Immutable transfer object across the Gateway ↔ ViewModel boundary; primitive + string + nested DTO fields only. |
-| Command | `ICommand` implementation invoked by a View binding; sync or async. |
-| Composition root | The single `MonoBehaviour` in the View assembly that wires ViewModels to their dependencies at scene start. |
-| ACL | Anti-corruption layer — the Gateway assembly that prevents Unity/SteamVR types from leaking into domain code. |
-| `IUIDispatcher` | Interface for marshalling work onto the Unity main thread from background Gateway callbacks. |
-
----
-
-## 13. References
+## 10. References
 
 - [ADR-0002 — Client–server transport](../D2-Architecture/architecture.md#adr-0002--clientserver-transport-json-rpc-over-named-pipes--grpc)
 - [D4 — File-tab worked example](../D4-worked-examples/README.md#example-1--file-tab)

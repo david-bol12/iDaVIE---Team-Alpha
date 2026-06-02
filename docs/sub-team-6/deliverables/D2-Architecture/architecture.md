@@ -13,8 +13,10 @@
 This document covers the **Desktop GUI and Client Shell** work package (§6.6 of the assignment spec). Sub-team 6 owns:
 
 - `CanvassDesktop` — the 1,899-line `MonoBehaviour` that is the primary refactoring target.
+- `DesktopPaintController` — the 1,558-line `MonoBehaviour` behind the PAINT tab; the second refactoring target, bidirectionally coupled to `CanvassDesktop`.
 - File and mask loaders (FILE tab).
 - Parameter panels (RENDER, STATS, SOURCES tabs).
+- Desktop mask painting (PAINT tab).
 - Debug console (DEBUG tab).
 - The **client-side composition root** that wires every panel, ViewModel, and adapter to the server at startup.
 
@@ -31,12 +33,12 @@ This section slots into the team architecture document as the **client-shell cha
 | Sub-characteristic | Concrete problem in the current code | Target |
 |---|---|---|
 | **Modularity** | `CanvassDesktop` owns eight unrelated concerns; any change to one tab risks breaking another. | Each tab concern in a separate class with an explicit interface contract. |
-| **Analysability** | WMC 63, RFC 118 — too many methods and call sites to reason about locally. | WMC ≤ 27 per class; max RFC 50. No class exceeds the §7.1 thresholds. |
+| **Analysability** | WMC 63, RFC 118 — too many methods and call sites to reason about locally. | Per-class WMC and RFC held to the §7.1 thresholds (WMC ≤ 40, RFC ≤ 50); tool-verified max WMC 43, with `FileTabViewModel` the one documented exception (remediation planned). |
 | **Modifiability** | 20+ `transform.Find("A/B/C").GetComponent<T>()` chains hard-wire the code to the scene hierarchy; adding a panel requires editing `CanvassDesktop`. | IPanel contract; panels registered via composition root, not hard-wired paths. |
 | **Testability** | Zero testable methods today — every method is inside a MonoBehaviour. | ≥ 70% branch/line on ViewModel and domain code (NFR-TST-1); ViewModels require no Unity runner. |
 | **Reusability** | Tab logic is welded to the scene hierarchy and to `UnityEngine`/`Valve.VR` types, so nothing can be reused outside this one Canvas — the VR client (Sub-team 4) cannot share a line of it. | ViewModels and service interfaces sit in Unity-free assemblies; the same `IFitsService` / `ILogStream` contracts and ViewModel logic are reusable by the VR client and by test harnesses without modification. |
 
-### 2.2 Day 2 Baseline Evidence
+### 2.2 Baseline Evidence
 
 The CK measurement taken on Day 2 (BNCH-1) confirms the problem quantitatively:
 
@@ -51,9 +53,9 @@ The CK measurement taken on Day 2 (BNCH-1) confirms the problem quantitatively:
 
 CBO of 47 breaks down as: 23 project types, 13 Unity/TMPro types, 7 System library types, and 4 `Valve.VR` types. Propagation cost is 87.5% of the monitored slice — a change anywhere in this class forces re-analysis of almost the entire sub-system.
 
-### 2.3 Day 13 Projected Improvement
+### 2.3 Projected Improvement
 
-After full MVVM extraction (all five tabs plus composition root): 8 classes → 25 classes, 0 CK violations, max WMC 27, max CBO 9, max RFC 50, max LCOM 0.20, 0 circular cycles. See [BNCH-5](../other/T2-baseline-benchmark/ck-metrics.md) for the full projection.
+After full MVVM extraction (all six tabs — File, Render, Stats, Sources, Paint, Debug — plus composition root): 8 classes → ~25 classes, and **circular cycles drop from 2 → 0** (a §4.2 non-negotiable, now satisfied). Tool-verified Day 13 maxima (Understand export, 2026-05-29): max WMC 43, max CBO 19, max RFC (tool def.) 43, max LCOM 91%. CK violations are reduced but **not** fully eliminated: `FileTabViewModel` still exceeds WMC and CBO, with a documented remediation (extract a `FileTabCommands` helper). The high LCOM readings are an MVVM property-pattern artifact (one backing field per bindable property, accessed by ≤ 2 methods), not disjoint concern clusters — the structural separation the metric cannot see is real. File-tab (WE1) and Debug-tab (WE2) figures are tool-verified; the remaining tabs are proportional projections. See [ck-metrics.md (BNCH-5)](../other/T2-baseline-benchmark/ck-metrics.md) for the full per-class breakdown.
 
 ---
 
@@ -71,6 +73,7 @@ C4Component
         Component(renderView, "RenderingTabView", "UI Toolkit Document", "Binds to IRenderingTabViewModel")
         Component(statsView, "StatsTabView", "UI Toolkit Document", "Binds to IStatsTabViewModel")
         Component(sourcesView, "SourcesTabView", "UI Toolkit Document", "Binds to ISourcesTabViewModel")
+        Component(paintView, "PaintTabView", "UI Toolkit Document", "Binds to IPaintTabViewModel; renders the 2D slice + polygon overlay")
     }
 
     Container_Boundary(vm, "ViewModel Layer — iDaVIE.Client.ViewModel (pure C#, no UnityEngine)") {
@@ -79,6 +82,7 @@ C4Component
         Component(renderVM, "RenderingTabViewModel", "C# class", "Colormap, thresholds, render mode state")
         Component(statsVM, "StatsTabViewModel", "C# class", "Statistics display binding")
         Component(sourcesVM, "SourcesTabViewModel", "C# class", "Source catalogue display binding")
+        Component(paintVM, "PaintTabViewModel", "C# class", "Slice navigation + polygon mask-edit commands (replaces DesktopPaintController); calls IVolumeService for voxel writes")
     }
 
     Container_Boundary(gw, "Gateway Layer — iDaVIE.Client.Gateway (Anti-Corruption Layer)") {
@@ -101,13 +105,16 @@ C4Component
     Rel(root, renderVM, "creates + injects")
     Rel(root, statsVM, "creates + injects")
     Rel(root, sourcesVM, "creates + injects")
+    Rel(root, paintVM, "creates + injects")
     Rel(root, fileView, "creates + binds VM")
     Rel(root, debugView, "creates + binds VM")
     Rel(root, gateway, "creates + connects")
     Rel(fileView, fileVM, "one-way data + commands", "UI Toolkit binding")
     Rel(debugView, debugVM, "one-way data + commands", "UI Toolkit binding")
     Rel(renderView, renderVM, "one-way data + commands", "UI Toolkit binding")
+    Rel(paintView, paintVM, "one-way data + commands", "UI Toolkit binding")
     Rel(fileVM, fileAdapter, "calls IFitsService")
+    Rel(paintVM, volumeAdapter, "calls IVolumeService (mask voxel writes)")
     Rel(fileVM, volumeAdapter, "calls IVolumeService")
     Rel(fileVM, dialogAdapter, "calls IFileDialogService")
     Rel(debugVM, logAdapter, "observes ILogStream")
@@ -360,6 +367,9 @@ classDiagram
     class RenderingTabView {
         <<UI Toolkit>>
     }
+    class PaintTabView {
+        <<UI Toolkit>>
+    }
 
     class FileTabViewModel {
         +BrowseImageCommand : ICommand
@@ -371,6 +381,16 @@ classDiagram
     class DebugTabViewModel {
         +LogEntries : IReadOnlyList~LogEntry~
         +FilterLevel : LogLevel
+    }
+
+    class PaintTabViewModel {
+        +ActiveAxis : Axis
+        +SliceIndex : int
+        +ActiveSourceId : short
+        +IsAdditive : bool
+        +FillMaskCommand : ICommand
+        +ClearAllCommand : ICommand
+        +SaveMaskCommand : ICommand
     }
 
     class SubsetBoundsViewModel {
@@ -387,12 +407,15 @@ classDiagram
     IPanel <|.. FileTabView
     IPanel <|.. DebugTabView
     IPanel <|.. RenderingTabView
+    IPanel <|.. PaintTabView
     FileTabViewModel --> SubsetBoundsViewModel : owns
     FileTabView --> FileTabViewModel : binds
     DebugTabView --> DebugTabViewModel : binds
+    PaintTabView --> PaintTabViewModel : binds
     CanvassDesktopShell --> IPanel : manages
 
     note for CanvassDesktopShell "WMC = 8, CBO = 4 (down from 63 / 47)"
+    note for PaintTabViewModel "Replaces DesktopPaintController (1,558 LOC, WMC 57). Mask-edit logic becomes unit-testable; the UpdateMaxValue→minVal corruption (D1 B-14) is structurally eliminated."
 ```
 
 ### 5.3 SOLID principles applied
