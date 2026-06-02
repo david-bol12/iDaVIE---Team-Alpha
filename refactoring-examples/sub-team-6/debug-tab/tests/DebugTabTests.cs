@@ -8,7 +8,7 @@ using NUnit.Framework;
 
 namespace iDaVIE.Desktop.DebugTab.Tests
 {
-    // ── Shared test double ─────────────────────────────────────────────────────
+    // Shared test double
 
     internal sealed class LambdaObserver : ILogObserver
     {
@@ -46,9 +46,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
         public int ObserverCount => _observers.Count;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
     // LogStream tests (production implementation)
-    // ═══════════════════════════════════════════════════════════════════════════
 
     [TestFixture]
     public sealed class LogStreamTests
@@ -173,9 +171,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
     // DebugTabViewModel tests
-    // ═══════════════════════════════════════════════════════════════════════════
 
     [TestFixture]
     public sealed class DebugTabViewModelTests
@@ -187,7 +183,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
             return (vm, stream);
         }
 
-        // ── Construction ──────────────────────────────────────────────────────
+        // Construction
 
         [Test]
         public void Constructor_SubscribesToProvidedStream()
@@ -211,7 +207,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
             Assert.AreEqual(0, vm.LogEntries.Count);
         }
 
-        // ── AppendEntry ────────────────────────────────────────────────────────
+        // AppendEntry
 
         [Test]
         public void AppendEntry_AddsEntry()
@@ -257,7 +253,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
             Assert.AreEqual("third",  vm.LogEntries[2].Message);
         }
 
-        // ── ClearEntries ───────────────────────────────────────────────────────
+        // ClearEntries
 
         [Test]
         public void ClearEntries_RemovesAllEntries()
@@ -291,7 +287,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
             Assert.DoesNotThrow(() => vm.ClearEntries());
         }
 
-        // ── Observer integration ───────────────────────────────────────────────
+        // Observer integration
 
         [Test]
         public void StreamPublish_ReceiveEntry_CorrectLevel()
@@ -335,7 +331,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
             Assert.IsTrue(raised);
         }
 
-        // ── LogEntries is read-only ────────────────────────────────────────────
+        // LogEntries is read-only
 
         [Test]
         public void LogEntries_IsReadOnlyCollection()
@@ -345,7 +341,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
             Assert.IsInstanceOf<System.Collections.Generic.IReadOnlyList<LogEntry>>(vm.LogEntries);
         }
 
-        // ── Entry cap ──────────────────────────────────────────────────────────
+        // Entry cap
 
         [Test]
         public void AppendEntry_OverCap_TrimsOldestEntry()
@@ -364,7 +360,7 @@ namespace iDaVIE.Desktop.DebugTab.Tests
             Assert.AreEqual("msg2000", vm.LogEntries[vm.LogEntries.Count - 1].Message);
         }
 
-        // ── Dispose ────────────────────────────────────────────────────────────
+        // Dispose
 
         [Test]
         public void Dispose_UnsubscribesFromStream()

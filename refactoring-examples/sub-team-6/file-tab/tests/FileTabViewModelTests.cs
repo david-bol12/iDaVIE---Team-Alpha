@@ -10,7 +10,7 @@ using NUnit.Framework;
 
 namespace iDaVIE.Desktop.FileTab.Tests
 {
-    // ── Test doubles ──────────────────────────────────────────────────────────
+    // Test doubles
 
     internal sealed class StubFitsHandle : IFitsHandle
     {
@@ -82,7 +82,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         }
     }
 
-    // ── Shared fixture helpers ─────────────────────────────────────────────────
+    // Shared fixture helpers
 
     internal static class FitsFactory
     {
@@ -119,9 +119,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         };
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
     // FileTabViewModel tests
-    // ═══════════════════════════════════════════════════════════════════════════
 
     [TestFixture]
     public sealed class FileTabViewModelTests
@@ -138,7 +136,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             return (new FileTabViewModel(fits, dialog, vol, probe), fits, dialog, vol, probe);
         }
 
-        // ── Browse image ──────────────────────────────────────────────────────
+        // Browse image
 
         [Test]
         public async Task BrowseImage_ValidCube_SetsImagePathAndIsLoadable()
@@ -261,7 +259,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.AreEqual(50,  vm.Subset.ZMax);
         }
 
-        // ── Browse mask ────────────────────────────────────────────────────────
+        // Browse mask
 
         [Test]
         public async Task BrowseMask_MatchingDimensions_SetsMaskPath()
@@ -302,7 +300,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.BrowseMaskCommand.CanExecute());
         }
 
-        // ── Load ───────────────────────────────────────────────────────────────
+        // Load
 
         [Test]
         public async Task Load_ValidFile_PassesCorrectPathAndHduIndex()
@@ -389,7 +387,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.LoadCommand.CanExecute());
         }
 
-        // ── Aspect ratio (RatioMode → ZScale) ─────────────────────────────────
+        // Aspect ratio (RatioMode → ZScale)
 
         [Test]
         public async Task Load_IsotropicRatio_PassesZScaleOne()
@@ -427,7 +425,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.AreEqual("X=Y",   vm.RatioModeOptions[1]);
         }
 
-        // ── Memory-feasibility warning (CheckMemSpaceForCubes equivalent) ─────
+        // Memory-feasibility warning (CheckMemSpaceForCubes equivalent)
 
         [Test]
         public async Task Load_CubeFitsInMemory_NoWarning()
@@ -442,7 +440,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsNull(vm.ValidationMessage);
         }
 
-        // ── CubeLoaded event (peer-tab subscription point) ────────────────────
+        // CubeLoaded event (peer-tab subscription point)
 
         [Test]
         public async Task Load_Success_RaisesCubeLoadedEventOnce()
@@ -500,7 +498,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsNotNull(vol.LastRequest);
         }
 
-        // ── Clear mask ─────────────────────────────────────────────────────────
+        // Clear mask
 
         [Test]
         public async Task ClearMask_RemovesMaskPath()
@@ -519,7 +517,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsNull(vm.MaskPath);
         }
 
-        // ── PropertyChanged ────────────────────────────────────────────────────
+        // PropertyChanged
 
         [Test]
         public async Task PropertyChanged_ImagePath_RaisedOnBrowse()
@@ -552,7 +550,6 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.IsLoading);   // must be false when command finishes
         }
 
-        // ═══════════════════════════════════════════════════════════════════════
         // Branch-coverage gate close (audit F14 follow-up, 2026-05-27).
         //
         // The 34 happy-path / single-error tests above leave FileTabViewModel at
@@ -574,9 +571,8 @@ namespace iDaVIE.Desktop.FileTab.Tests
         //
         // Together these are estimated to lift FileTabViewModel branch coverage
         // from 68.7 % to ≥ 76 %, clearing the D5 §7 ≥ 70 % gate.
-        // ═══════════════════════════════════════════════════════════════════════
 
-        // ── Constructor null guards (L54-57) ──────────────────────────────────
+        // Constructor null guards (L54-57)
 
         [Test]
         public void Ctor_NullFitsService_Throws()
@@ -618,7 +614,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
                 memoryProbe:   null!));
         }
 
-        // ── Setter no-op paths (L85, L100) ────────────────────────────────────
+        // Setter no-op paths (L85, L100)
 
         [Test]
         public async Task SelectedHduIndex_SetToSameValue_DoesNotRaisePropertyChanged()
@@ -660,7 +656,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.AreEqual(0, notifications);
         }
 
-        // ── Setters with no image loaded (L338, L388) ─────────────────────────
+        // Setters with no image loaded (L338, L388)
 
         [Test]
         public void SelectedHduIndex_SetBeforeImage_NoOpAndDoesNotThrow()
@@ -676,7 +672,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.IsLoadable);
         }
 
-        // ── Dispose on empty VM (L328, L329) ──────────────────────────────────
+        // Dispose on empty VM (L328, L329)
 
         [Test]
         public void Dispose_VmWithNoOpenFiles_DoesNotThrow()
@@ -690,7 +686,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.DoesNotThrow(() => vm.Dispose());
         }
 
-        // ── IsLoadable axis-count rule (L161) ─────────────────────────────────
+        // IsLoadable axis-count rule (L161)
 
         [Test]
         public async Task IsLoadable_ThreeAxesButOnlyTwoNonTrivial_False()
@@ -714,7 +710,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.IsLoadable);
         }
 
-        // ── BrowseMask edge cases (L244, L259, MaskAxesMatchImage axes 1+2) ───
+        // BrowseMask edge cases (L244, L259, MaskAxesMatchImage axes 1+2)
 
         [Test]
         public async Task BrowseMask_UserCancels_LeavesStateUnchanged()
@@ -793,9 +789,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
     // SubsetBoundsViewModel tests
-    // ═══════════════════════════════════════════════════════════════════════════
 
     [TestFixture]
     public sealed class SubsetBoundsViewModelTests
