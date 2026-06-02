@@ -50,37 +50,48 @@ using VolumeData;    // [CBO #2] VolumeDataSet — PLACEHOLDER; see note below
 namespace iDaVIE.Rendering
 {
     // ══════════════════════════════════════════════════════════════════════════
-    // SUB-TEAM 2 DEPENDENCY PLACEHOLDER
+    // SUB-TEAM 2 CONTRACT — CONFIRMED 2 June 2026
     // ══════════════════════════════════════════════════════════════════════════
     //
-    // ⚠  THIS IS OUR ASSUMED VERSION — NOT YET CONFIRMED WITH SUB-TEAM 2.
+    // ✅  Contract agreed with Sub-team 2 (Data I/O). Fields below are final.
     //
-    // VolumeTextureManager currently depends on VolumeDataSet directly (above
-    // [CBO #2]). This is a temporary coupling maintained to keep the skeleton
-    // buildable while the cross-team interface is negotiated.
+    // Key corrections from our original assumption:
+    //   • Voxels field is byte[] — NOT float[].
+    //     Reason: the data cube is read via FitsReadSubImageFloat (float) but the
+    //     mask cube is read via FitsReadSubImageInt16 (Int16/short). A single
+    //     struct must carry both without silent upcasting or memory waste.
+    //     DataFormat tells the consumer how to interpret the bytes.
+    //     Upload uses Texture3D.SetPixelData<T>() with T inferred from DataFormat.
     //
-    // When Sub-team 2 confirms the RawVolumeData struct (blocker in
-    // PROGRESS.md task S2-CO09), reconcile and update:
-    //   • Replace the two VolumeDataSet constructor parameters with:
+    //   • XDim / YDim / ZDim are long — NOT int.
+    //     Reason: VolumeDataSet already uses long for all three dimensions because
+    //     astronomical FITS cubes can exceed int range. Narrowing to int here would
+    //     create a silent overflow at the handoff boundary.
+    //
+    //   • Constructor shape confirmed: (VolumeTextureConfig, RawVolumeData, RawVolumeData?)
+    //     Nullable mask cube is correct — not every volume has a mask.
+    //
+    //   • Downsample factors: we compute them (Sub-team 2 does not pre-compute).
+    //
+    // TODO (Sprint 3): replace VolumeDataSet constructor parameters with:
     //       RawVolumeData  dataCube
     //       RawVolumeData? maskCube
-    //   • Remove the VolumeData using statement above.
-    //   • Delete the VolumeDataSet fields and replace with the voxel arrays
-    //     from RawVolumeData — texture creation will call
-    //     Texture3D.SetPixelData<float>() directly rather than delegating to
-    //     VolumeDataSet.GenerateVolumeTexture().
+    //   and remove the VolumeData using statement. Texture creation must branch on
+    //   DataFormat to call SetPixelData<float> vs SetPixelData<short> accordingly.
     //
-    // Specific fields to confirm with Sub-team 2:
-    //   • The element type of the voxel array (float, half, short?).
-    //   • Whether dimensions (XDim, YDim, ZDim) are provided as a Vector3Int
-    //     or as three separate ints.
-    //   • Whether a downsample-factor hint is pre-computed by the data layer or
-    //     whether VolumeTextureManager should call FindDownsampleFactors itself.
-    //   • Whether RawVolumeData is re-used for the mask cube or if a separate
-    //     type is used.
+    // ══════════════════════════════════════════════════════════════════════════
     //
-    // This placeholder pattern mirrors the IGazeProvider note in
-    // FoveatedSamplingPolicy.cs (Sub-team 4 dependency).
+    // CONFIRMED RawVolumeData struct (defined by Sub-team 2, consumed here):
+    //
+    //   public readonly struct RawVolumeData
+    //   {
+    //       public byte[]      Voxels  { get; init; }  // raw bytes; interpret via Format
+    //       public long        XDim    { get; init; }
+    //       public long        YDim    { get; init; }
+    //       public long        ZDim    { get; init; }
+    //       public DataFormat  Format  { get; init; }  // Float32 | Int16
+    //   }
+    //
     // ══════════════════════════════════════════════════════════════════════════
 
 
