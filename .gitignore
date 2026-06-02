@@ -566,3 +566,6 @@ NDependOut/
 
 # People can see docs
 !docs/
+
+# Can't see personal prep
+docs\sub-team-6\explainer-docs\con_folder
