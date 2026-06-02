@@ -172,7 +172,94 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ## Damien O Brien
 
-### Session 1 — Design Document Questions (URP/HDRP & No-ops)
+### Session 1 — Read & Annotate VolumeDataSetRenderer.cs
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 21 May 2026
+**Task:** Read and annotate the primary target class `VolumeDataSetRenderer.cs`.
+**Prompt summary:** Asked Claude to read `VolumeDataSetRenderer.cs` in full and produce a structured annotation document.
+**Output:** Annotation Word document covering: file overview (1,402 lines, ~40 methods, 60+ fields), full method responsibility map across 8 responsibility categories, SOLID violation summary (SRP: 9 responsibilities, OCP, DIP, ISP all violated), preliminary CK metrics (WMC ~60, CBO ~32, RFC ~130, LCOM ~0.90), proposed target class mappings, key inline annotations on 4 worst methods, and Unity 6 migration flags. 
+**Files affected:** `VolumeDataSetRenderer annotation.docx` (new)
+
+---
+
+### Session 2 — Read VolumeRender Shaders & Colourbar
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 22 May 2026
+**Task:** Read and annotate `BasicVolume.shader`, `BasicVolume.cginc`, and `Colorbar.cs`.
+**Prompt summary:** Asked Claude to read `VolumeRender.shader`. Then pasted the full `BasicVolume.shader` ShaderLab wrapper and asked for a plain-English breakdown and markdown file. Later pasted the full `Colorbar.cs` code and asked for the same treatment.
+**Output:** Shader annotation covering: vertex shader ray setup, fragment shader ray march loop (foveated step count, temporal jitter, 8 duplicated loop bodies across 2 projection modes × 4 mask modes), transfer function pipeline, depth intersection, NaN guard. `BasicVolume.shader` annotation markdown produced. `Colorbar.cs` breakdown produced covering: colour strip sprite atlas system, tick label layout, per-frame polling issues, and 5 refactoring problems (GetHashCode() fragility, GetComponentInChildren at runtime, GC allocations from Destroy/Instantiate, Resources.LoadAll coupling, update polling vs event-driven).
+**Files affected:** `BasicVolume.shader annotation.md` (new), `Colorbar annotation.md` (implied).
+
+---
+
+### Session 3 — Understand Mask/Ray Marching 
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 23 May 2026
+**Task:** Understand masks and ray marching conceptually.
+**Prompt summary:** "what is a mask in relation to this codebase?", "what is ray marching?", and "can you describe it at the most simple level you can?" Then asked for a markdown file covering all discussion on this task.
+**Output:** Explanation of ray marching (simple: "shining a torch through fog, pixel by pixel"). 
+
+---
+
+### Session 4 — Read All ColourMap Shader Files 
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 23 May 2026
+**Task:** Read all colour map shader files.
+**Prompt summary:** Asked Claude to read all colour map shader files. Followed up asking whether individual colour map shader files exist.
+**Output:** Confirmed no dedicated colour map shader files exist — the system is entirely texture-based. Colour map system spans four locations: `ColorMapEnum.cs` (80 maps as enum), `BasicVolume.cginc` (atlas UV sampling pipeline), `Colorbar.cs` (UI sprite display), and `VolumeDataSetRenderer.ShiftColorMap()` (switching logic in the wrong class). Key finding: all 80 maps are stacked as horizontal strips in one 2D texture atlas; switching costs a single integer uniform update. Fragility flagged: `GetHashCode()` used as shader index — inserting a new enum value in the middle silently breaks atlas alignment.
+**Files affected:** `ColourMap annotation.md` (new).
+
+---
+
+### Session 5 — Catalogue Unity 5 / Built-in RP APIs 
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 23 May 2026
+**Task:** Catalogue all Unity 5 / Built-in RP API usage across the codebase.
+**Prompt summary:** Asked Claude to catalogue Unity 5 / Built-in RP APIs across the codebase. Then asked "what is Built-in RP?" for a conceptual explanation.
+**Output:** Full catalogue produced: 5 shader files all using `CGPROGRAM`/`UnityCG.cginc` (zero URP), 15+ legacy texture sampling calls (`tex3Dlod`, `tex2D`, `sampler3D`), 23 `FindObjectOfType` calls (compile error in Unity 6), 2 `OnRenderObject`/`OnRenderImage` callbacks (not called by URP), 3 `Graphics.DrawProceduralNow` calls (incompatible with URP render pass system). Conceptual explanation of Built-In RP vs URP/HDRP and the exact shader syntax changes required for migration.
+**Files affected:** `Unity5 BuiltinRP API Catalogue.md` (new).
+
+---
+
+### Session 6 — Write Render-Frame Call Sequence 
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 24 May 2026
+**Task:** Document the full render-frame call sequence with line numbers.
+**Prompt summary:** Asked Claude to write the render-frame call sequence. Then asked to add line number references after reviewing the first version.
+**Output:** Full call sequence document covering 5 phases: one-time setup (`_startFunc()` coroutine), CPU `Update()` (25+ uniform calls in order), GPU vertex shader (ray setup), GPU fragment shader (full ray march loop with all 8 branches + transfer function pipeline), GPU mask point cloud (`OnRenderObject()` + `DrawProceduralNow`). Line numbers added for all key functions. Key finding: `Update()` pushes all 25+ uniforms every frame regardless of whether values changed — refactored `VolumeMaterialBinder.SyncShaderState()` with dirty flags reduces this to near-zero on a static frame.
+**Files affected:** `RenderFrame CallSequence.md` (new).
+
+---
+
+### Session 7 — Identify Other Rendering-Adjacent Classes 
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 24 May 2026
+**Task:** Identify all rendering-adjacent classes across the codebase.
+**Prompt summary:** Asked Claude to identify other rendering-adjacent classes.
+**Output:** 12 rendering-adjacent classes across 4 tiers identified. Key findings: `VolumeDataSet.cs` at 1,920 lines does GPU texture work (`GenerateVolumeTexture`, `Graphics.CopyTexture`) inside a data model class; vignette fields copy-pasted between `VolumeDataSetRenderer` and `CatalogDataSetRenderer`; 3 classes use `DrawProceduralNow` (all break on URP migration); near-circular dependency between `FeatureSetRenderer` and `VolumeDataSetRenderer`.
+**Files affected:** `RenderingAdjacentClasses.md` (new).
+
+---
+
+### Session 8 — List SOLID/GRASP Violations with Evidence 
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 24 May 2026
+**Task:** Produce a comprehensive SOLID/GRASP violation audit with line-number evidence.
+**Prompt summary:** Asked Claude to list SOLID/GRASP violations with evidence. Asked follow-up "just briefly what are SOLID and GRASP?" and "hypothetically if I asked you to refactor the whole codebase, would you be able to do it?"
+**Output:** Full violations document: SOLID — 9 violations (SRP: 9 responsibilities; OCP: MaskMode requires 4-file edit per new mode; ISP: 152 public members, zero interfaces; DIP: 4 violations including Config.Instance singleton, FindObjectOfType, AddComponent). GRASP — 6 violations with exact line evidence. Headline stats: CBO ~32 (target ≤14), LCOM ~0.90 (target ≤0.5), 152 public members with zero interface coverage. Hypothetical refactoring cost estimated at ~$7–10 via API (~$20 Pro plan would cover it).
+**Files affected:** `SOLID GRASP Violations.md` (new).
+
+---
+
+### Session 9 — Sketch Four-Class Split (Kanban Task 14)
+**Tool:** Claude (claude.ai, free tier)
+**Date:** 24 May 2026
+**Task:** Sketch the four-class split as rough design notes — final Sprint 1 task.
+**Prompt summary:** Asked Claude to sketch the four-class split (rough notes).
+**Output:** Design notes document covering all four target classes with exact fields and methods extracted from `VolumeDataSetRenderer.cs` with line numbers: `VolumeMaterialBinder` (25+ uniforms, IMaskMode strategy, URP anti-corruption layer), `VolumeTextureManager` (4GB budget enforcement, GPU slot management), `VolumeCameraDriver` (Transform wrapper, `VolumeCoordinateService` pure-C# helper), `FoveatedSamplingPolicy` (pure C#, zero Unity dependencies, fully testable). All 14 Kanban tasks completed.
+**Files affected:** `FourClassSplit RoughNotes.md` (new).
+
+### Session 10 — Design Document Questions (URP/HDRP & No-ops)
 **Tool:** Claude (Cowork)
 **Task:** Understand URP vs HDRP rendering pipelines and the concept of no-ops before working on the design document.
 **Prompt summary:** Asked what the difference is between the URP and HDRP rendering pipelines, and what "no-ops" means in reference to them.
@@ -181,34 +268,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 2 — URP/HDRP Redundant Code Identification
-**Tool:** Claude (Cowork)
-**Task:** Identify redundant code in the iDaVIE codebase specific to URP and HDRP render pipeline no-ops.
-**Prompt summary:** Asked Claude to find bits of code that are redundant and could be removed, specifically in relation to no-ops in URP and HDRP render pipelines. Followed up by asking whether the flagged functions are used anywhere else in the codebase.
-**Output:** Identified four affected files with code snippets that silently break under URP/HDRP (`OnRenderObject`, `OnRenderImage`, `Graphics.DrawProceduralNow`, `Graphics.Blit`). Confirmed via codebase search that none of the flagged calls appear elsewhere — removal is fully localised. A summary document was produced.
-**Files affected:** `docs/urp_hdrp_no-ops_analysis.md` (new).
-
----
-
-### Session 3 — Mask Mode Strategy Pattern (Design Doc §5.4 & IMaskMode.cs)
-**Tool:** Claude (Cowork)
-**Task:** Write the Mask Mode Strategy Pattern design document section and finalise `IMaskMode.cs`.
-**Prompt summary:** Asked Claude to write §5.4 of the design document covering the OCP violation, Strategy pattern decision, interface design, four implementations, and pattern-choice rationale. Also asked to finalise `IMaskMode.cs` with `DisabledMaskMode` as a Null Object, and promote `ApplyMaskMode`, `InverseMaskMode`, and `IsolateMaskMode` from stubs to fully annotated implementations with XML docs, null-guards, and mutual keyword exclusion.
-**Output:** `docs/design-document.md` §5.4 written. `IMaskMode.cs`, `ApplyMaskMode.cs`, `InverseMaskMode.cs`, `IsolateMaskMode.cs`, `DisabledMaskMode.cs` finalised with SOLID/GRASP annotations and projected CK metrics.
-**Files affected:** `docs/design-document.md` §5.4, `refactoring-examples/team3/example2-MaskModes/after/IMaskMode.cs`, `ApplyMaskMode.cs`, `InverseMaskMode.cs`, `IsolateMaskMode.cs`.
-
----
-
-### Session 4 — VolumeMaterialBinder Draft & VolumeTextureManager Documentation
-**Tool:** Claude (Cowork)
-**Task:** Draft `VolumeMaterialBinder.cs` and document `VolumeTextureManager`.
-**Prompt summary:** Asked Claude to draft `VolumeMaterialBinder.cs` with a `VolumeRenderState` readonly struct, a 7-member `IVolumeMaterialBinder` interface, and the sealed implementation with full SOLID/GRASP inline annotations and projected CK metrics. Also asked for documentation of `VolumeTextureManager`.
-**Output:** `VolumeMaterialBinder.cs` drafted with WMC=16, CBO≤11 confirmed against targets. `VolumeTextureManager` documented.
-**Files affected:** `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/VolumeMaterialBinder.cs`, `refactoring-examples/team3/example1-VolumeDataSetRenderer/after/Rationale/VolumeMaterialBinder-decisions.md`.
-
----
-
-### Session 5 — Remaining Tasks Assessment & Sprint 2 Progress
+### Session 11 — Remaining Tasks Assessment & Sprint 2 Progress
 **Tool:** Claude (Cowork)
 **Task:** Review remaining sprint tasks and assess what was done vs. outstanding.
 **Prompt summary:** Asked Claude to assess what sprint tasks were complete and what remained outstanding based on PROGRESS.md and the project files.
@@ -217,7 +277,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 6 — Design Document Scope & Requirements Sections
+### Session 12 — Design Document Scope & Requirements Sections
 **Tool:** Claude (Cowork)
 **Task:** Write and revise §3 (Scope) and §4 (Requirements Recap) of the design document.
 **Prompt summary:** Asked for the markdown code for §3 shortened significantly, and §4 without bullet points to condense presentation. Multiple iterations — first draft of §3 produced, then shortened; §4 written with CK metrics targets table and design standards, then condensed to remove bullet points and unnecessary information.
@@ -226,7 +286,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 7 — Design Document Condensed & Word Document Export
+### Session 13 — Design Document Condensed & Word Document Export
 **Tool:** Claude (Cowork)
 **Task:** Condense the full design document and export as a Word (.docx) file.
 **Prompt summary:** Asked Claude to condense the design document (down from ~1,400 lines to ~290) keeping all tables, code interfaces, and brief requirements. Then asked for a Word document export of the condensed version.
@@ -235,25 +295,24 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 8 — Deliverables Review & Baseline CK Metrics Fix
+### Session 14 — Deliverables Review 
 **Tool:** Claude (Cowork)
-**Task:** Review sprint deliverables status and fix TBD baseline CK metrics in `rendering-layer-design.md`.
-**Prompt summary:** Pasted git output showing a rebase/detached HEAD situation and asked for help resolving it. Then asked "so how are we looking now in respect to the deliverables?" to get a status check. Followed up by asking Claude to fix TBD entries in `rendering-layer-design.md`.
-**Output:** Deliverables status summary (design doc, refactoring examples, diagrams, metrics worksheet — all confirmed in good shape). TBD baseline CK metrics in `rendering-layer-design.md` replaced with measured Understand values (WMC=44, CBO=45, RFC=89, LCOM=~0.81, DIT=1).
-**Files affected:** `docs/rendering-layer-design.md`.
+**Task:** Review sprint deliverables status 
+**Prompt summary:** Pasted git output showing a rebase/detached HEAD situation and asked for help resolving it. Then asked "so how are we looking now in respect to the deliverables?" to get a status check. 
+**Output:** Deliverables status summary (design doc, refactoring examples, diagrams, metrics worksheet — all confirmed in good shape). 
 
 ---
 
-### Session 9 — Standup Notes
+### Session 15 — Standup Notes
 **Tool:** Claude (Cowork)
-**Task:** Create and format standup notes for the full project period (Weeks 1–3).
-**Prompt summary:** Asked Claude to generate a 5-day standup notes template for the team across three weeks, with rotating Scrum Master roles. Followed up pasting the content back and asking to fix formatting (missing spacing between team member sections).
-**Output:** `standup-notes.md` with Weeks 1–3, all four team members, rotating roles (Cathal SM Week 1, Damien SM Week 2, Ciallian SM Week 3), and blank templates for Week 3.
+**Task:** Format standup notes for the full project period (Weeks 1–2).
+**Prompt summary:** Asked Claude to format standup notes for the team across first two weeks, with rotating roles. 
+**Output:** `standup-notes.md` with Weeks 1–2, all four team members, rotating roles (Cathal SM Week 1, Damien SM Week 2, Ciallian SM Week 3), and blank templates for Week 3.
 **Files affected:** `docs/standup notes.md`, `standup/standup-log.md`.
 
 ---
 
-### Session 10 — Golden-Image Regression Testing Explanation
+### Session 16 — Golden-Image Regression Testing Explanation
 **Tool:** Claude (Cowork)
 **Task:** Understand what "golden-image regression suite across mask modes and colour maps" means in the context of the test strategy.
 **Prompt summary:** Asked what the phrase "Golden-image regression suite across mask modes and colour maps" means in regard to testing.
@@ -262,7 +321,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 11 — Unity Test Framework Setup
+### Session 17 — Unity Test Framework Setup
 **Tool:** Claude (Cowork)
 **Task:** Set up Unity Test Framework with Edit Mode and Play Mode tests for the refactored code.
 **Prompt summary:** Asked how to implement software testing including play-mode tests under Unity Test Framework for renderer behaviour and edit-mode tests for non-Unity parts. Asked Claude to check the tests folder inside refactoring-examples. Subsequently pasted partial Unity test file setup and asked Claude to write `EditModeTests.cs` and `PlayModeTests.cs` covering mask mode shader keywords, colour map enum sanity, and play-mode material apply behaviour.
@@ -271,16 +330,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 12 — CodeScene Report Guidance
-**Tool:** Claude (Cowork)
-**Task:** Understand how to generate a CodeScene report for the refactored code.
-**Prompt summary:** Asked how to write a CodeScene report for the refactored code given an existing CodeScene account.
-**Output:** Step-by-step guidance on generating an on-demand CodeScene PDF report, using Code Health scores to measure before/after refactoring impact, and triggering a fresh analysis once commits are pushed.
-**Files affected:** None (informational).
-
----
-
-### Session 13 — Git Workflow Support
+### Session 18 — Git Workflow Support
 **Tool:** Claude (Cowork)
 **Task:** Git commands for pulling, branching, pushing, and resolving conflicts throughout the project.
 **Prompt summary:** Multiple git-related questions across sessions: how to pull the latest branch version, how to see branches, how to discard unstaged changes, how to push to a branch, resolving a detached HEAD state during a rebase, and how to unstage/discard changes.
@@ -289,7 +339,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 14 — Presentation Preparation
+### Session 19 — Presentation Preparation
 **Tool:** Claude (Cowork)
 **Task:** Prepare the team for the Sprint 2 presentation/interview.
 **Prompt summary:** Asked Claude to assess the project files and identify what was already done vs. still open for Sprint 3. Asked for guidance on where to start for the presentation.
@@ -297,10 +347,3 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 **Files affected:** None (informational/planning).
 
 ---
-
-### Session 15 — AI Usage Log (current session)
-**Tool:** Claude (Cowork)
-**Task:** Review all Claude sessions and git commits for the iDaVIE project and populate the AI usage log.
-**Prompt summary:** Asked Claude to review all prompts and commits made regarding the iDaVIE project and update the existing team AI usage log with Damien's work.
-**Output:** Sessions 1–15 written into `AI-USAGE-LOG.md` under Damien O Brien's section, drawn from session transcript history and git commit log.
-**Files affected:** `AI-USAGE-LOG.md`.
