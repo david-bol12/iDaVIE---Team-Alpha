@@ -1,245 +1,87 @@
-# iDaVIE Refactoring — Sub-team 3: Rendering Engine
-## Team Alpha | Cache Me If You Can
+# Project: iDaVIE Refactoring Proposal — Sub-team 6 (Desktop GUI & Client Shell)
 
----
+This repository is a working fork of [iDaVIE](https://github.com/idia-astro/iDaVIE) used for the **ISE EPIC: Refactoring the iDaVIE Codebase for Maintainability** assignment (Mon 18 May – Fri 5 June 2026, 15 working days).
 
-## What This Project Is
+> **Team identity (resolved 2026-05-19).** We are **Team Alpha**, allocated to the **Desktop GUI and Client Shell** work package (Section 6.6 of the spec). In Section 5.5's cohort allocation table that's **Sub-team 5 "Die Boks"**. We informally refer to our work package as "Team 6" because the brief we read is Section 6.6 — the spec overloads "Sub-team N" to mean both allocation ID and work package number. When external coordination needs a number, use **Alpha / Sub-team 5 / Die Boks**.
 
-A 15-day design-only refactoring proposal for the iDaVIE open-source VR codebase.
-iDaVIE is a Unity-based VR application for visualising 3D astronomical data (FITS files).
+## Assignment one-liner
 
-**We do NOT change production code.** We produce a proposal document showing *how* the
-code would be refactored, with worked before/after examples.
+**Design-only** refactoring proposal — no upstream code is changed. Sub-teams demonstrate maintainability gains using **before/after worked examples**, UML, CK metrics, ADRs, and a testability strategy. The target style is **client–server + micro-kernel + layered + plug-in**, with an **anti-corruption layer** around Unity 6 APIs.
 
-The final output is a pitch to the iDaVIE maintainer panel on Thu 4 June 2026.
+- **Cohort:** Team Beta (27 students, 7 sub-teams). Sub-team 6 = us, 4 people.
+- **Final deliverable:** a 40-min pitch to the iDaVIE maintainer panel on **Thu 4 June 2026, 12:00–13:00**.
+- **Artefact freeze:** Thu 4 June 11:00 (pitch start). Submission window Fri 5 June 14:00–16:00.
 
-- **Team:** Team Alpha (28 students, 7 sub-teams of 4)
-- **Our sub-team:** Sub-team 3 — Rendering Engine ("Cache Me If You Can")
-- **Duration:** Mon 18 May – Fri 5 June 2026
-- **Codebase:** https://github.com/idia-astro/iDaVIE
+See `Assignment-Docs/iDaVIE_Refactoring_Assignment_FINAL_1.md` for the canonical spec.
 
----
+## Sub-team 6 scope (Section 6.6)
 
-## Our Sub-team's Scope
+**Behavioural element owned:** `CanvassDesktop`, file/mask loaders, parameter panels, debug consoles, and the client-side composition root that wires everything to the server.
 
-We own the **volume rendering layer**:
-- Ray-marching shaders
-- 3D texture management
-- Foveated rendering
-- Colour mapping
-- Migration of all of the above to Unity 6 Scriptable Render Pipeline (URP/HDRP)
+**Target architecture for our slice:**
+- **MVVM split:** View (Unity 6 UI Toolkit) → ViewModel (pure C#, Unity-free) → Service Gateway (talks to the server).
+- **Transport contract:** JSON-RPC over named pipes (local mode); gRPC for future remote streaming.
+- **SRP on `CanvassDesktop`:** menu structure, panel state, file dialogs and configuration must be separated. No more God-canvas.
+- **Anti-corruption layer:** domain code in the client must not transitively depend on `UnityEngine` or `SteamVR` types.
 
-**Key class we are refactoring:** `VolumeDataSetRenderer` (currently a monolithic ~1400-line class)
+**Mandatory worked refactoring examples (two):**
+1. **File tab** — from direct native-plugin call → ViewModel command via service gateway.
+2. **Debug tab** — as Observer of a structured logging stream.
 
----
+**Sub-team deliverables (per Section 6.6 + Section 9.2):**
+- Desktop client architecture document (5–10 pages).
+- MVVM binding policy.
+- Worked refactoring of File and Debug tabs (before/after UML, dependency graph, CK metric deltas).
+- Sub-team requirements doc (1–2 pages).
+- Sub-team test strategy (2–4 pages).
+- End-of-sprint Kanban snapshots ×3.
+- Daily stand-up notes (single shared file).
 
-## Deliverables We Must Produce
+**Dependencies:**
+- Sub-team 1 (Architecture/Micro-kernel) for the **service gateway** contract.
+- Sub-team 4 (Interaction System) for **VR-side menus**.
 
-### Sub-team Deliverables (Section 9.2 of brief)
-1. `docs/team3/requirements.md` — Sub-team requirements document (1–2 pages)
-2. `docs/team3/design-document.md` — Sub-team design document (5–10 pages)
-3. `refactoring-examples/team3/` — Two worked refactoring examples with before/after CK metrics
-4. `docs/team3/test-strategy.md` — Sub-team test strategy (2–4 pages)
-5. `kanban/` — Kanban snapshots at end of each sprint (Sprint 1, 2, 3)
-6. `standup/standup-log.md` — Daily stand-up notes (single running file)
+## Codebase facts that matter for our scope
 
-### Section 6.3 Specific Deliverables
-- `docs/team3/rendering-layer-design.md` — Rendering layer design document
-- `docs/team3/shader-asset-policy.md` — Shader/asset organisation policy for Unity 6
-- `docs/team3/metrics-worksheet.md` — Before/after CK metrics worksheet for the renderer
+- **Unity:** 2021.3.45f2 (legacy `UnityEngine.UI` Canvas system; target is Unity 6 UI Toolkit).
+- **Primary file under our care:** `Assets/Scripts/UI/CanvassDesktop.cs` — **1899 lines**, single `MonoBehaviour`. Code smells visible at a glance:
+  - Long `transform.Find("A/B/C/...").GetComponent<...>()` chains hardwired to scene hierarchy (fragile, untestable).
+  - Mixed concerns: file I/O, FITS axis logic, slider wiring, popup state, coroutine lifecycles, threshold sliders, subset bounds maths.
+  - Heavy reliance on `FindObjectOfType<>` (singleton-style coupling).
+  - Direct calls to native plug-ins / `VolumeCommandController`.
+- **Other UI files in scope:** everything under `Assets/Scripts/UI/` and `Assets/Scripts/Menu/` (TabsManager, RenderingController, OptionController, etc.).
+- **CI:** basic sanity checks live at `.github/workflows/ci.yml`. The Quality Guild will harden this team-wide — we plug into it, we do not own it.
 
----
+## Mandatory metric tools (operational by Day 2, owned by Quality Guild)
 
-## Key Technical Requirements
+SonarQube Cloud · Understand (CK suite) · NDepend · CodeScene · DV8. We must produce a **Day 2 baseline** and a **Day 13 projected snapshot** for our slice of the code.
 
-### Current Invariants (must never be violated)
-- 90 fps minimum frame rate
-- 4 GB Unity texture limit
-- 368 MB default cube memory budget
-- Blocky (nearest-neighbour) texture filtering
-- Foveated rendering support
+**CK thresholds (Section 7.1):** WMC ≤ 20 (domain) / ≤ 40 (adapters) · DIT ≤ 4 · NOC ≤ 5 · CBO ≤ 14 (domain) / ≤ 25 (orchestrators) · RFC ≤ 50 · LCOM ≤ 0.5. Cycles forbidden.
 
-### Future Requirements (design must not preclude these)
-- Iso-contours / iso-surfaces
-- Multi-cube and time-series data
+**Coverage targets:** ≥ 70 % branch/line on domain code; ≥ 50 % overall. Unity-bound code tracked, not in the strict target.
 
----
+## Architectural non-negotiables (Section 4.2)
 
-## Target Architecture
+1. No SOLID/GRASP violations without a documented trade-off.
+2. **Zero circular dependencies** between top-level components.
+3. **Domain code must not transitively depend on UnityEngine / SteamVR.**
+4. Every public API boundary expressed as an interface with at least one test double.
+5. Plug-in C ABI semver and ABI-stable within a major version.
 
-### The Split We Must Design
-Break `VolumeDataSetRenderer` into four focused classes:
+## Working-style notes
 
-| New Class | Responsibility |
-|-----------|---------------|
-| `VolumeMaterialBinder` | Shader/material property management |
-| `VolumeTextureManager` | 3D texture upload, caching, eviction |
-| `VolumeCameraDriver` | Camera matrix calculations, clip planes |
-| `FoveatedSamplingPolicy` | Foveated rendering rate decisions |
+- This is a **design proposal**, not a code change. Worked examples live in `/refactoring-examples/sub-team-6/` (create when needed). Do not refactor production scripts under `Assets/`.
+- All diagrams must be **text-based and source-controlled** (PlantUML, Mermaid, .drawio XML). No binary-only diagrams.
+- **AI usage is expected and logged.** Any AI-generated artefact must be defensible by a human author on the panel. Maintain a log of prompts + tool + where it helped + where it failed.
+- AI may NOT be used for: peer-rating, contribution log, individual reflection, live pitch/interview defence.
 
-### Render Pipeline Abstraction
-- Create `IRenderPipeline` interface — our core must NOT import URP/HDRP types directly
-- URP and HDRP are concrete implementations of this interface
-- Enables edit-mode unit testing without a full Unity context
+## Where to look
 
-### Mask Mode Pattern
-- Replace the switch statement on mask modes with Strategy pattern
-- `IMaskMode` interface with three implementations: `ApplyMaskMode`, `InverseMaskMode`, `IsolateMaskMode`
-- Open-Closed Principle: new mask modes = new class, nothing existing changes
-
----
-
-## CK Metrics We Must Measure and Report
-
-| Metric | Meaning | Target |
-|--------|---------|--------|
-| WMC | Weighted Methods per Class | ≤ 20 (domain), ≤ 40 (adapters) |
-| DIT | Depth of Inheritance Tree | ≤ 4 |
-| NOC | Number of Children | ≤ 5 |
-| CBO | Coupling Between Objects | ≤ 14 (domain), ≤ 25 (orchestrators) |
-| RFC | Response For a Class | ≤ 50 |
-| LCOM | Lack of Cohesion in Methods | ≤ 0.5 |
-
-We need a **Day 2 baseline** snapshot and a **Day 13 projected** snapshot.
-
----
-
-## Dependencies on Other Sub-teams
-
-| Sub-team | What we need from them | What we give them |
-|----------|----------------------|-------------------|
-| Sub-team 2 (Data I/O) | Texture data format contract (`RawVolumeData` struct) | Nothing upstream |
-| Sub-team 4 (Interaction) | `IGazeProvider` interface for foveated rendering | Camera state |
-
----
-
-## Sprint Plan
-
-| Sprint | Dates | Focus |
-|--------|-------|-------|
-| Sprint 1 | 18–22 May | Understand codebase, baseline CK metrics, requirements document | ✅ Complete |
-| Sprint 2 | 25–29 May | Design document, both worked refactoring examples, diagrams, Section 6.3 docs, SOLID/GRASP audit | 🔄 **Current sprint** |
-| Sprint 3 | 1–3 June | Finalise, address feedback, polish for pitch | ⏳ Upcoming |
-
-**Artefact freeze:** Thu 4 June 11:00  
-**Pitch:** Thu 4 June (Team Alpha 11:00–12:00)  
-**Submission:** Fri 5 June 14:00–16:00
-
----
-
-## Roles (rotate each sprint)
-
-| Role            | Sprint 1 | Sprint 2 | Sprint 3 |
-|-----------------|----------|----------|----------|
-| Scrum Master    | Cathal   | Damien   | Ciallian |
-| Tech Lead       | Damien   | Cathal   | Chris    |
-| PO Liaison      | Ciallian | Chris    | Cathal   |
-| Quality Champion| Chris    | Ciallian | Damien   |
-
-
-
----
-
-## Tools We Use
-
-- **SonarQube Cloud** — code smells, complexity, duplication
-- **Understand** — CK metrics suite
-- **NDepend** — architecture violation rules
-- **CodeScene** — hotspots, churn
-- **DV8** — Dependency Structure Matrix
-- **PlantUML / Mermaid** — diagrams (source-controlled)
-- **GitHub Actions** — CI/CD pipeline
-
-All diagrams must be in PlantUML, Mermaid, or .drawio XML format — no binary-only files.
-
----
-
-## Architectural Constraints (from brief Section 4.2)
-
-1. No SOLID or GRASP violations — flag and refactor, or document as a trade-off
-2. No circular dependencies between components
-3. Domain rendering math must NOT transitively depend on `UnityEngine` or `SteamVR` types
-4. Every public API boundary must be expressed as an interface with at least one test double
-5. Plug-in contracts must be semantically versioned and ABI-stable within a major version
-
----
-
-## File Structure
-
-```
-idavie-subteam3/
-├── CLAUDE.md                         ← YOU ARE HERE — read this first every session
-├── CONTEXT.md                        ← Detailed technical context about iDaVIE rendering
-├── PROGRESS.md                       ← Running log of what's done / in progress / blocked
-├── docs/team3/
-│   ├── README.md                     ← Document index — maps every file to a brief section
-│   ├── deliverables/                 ← ALL ASSESSED DELIVERABLES (canonical, one file each)
-│   │   ├── requirements.md           ← §9.2 D1: requirements doc (1–2 pages)
-│   │   ├── design-document.md        ← §9.2 D2 + §6.3: design doc (5–10 pages)
-│   │   ├── shader-asset-policy.md    ← §6.3: shader/asset policy for Unity 6
-│   │   ├── metrics-worksheet.md      ← §6.3: before/after CK metrics worksheet
-│   │   └── test-strategy.md          ← §9.2 D4: test strategy (2–4 pages)
-│   ├── integration/                  ← Cross-team interface contracts
-│   │   ├── meeting-subteam2.md       ← RawVolumeData contract (confirmed 2 Jun)
-│   │   ├── meeting-subteam4.md       ← IGaze contract (confirmed 2 Jun)
-│   │   └── meeting-subteam7.md       ← Persistence contract (pending sign-off)
-│   └── exploration/                  ← Background research; cited in deliverables
-│       ├── SOLID_GRASP_Violations.md
-│       ├── RenderFrame_CallSequence(1).md
-│       ├── migration_plan.md
-│       └── ... (other exploration notes)
-├── refactoring-examples/team3/
-│   ├── example1-VolumeDataSetRenderer/
-│   │   ├── README.md
-│   │   ├── before/
-│   │   └── after/
-│   ├── example2-MaskModes/
-│   │   ├── README.md
-│   │   ├── before/
-│   │   └── after/
-│   ├── stubs/                        ← Shared interfaces and test doubles
-│   │   ├── IRenderPipeline.cs
-│   │   ├── NullRenderPipeline.cs
-│   │   ├── UrpRenderPipeline.cs
-│   │   ├── HdrpRenderPipeline.cs
-│   │   └── StubGazeProvider.cs
-│   └── tests/                        ← NUnit test files
-│       ├── Example1_RendererSplitTests.cs
-│       ├── Example2_MaskModeTests.cs
-│       └── GoldenImageRegressionTests.cs
-├── diagrams/
-│   ├── architecture.puml
-│   ├── class-before.puml
-│   ├── class-after.puml
-│   ├── sequence-render-frame.puml
-│   └── vdsr-dependencies.puml
-├── kanban/
-│   ├── sprint1-snapshot.md
-│   ├── sprint2-snapshot.md           ← Fill in end-of-sprint state
-│   └── sprint3-snapshot.md           ← Fill in at artefact freeze
-└── standup/
-    └── standup-log.md                ← Fill in Week 3 daily entries
-```
-
----
-
-## Sprint 2 Kanban
-
-Full task breakdown: `kanban/sprint2-greenfield.md` (57 tasks, ~55 person-hours)
-ClickUp import file: `kanban/sprint2-clickup.csv` (import with DD/MM/YYYY date format; time estimates in minutes)
-
-**Sprint 2 carry-overs (close Mon 25 May EOD):**
-- Team review + finalise `docs/team3/deliverables/requirements.md`
-- Confirm CBO count in VDSR dependency map
-- Agree two refactoring examples (document in `PROGRESS.md`)
-- Tool smoke-test + version docs
-- Chase Sub-team 2 and Sub-team 4 for interface contracts
-
----
-
-## How to Use This Folder with Cowork
-
-- **Start every session** by reading `CLAUDE.md` (this file) and `PROGRESS.md`
-- **After every session** update `PROGRESS.md` with what changed
-- **When writing a deliverable**, check the section of the brief it maps to (referenced in each file)
-- **For diagrams**, output PlantUML or Mermaid — never PNG/SVG only
+| Need | Path |
+|---|---|
+| Canonical assignment spec | `Assignment-Docs/iDaVIE-Refactoring_Assignment_FINAL_1.md` |
+| Our primary refactor target | `Assets/Scripts/UI/CanvassDesktop.cs` |
+| Other GUI/Menu scripts | `Assets/Scripts/UI/`, `Assets/Scripts/Menu/` |
+| Build & troubleshooting | `BUILD.md`, `BUILD_TROUBLESHOOTING.md` |
+| CI workflows | `.github/workflows/ci.yml` |
+| Sub-team scratch notes & settings | `.claude/` |

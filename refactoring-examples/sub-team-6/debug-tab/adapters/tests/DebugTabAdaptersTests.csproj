@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Sub-team 6 — GatewayLogStreamAdapter round-trip tests.
+    Pins ADR-0002 log.emit notification handling: method filter, level parse,
+    timestamp preservation, subscribe/unsubscribe lifecycle.
+    Run: dotnet test refactoring-examples/sub-team-6/debug-tab/adapters/tests/DebugTabAdaptersTests.csproj
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>iDaVIE.Desktop.Adapters.DebugTab.Tests</RootNamespace>
+    <AssemblyName>DebugTabAdaptersTests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Compile the adapter directly into the test assembly — same OneDrive
+       Application-Control workaround as the file-tab adapter tests. -->
+  <ItemGroup>
+    <Compile Include="..\GatewayLogStreamAdapter.cs" Link="UnderTest\GatewayLogStreamAdapter.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\skeleton\DebugTabSkeleton.csproj" />
+    <ProjectReference Include="..\..\..\contracts-team1\GatewayContracts.csproj" />
+  </ItemGroup>
+
+</Project>
