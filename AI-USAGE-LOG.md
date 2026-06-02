@@ -118,16 +118,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 2 — DV8 / Understand Architecture File
-**Tool:** Claude Code
-**Task:** Extend DV8 architecture analysis beyond the default 9-file cap.
-**Prompt summary:** Asked Claude to create an Understand project file so DV8 architecture testing would not be limited to 9 source files.
-**Output:** Created an Understand project configuration file enabling full codebase analysis in DV8.
-**Files affected:** Understand project file (new).
-
----
-
-### Session 3 — Unit Tests for Refactoring Examples
+### Session 2 — Unit Tests for Refactoring Examples
 **Tool:** Claude Code
 **Task:** Write unit tests against the refactored C# code and document what is being tested.
 **Prompt summary:** Asked Claude to find the refactoring examples and generate unit tests for the new refactored code, place them in the refactoring folder, and create a markdown file explaining what each test covers and why.
@@ -136,7 +127,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 4 — Test Strategy Updated to Reflect New Tests
+### Session 3 — Test Strategy Updated to Reflect New Tests
 **Tool:** Claude Code
 **Task:** Align `test-strategy.md` with the unit tests written in Session 3.
 **Prompt summary:** Asked Claude to update the test strategy document to reflect the new tests in the refactoring examples, keeping it concise, useful, and relevant, and to note short- and long-term codebase impact.
@@ -145,7 +136,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 5 — Revised Design Document (Section 5 Merge)
+### Session 4 — Revised Design Document (Section 5 Merge)
 **Tool:** Claude Code
 **Task:** Merge Section 5 content from the original design document into the revised design document.
 **Prompt summary:** Asked Claude to read the design document, extract Section 5, and write it into the revised design document in a clear, concise style matching the existing content. Also asked Claude to check the document wasn't too long before committing.
@@ -154,7 +145,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 6 — VolumeDataSetRenderer Top-Down Explanation
+### Session 5 — VolumeDataSetRenderer Top-Down Explanation
 **Tool:** Claude Code
 **Task:** Understand the existing `VolumeDataSetRenderer.cs` class before beginning refactoring work.
 **Prompt summary:** Asked for a top-down explanation of what `VolumeDataSetRenderer.cs` does, its purpose, its dependencies, and how it affects other parts of the system.
@@ -163,7 +154,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 7 — Sequence Diagrams (Before & After)
+### Session 6 — Sequence Diagrams (Before & After)
 **Tool:** Claude Code
 **Task:** Create PlantUML sequence diagrams for one render frame, both before and after refactoring.
 **Prompt summary:** Asked Claude to create a new sequence diagram using the revised design document, the previous sequence diagram file, and the refactored examples. Also asked for an initial sequence diagram based on the original `VolumeDataSetRenderer`.
@@ -172,7 +163,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 8 — Brief Compliance Evaluation & Document Push
+### Session 7 — Brief Compliance Evaluation & Document Push
 **Tool:** Claude Code
 **Task:** Evaluate whether Sub-team 3 has met all requirements in the assignment brief; push deliverable document to GitHub.
 **Prompt summary:** Provided the assignment brief PDF and asked Claude to evaluate whether Team 3's rendering engine deliverables met everything in the brief. Followed up asking Claude to re-check after a pull and then action the first identified gap.
@@ -181,7 +172,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 9 — Unity 6 Migration Plan in Test Strategy
+### Session 8 — Unity 6 Migration Plan in Test Strategy
 **Tool:** Claude Code
 **Task:** Ensure the Unity 6 migration plan was properly reflected in `test-strategy.md`.
 **Prompt summary:** Asked Claude to check if a migration plan for Unity 6 was included in `test-strategy.md`. Confirmed adding a Section 10 covering Unity 6 migration testing after verifying it was also referenced in the design document.
@@ -190,7 +181,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-### Session 10 — AI Usage Log Population (current session)
+### Session 9 — AI Usage Log Population (current session)
 **Tool:** Claude Code
 **Task:** Populate the AI usage log for Chris Jo from Claude session history.
 **Prompt summary:** Asked Claude to read the existing AI usage log for format reference and fill in all sessions from Claude history.
