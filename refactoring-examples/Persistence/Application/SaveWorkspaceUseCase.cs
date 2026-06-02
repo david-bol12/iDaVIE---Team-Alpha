@@ -1,3 +1,4 @@
+using System;
 using iDaVIE.Persistence.Application.Interfaces;
 using iDaVIE.Persistence.Domain;
 using iDaVIE.Persistence.Infrastructure;
@@ -11,26 +12,26 @@ namespace iDaVIE.Persistence.Application;
 /// </summary>
 public class SaveWorkspaceUseCase
 {
-    private readonly IWorkspaceStateCollector _collector;
-    private readonly WorkspaceStubFactory     _stubFactory;
-    private readonly WorkspaceValidator       _validator;
-    private readonly SnapshotSerializer       _serializer;
-    private readonly SnapshotRing             _ring;
+    private readonly Func<IWorkspaceStateCollector> _collectorFactory;
+    private readonly WorkspaceStubFactory           _stubFactory;
+    private readonly WorkspaceValidator             _validator;
+    private readonly SnapshotSerializer             _serializer;
+    private readonly SnapshotRing                   _ring;
 
     private volatile bool _saveInProgress;
 
     public SaveWorkspaceUseCase(
-        IWorkspaceStateCollector collector,
-        WorkspaceStubFactory     stubFactory,
-        WorkspaceValidator       validator,
-        SnapshotSerializer       serializer,
-        SnapshotRing             ring)
+        Func<IWorkspaceStateCollector> collectorFactory,
+        WorkspaceStubFactory           stubFactory,
+        WorkspaceValidator             validator,
+        SnapshotSerializer             serializer,
+        SnapshotRing                   ring)
     {
-        _collector   = collector;
-        _stubFactory = stubFactory;
-        _validator   = validator;
-        _serializer  = serializer;
-        _ring        = ring;
+        _collectorFactory = collectorFactory;
+        _stubFactory      = stubFactory;
+        _validator        = validator;
+        _serializer       = serializer;
+        _ring             = ring;
     }
 
     /// <summary>
@@ -54,8 +55,12 @@ public class SaveWorkspaceUseCase
 
     private bool RunSave()
     {
-        // 1. Collect live state via adapter interfaces (must happen on Unity main thread)
-        var aggregate = _collector.Collect();
+        // 1. Resolve collector — returns null if no dataset is loaded yet
+        var collector = _collectorFactory();
+        if (collector == null)
+            return false;
+
+        var aggregate = collector.Collect();
 
         // 2. Build profile-appropriate stub and fill with captured DTOs
         var profile  = aggregate.InferProfile();

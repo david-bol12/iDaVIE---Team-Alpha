@@ -17,7 +17,6 @@
  */
 
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using iDaVIE.Persistence.Application;
 using iDaVIE.Persistence.Application.Interfaces;
@@ -35,32 +34,20 @@ namespace iDaVIE.Persistence
     ///
     /// Wiring order:
     ///   Awake  → resolve scene refs, build all services
-    ///   Start  → CrashDetector.CheckAndAcquire() → optional restore → AutosaveService.Start()
-    ///   Update → drain _pendingSaves queue (main-thread save execution)
-    ///   OnApplicationQuit / OnDestroy → release crash lock, dispose timer
+    ///   Start  → CrashDetector.CheckAndAcquire() → optional restore → InvokeRepeating(RunAutosave)
+    ///   OnApplicationQuit / OnDestroy → CancelInvoke, release crash lock
     /// </summary>
     public class PersistenceController : MonoBehaviour
     {
         [Header("Scene References")]
-        [Tooltip("The VolumeDataSetRenderer in the scene.")]
-        public VolumeDataSetRenderer volumeRenderer;
-
         [Tooltip("The VolumeInputController in the scene.")]
         public VolumeInputController volumeInputController;
 
-        [Tooltip("The FeatureSetManager in the scene.")]
-        public FeatureSetManager featureSetManager;
-
         // ── Services (built in Awake) ─────────────────────────────────────────
-        private AutosaveService      _autosaveService;
         private CrashDetector        _crashDetector;
-        private RestoreOrchestrator  _restoreOrchestrator;
         private SaveWorkspaceUseCase _saveUseCase;
         private SnapshotRing         _ring;
         private SnapshotSerializer   _serializer;
-
-        // Thread-safe queue: timer thread posts work items; Update() drains them
-        private readonly ConcurrentQueue<Action> _pendingSaves = new ConcurrentQueue<Action>();
 
         // ── Unity lifecycle ───────────────────────────────────────────────────
 
@@ -73,30 +60,12 @@ namespace iDaVIE.Persistence
             _serializer    = new SnapshotSerializer();
             _crashDetector = new CrashDetector(snapshotDir);
 
-            var dataIoAdapter      = new DataIoStateAdapter(volumeRenderer);
-            var renderingAdapter   = new RenderingStateAdapter(volumeRenderer);
-            var featureAdapter     = new FeatureStateAdapter(featureSetManager);
-            var interactionAdapter = new InteractionStateAdapter(volumeInputController);
-            var guiAdapter         = new GuiStateAdapter(volumeRenderer);
-
-            IWorkspaceStateCollector collector = new UnityWorkspaceStateCollector(
-                dataIoAdapter, renderingAdapter, featureAdapter, interactionAdapter, guiAdapter);
-
             _saveUseCase = new SaveWorkspaceUseCase(
-                collector,
+                BuildCollector,
                 new WorkspaceStubFactory(),
                 new WorkspaceValidator(),
                 _serializer,
                 _ring);
-
-            _restoreOrchestrator = new RestoreOrchestrator(
-                dataIoAdapter, renderingAdapter, featureAdapter, interactionAdapter, guiAdapter);
-
-            _autosaveService = new AutosaveService(_saveUseCase, Config.Instance.autosaveIntervalSeconds);
-            _autosaveService.SaveCompleted += skipped =>
-                Debug.Log(skipped
-                    ? "[Persistence] Autosave cycle skipped (save already in progress)."
-                    : "[Persistence] Autosave snapshot written.");
         }
 
         private void Start()
@@ -113,15 +82,9 @@ namespace iDaVIE.Persistence
                 Debug.Log("[Persistence] Clean start — no crash detected.");
             }
 
-            _autosaveService.Start();
+            float interval = Config.Instance.autosaveIntervalSeconds;
+            InvokeRepeating(nameof(RunAutosave), interval, interval);
             Debug.Log($"[Persistence] Autosave started (interval = {Config.Instance.autosaveIntervalSeconds}s).");
-        }
-
-        private void Update()
-        {
-            Action action;
-            while (_pendingSaves.TryDequeue(out action))
-                action();
         }
 
         private void OnApplicationQuit()
@@ -142,39 +105,45 @@ namespace iDaVIE.Persistence
         /// </summary>
         public void SaveNow()
         {
-            _autosaveService.TriggerNow();
+            RunAutosave();
+            CancelInvoke(nameof(RunAutosave));
+            float interval = Config.Instance.autosaveIntervalSeconds;
+            InvokeRepeating(nameof(RunAutosave), interval, interval);
         }
 
         // ── Private helpers ───────────────────────────────────────────────────
 
+        private void RunAutosave()
+        {
+            bool saved = _saveUseCase.Execute();
+            Debug.Log(saved
+                ? "[Persistence] Autosave snapshot written."
+                : "[Persistence] Save skipped — no dataset loaded.");
+        }
+
+        private IWorkspaceStateCollector BuildCollector()
+        {
+            var renderer = volumeInputController != null ? volumeInputController.ActiveDataSet : null;
+            if (renderer == null) return null;
+
+            var featureManager = renderer.GetComponentInChildren<FeatureSetManager>();
+            return new UnityWorkspaceStateCollector(
+                new DataIoStateAdapter(renderer),
+                new RenderingStateAdapter(renderer),
+                new FeatureStateAdapter(featureManager),
+                new InteractionStateAdapter(volumeInputController),
+                new GuiStateAdapter(renderer));
+        }
+
         private void TryRestore()
         {
-            try
-            {
-                var handle = _ring.Peek();
-                if (handle == null)
-                {
-                    Debug.LogWarning("[Persistence] No snapshot found — nothing to restore.");
-                    return;
-                }
-
-                Debug.Log($"[Persistence] Restoring from: {handle.FilePath} (saved {handle.SavedAt:u})");
-                var snapshot = _serializer.Deserialize(handle.FilePath);
-                _restoreOrchestrator.Restore(snapshot);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[Persistence] Restore failed: {ex.Message}\n{ex.StackTrace}");
-            }
+            // RestoreOrchestrator is not yet wired to a UI button; restore is deferred.
+            Debug.LogWarning("[Persistence] Crash recovery restore is not yet implemented.");
         }
 
         private void CleanShutdown()
         {
-            if (_autosaveService != null)
-            {
-                _autosaveService.Stop();
-                _autosaveService.Dispose();
-            }
+            CancelInvoke(nameof(RunAutosave));
             if (_crashDetector != null)
                 _crashDetector.Release();
             Debug.Log("[Persistence] Clean shutdown — crash lock released.");

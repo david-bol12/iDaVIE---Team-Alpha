@@ -16,6 +16,7 @@
  * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
 using iDaVIE.Persistence.Application.Interfaces;
 using iDaVIE.Persistence.Domain;
 using iDaVIE.Persistence.Infrastructure;
@@ -28,26 +29,26 @@ namespace iDaVIE.Persistence.Application
     /// </summary>
     public class SaveWorkspaceUseCase
     {
-        private readonly IWorkspaceStateCollector _collector;
-        private readonly WorkspaceStubFactory     _stubFactory;
-        private readonly WorkspaceValidator       _validator;
-        private readonly SnapshotSerializer       _serializer;
-        private readonly SnapshotRing             _ring;
+        private readonly Func<IWorkspaceStateCollector> _collectorFactory;
+        private readonly WorkspaceStubFactory           _stubFactory;
+        private readonly WorkspaceValidator             _validator;
+        private readonly SnapshotSerializer             _serializer;
+        private readonly SnapshotRing                   _ring;
 
         private volatile bool _saveInProgress;
 
         public SaveWorkspaceUseCase(
-            IWorkspaceStateCollector collector,
-            WorkspaceStubFactory     stubFactory,
-            WorkspaceValidator       validator,
-            SnapshotSerializer       serializer,
-            SnapshotRing             ring)
+            Func<IWorkspaceStateCollector> collectorFactory,
+            WorkspaceStubFactory           stubFactory,
+            WorkspaceValidator             validator,
+            SnapshotSerializer             serializer,
+            SnapshotRing                   ring)
         {
-            _collector   = collector;
-            _stubFactory = stubFactory;
-            _validator   = validator;
-            _serializer  = serializer;
-            _ring        = ring;
+            _collectorFactory = collectorFactory;
+            _stubFactory      = stubFactory;
+            _validator        = validator;
+            _serializer       = serializer;
+            _ring             = ring;
         }
 
         /// <summary>
@@ -69,7 +70,14 @@ namespace iDaVIE.Persistence.Application
 
         private bool RunSave()
         {
-            var aggregate = _collector.Collect();
+            var collector = _collectorFactory();
+            if (collector == null)
+            {
+                UnityEngine.Debug.Log("[Persistence] Save skipped — no dataset loaded.");
+                return false;
+            }
+
+            var aggregate = collector.Collect();
             var profile   = aggregate.InferProfile();
             var snapshot  = _stubFactory.CreateStub(profile) with
             {
