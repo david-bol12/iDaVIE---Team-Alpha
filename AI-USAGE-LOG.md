@@ -107,7 +107,7 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ---
 
-## Chris Jo
+## Chris 
 
 ### Session 1 — SonarQube Setup & Code Health
 **Tool:** Claude Code
