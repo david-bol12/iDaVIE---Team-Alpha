@@ -38,20 +38,19 @@ public static class FitsMask
         Marshal.Copy(maskDataDims, 0, naxes, maskDataDims.Length);
         if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
         {
-            Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
+            Console.Error.WriteLine($"Fits create file error {FitsHeader.FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
             Marshal.FreeHGlobal(keyValue);
             return status;
         }
-        if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
-        {
-            Debug.LogError($"Fits copy header error {FitsErrorMessage(status)}");
+        if (FitsImage.FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
+            {Console.Error.WriteLine($"Fits copy header error {FitsHeader.FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
             Marshal.FreeHGlobal(keyValue);
             return status;
         }
         Marshal.WriteInt32(keyValue, 16);
-        if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
+           if (FitsHeader.FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
         {
             Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
@@ -59,43 +58,43 @@ public static class FitsMask
             return status;
         }
         Marshal.WriteInt32(keyValue, 3);
-        if (FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)   //Make sure new header has 3 dimensions
+        if (FitsHeader.FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)
         {
-            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Console.Error.WriteLine($"Fits update key error {FitsHeader.FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
             Marshal.FreeHGlobal(keyValue);
             return status;
         }
-        if (FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
+        if (FitsHeader.FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
         {
-            Debug.LogWarning("Could not delete fits unit key. It probably does not exist!");
+            Console.Error.WriteLine("Could not delete fits unit key. It probably does not exist!");
             status = 0;
         }
-        if (FitsWriteImageInt16(maskPtr, 3, nelements, maskData, out status) != 0)
+          if (FitsImage.FitsWriteImageInt16(maskPtr, 3, nelements, maskData, out status) != 0)
         {
-            Debug.LogError("Fits write image error " + FitsErrorMessage(status));
+                 Console.Error.WriteLine("Fits write image error " + FitsHeader.FitsErrorMessage(status));
             Marshal.FreeHGlobal(naxes);
             Marshal.FreeHGlobal(keyValue);
             return status;
         }
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
-        if (FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+         if (FitsHeader.FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
         {
-            Debug.LogError("Error writing history!");
+            Console.Error.WriteLine("Error writing history!");
             Marshal.FreeHGlobal(naxes);
             Marshal.FreeHGlobal(keyValue);
             return status;
         }
-        if (FitsFlushFile(maskPtr, out status) != 0)
+            if (FitsFile.FitsFlushFile(maskPtr, out status) != 0))
         {
-            Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            Console.Error.WriteLine($"Fits flush file error {FitsHeader.FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
             Marshal.FreeHGlobal(keyValue);
             return status;
         }
-        if (FitsCloseFile(maskPtr, out status) != 0)
+        if (FitsFile.FitsCloseFile(maskPtr, out status) != 0)
         {
-            Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
+            Console.Error.WriteLine($"Fits close file error {FitsHeader.FitsErrorMessage(status)}");
             Marshal.FreeHGlobal(naxes);
             Marshal.FreeHGlobal(keyValue);
             return status;
