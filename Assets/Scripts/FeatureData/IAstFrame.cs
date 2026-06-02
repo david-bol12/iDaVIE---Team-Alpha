@@ -2,9 +2,10 @@ namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Opaque domain handle for an AST World Coordinate System frame.
-    /// Replaces raw IntPtr at the domain boundary (ADR-002 Anti-Corruption Layer).
-    /// Production implementation (AstFrameHandle) lives in Infrastructure.NativePlugins.
-    /// Pass <see cref="NullAstFrame"/> in unit tests — no unsafe code required.
+    /// Replaces a raw IntPtr at the domain boundary (ADR-002 Anti-Corruption Layer).
+    /// The production implementation (AstFrameHandle) lives in
+    /// Infrastructure.NativePlugins. Pass <see cref="NullAstFrame"/> in unit tests
+    /// so no unsafe code is required.
     /// </summary>
     public interface IAstFrame { }
 

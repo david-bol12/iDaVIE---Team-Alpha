@@ -7,8 +7,8 @@ using iDaVIE.Domain.Feature;
 namespace iDaVIE.Infrastructure.Persistence
 {
     /// <summary>
-    /// Pure-C# VOTable 1.3 XML serialiser. No Unity dependencies; fully unit-testable.
-    /// Depends only on domain types (FeatureSet, Feature) and ICoordinateTransformer.
+    /// VOTable 1.3 XML serialiser with no Unity dependencies. Depends only on the
+    /// domain types (FeatureSet, Feature) and ICoordinateTransformer.
     /// </summary>
     public sealed class VoTableExportService : IVoTableExporter
     {

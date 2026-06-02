@@ -1,61 +1,39 @@
 /*
- * REFACTORING EXAMPLE 1 — Moment-Map Generation
+ * Refactoring example 1: moment-map generation
  * Sub-team 5: Feature System and Domain Model
  *
- * MomentMapRendererAdapter.cs — AFTER STATE (new file, design-level example)
- * ===========================================================================
- * Design role: thin MonoBehaviour adapter — the ONLY class in Example 1
- *              that imports UnityEngine.
+ * MomentMapRendererAdapter.cs (after state, new file, design-level example)
  *
- * NAMESPACE
- * ─────────
- * iDaVIE.Infrastructure.Unity  (ADR-008)
+ * This is a thin MonoBehaviour adapter and the only class in example 1 that
+ * imports UnityEngine. It lives in iDaVIE.Infrastructure.Unity (ADR-008).
  *
- * ADR-006 COMPLIANCE — Separation of MonoBehaviour from Domain Logic
- * ──────────────────────────────────────────────────────────────────
- * Before: MomentMapRenderer : MonoBehaviour contained:
- *   • ComputeShader dispatch (GPU) — Infrastructure concern
- *   • RenderTexture management    — Infrastructure concern
- *   • Threshold comparison        — Domain/Application concern
- *   • Bounds extraction           — Domain concern
- *   • Config.Instance access      — Singleton violation (ADR-003)
- *   • UI sprite and colour-bar update — Presentation concern
- *   All mixed in ~380 lines of MonoBehaviour.
+ * The point of the example is ADR-006: keep MonoBehaviour code separate from
+ * domain logic. The old MomentMapRenderer : MonoBehaviour crammed everything
+ * into ~380 lines: ComputeShader dispatch and RenderTexture management
+ * (infrastructure), threshold comparison and bounds extraction (domain),
+ * Config.Instance access (a singleton, breaking ADR-003), and the UI sprite and
+ * colour-bar updates (presentation).
  *
- * After: Responsibilities are split across layers:
- *   ┌─ iDaVIE.Infrastructure.Unity ─────────────────────────────────────┐
- *   │ MomentMapRendererAdapter : MonoBehaviour, IMomentMapAdapter        │
- *   │  • Unity lifecycle (Awake, Start)                                  │
- *   │  • Holds ComputeShader + RenderTexture GPU resources               │
- *   │  • Implements IMomentMapAdapter.Compute() — GPU dispatch only      │
- *   │  • Calls service to get result, then uploads to GPU / UI           │
- *   │  • The ONLY class with "using UnityEngine" in Example 1            │
- *   └────────────────────────────────────────────────────────────────────┘
- *   ┌─ iDaVIE.Application.Feature ──────────────────────────────────────┐
- *   │ MomentMapService           — orchestrates adapter + calculator     │
- *   │ IMomentMapAdapter          — GPU abstraction seam                  │
- *   │ MomentMapRequest / Result  — plain C# value objects               │
- *   └────────────────────────────────────────────────────────────────────┘
- *   ┌─ iDaVIE.Domain.Feature ───────────────────────────────────────────┐
- *   │ MomentMapCalculator        — pure bounds math                      │
- *   └────────────────────────────────────────────────────────────────────┘
+ * After the split:
+ *   iDaVIE.Infrastructure.Unity
+ *     MomentMapRendererAdapter : MonoBehaviour, IMomentMapAdapter
+ *       handles Unity lifecycle, holds the ComputeShader/RenderTexture, does the
+ *       GPU dispatch in Compute(), then uploads the result to the GPU and UI.
+ *   iDaVIE.Application.Feature
+ *     MomentMapService            orchestrates the adapter and calculator
+ *     IMomentMapAdapter           the GPU abstraction seam
+ *     MomentMapRequest / Result   plain C# value objects
+ *   iDaVIE.Domain.Feature
+ *     MomentMapCalculator         the bounds maths
  *
- * ADR-003 DEPENDENCY INJECTION
- * ────────────────────────────
- * In production, MomentMapService is resolved via the composition root and
- * injected. The adapter (this) is passed as the IMomentMapAdapter to the
- * service — forming a deliberate circular delegation:
- *   Adapter → Service → Adapter (via IMomentMapAdapter interface)
- * This is the standard Separated Interface / Dependency Inversion pattern:
- * the service depends on the interface, not the concrete adapter.
- *
- * No singletons, no Config.Instance, no static access (ADR-003 ✓).
- *
- * ADR-006 RULE — MonoBehaviour responsibilities:
- *   ✓ Subscribe to Unity lifecycle events
- *   ✓ Delegate to domain/application services via injected interfaces
- *   ✓ Bind data to Unity GameObjects / UI
- *   ✗ NO conditional business logic beyond trivial null-guards
+ * On dependency injection (ADR-003): in production MomentMapService comes from
+ * the composition root, and this adapter is passed to it as the
+ * IMomentMapAdapter. That gives a deliberate circular delegation, adapter to
+ * service to adapter, through the interface. The service depends on the
+ * interface, not the concrete adapter, so there are no singletons or static
+ * access. The MonoBehaviour only subscribes to lifecycle events, delegates to
+ * the injected services, and binds data to the UI; it holds no business logic
+ * beyond null guards.
  */
 
 using System;
@@ -74,27 +52,27 @@ namespace iDaVIE.Infrastructure.Unity
     /// receiving the plain <see cref="MomentMapResult"/> from the service.
     /// </para>
     /// <para>
-    /// This is the <em>only</em> class in Example 1 that imports
-    /// <c>UnityEngine</c> — satisfying ADR-002 and ADR-006.
+    /// This is the only class in example 1 that imports <c>UnityEngine</c>,
+    /// which is what ADR-002 and ADR-006 ask for.
     /// </para>
     /// </summary>
     [RequireComponent(typeof(VolumeDataSetRenderer))]
     public sealed class MomentMapRendererAdapter : MonoBehaviour, IMomentMapAdapter
     {
-        // ── Service dependency (injected at composition root) ─────────────────
+        // Service dependency, injected at the composition root
         private IMomentMapService _momentMapService;
 
-        // ── Unity GPU resources ───────────────────────────────────────────────
+        // Unity GPU resources
         private ComputeShader _computeShader;
         private int   _kernelIndex;
         private int   _kernelIndexMasked;
         private uint  _threadGroupX;
         private uint  _threadGroupY;
 
-        // ── Scene references (set via Inspector or DI) ────────────────────────
+        // Scene references, set via Inspector or DI
         [SerializeField] private MomentMapMenuController _momentMapMenuController;
 
-        // ── Unity lifecycle ───────────────────────────────────────────────────
+        // Unity lifecycle
 
         private void Awake()
         {
@@ -110,13 +88,13 @@ namespace iDaVIE.Infrastructure.Unity
             _momentMapService = new MomentMapService(this);
         }
 
-        // ── Public trigger (called by owning VolumeDataSetRenderer adapter) ───
+        // Public trigger, called by the owning VolumeDataSetRenderer adapter
 
         /// <summary>
         /// Builds a <see cref="MomentMapRequest"/> from the current scene state,
         /// delegates to the service, and applies the result to the Unity UI.
-        /// All business logic (threshold application, bounds) happens in the
-        /// service and calculator — not here.
+        /// The business logic (threshold application, bounds) lives in the service
+        /// and calculator, not here.
         /// </summary>
         public void RefreshMomentMaps(
             float[] dataVoxels, float[] spectrumZ,
@@ -133,7 +111,7 @@ namespace iDaVIE.Infrastructure.Unity
             ApplyResultToUI(result);
         }
 
-        // ── IMomentMapAdapter — GPU dispatch ──────────────────────────────────
+        // IMomentMapAdapter: GPU dispatch
 
         /// <inheritdoc/>
         /// <remarks>
@@ -145,7 +123,7 @@ namespace iDaVIE.Infrastructure.Unity
             bool useMask = request.UseMask && request.MaskVoxels != null;
             int  kernel  = useMask ? _kernelIndexMasked : _kernelIndex;
 
-            // Transient render textures — created per dispatch, released after readback.
+            // Transient render textures, created per dispatch and released after readback.
             var m0Tex = CreateRenderTexture(request.Width, request.Height);
             var m1Tex = CreateRenderTexture(request.Width, request.Height);
 
@@ -172,7 +150,7 @@ namespace iDaVIE.Infrastructure.Unity
             return (m0, m1);
         }
 
-        // ── Private Unity helpers ─────────────────────────────────────────────
+        // Private Unity helpers
 
         private static RenderTexture CreateRenderTexture(int width, int height)
         {
@@ -195,13 +173,13 @@ namespace iDaVIE.Infrastructure.Unity
             tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             tex.Apply();
             RenderTexture.active = prev;
-            // NativeArray<float> → managed float[] (Unity Collections)
+            // Copy the NativeArray<float> into a managed float[] (Unity Collections).
             return tex.GetRawTextureData<float>().ToArray();
         }
 
         /// <summary>
         /// Uploads the computed result to Unity GPU textures and UI colour-bars.
-        /// All pure Infrastructure / Unity presentation work — no domain logic.
+        /// This is all infrastructure and Unity presentation work, no domain logic.
         /// </summary>
         private void ApplyResultToUI(MomentMapResult result)
         {

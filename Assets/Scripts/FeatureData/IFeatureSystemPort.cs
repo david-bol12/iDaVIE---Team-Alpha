@@ -12,7 +12,7 @@ using DataFeatures;
 
 namespace iDaVIE.Application.Feature
 {
-    // ── Request value objects ─────────────────────────────────────────────────
+    // Request value objects
 
     /// <summary>Parameters for creating a selection feature from a VR bounding box.</summary>
     public sealed class SelectionRequest
@@ -71,7 +71,7 @@ namespace iDaVIE.Application.Feature
         }
     }
 
-    // ── Port interface ────────────────────────────────────────────────────────
+    // Port interface
 
     /// <summary>
     /// Boundary port that Team 4 (Koffiewinkel) calls to create, edit, and select

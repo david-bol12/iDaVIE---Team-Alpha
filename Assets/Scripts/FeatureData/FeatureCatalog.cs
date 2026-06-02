@@ -2,30 +2,13 @@
  * iDaVIE (immersive Data Visualisation Interactive Explorer)
  * Copyright (C) 2024 IDIA, INAF-OACT
  *
- * Refactoring proposal — Sub-team 5: Feature System and Domain Model
+ * Sub-team 5: Feature System and Domain Model
  *
- * FeatureCatalog.cs
- * Owns the identity and persistence of all FeatureSets in a session.
- *
- * BEFORE (FeatureSetManager responsibilities mixed together):
- *   • Maintained ImportedFeatureSetList / MaskFeatureSetList / NewFeatureSetList
- *   • Called StreamWriter directly to write ASCII output (persistence concern)
- *   • Called VoTableSaver.SaveFeatureSetAsVoTable (I/O concern)
- *   • Spawned FeatureAnchor GameObjects (Unity/interaction concern)
- *   • Ran an Update() loop repositioning anchors (Unity lifecycle concern)
- *   • Held a direct VolumeDataSetRenderer reference (rendering concern)
- *
- * AFTER (FeatureCatalog responsibilities):
- *   • Owns the three typed lists — the authoritative registry of FeatureSets
- *   • Provides factory methods for creating empty / mask / selection sets
- *   • Delegates ALL file I/O to IFeaturePersistenceService (WP7 owns impl.)
- *   • Raises domain events that FeatureSetService and FeatureVisualiser react to
- *   • Zero Unity types — pure C#, fully unit-testable
- *
- * CK metric targets (post-refactor projection):
- *   WMC  ≤ 15
- *   CBO  ≤  8   (depends on Feature, FeatureSet, IFeaturePersistenceService only)
- *   LCOM ≤ 0.3
+ * FeatureCatalog owns the identity and persistence of the FeatureSets in a
+ * session. It takes over the list management and file writing that used to live
+ * in FeatureSetManager, but keeps no Unity types so it can be unit tested on its
+ * own. File I/O goes through IFeaturePersistenceService, and changes to the
+ * registry are announced with the SetRegistered / SetRemoved events.
  */
 
 using System;
@@ -36,13 +19,12 @@ using DataFeatures;
 namespace iDaVIE.Domain.Feature
 {
     /// <summary>
-    /// Registry and persistence gateway for all <see cref="FeatureSet"/> instances
-    /// in a session. Pure C# — no Unity dependency.
+    /// Registry and persistence gateway for the <see cref="FeatureSet"/> instances
+    /// in a session. Has no Unity dependency.
     /// </summary>
-    /// 
     public sealed class FeatureCatalog
     {
-        // ── Colour palette (mirrors original FeatureSetManager.FeatureColors) ──
+        // Colour palette, mirrors the original FeatureSetManager.FeatureColors
         public static readonly FeatureColor[] FeatureColors =
         {
             new FeatureColor(0f,  1f,  1f),        // cyan
@@ -56,10 +38,10 @@ namespace iDaVIE.Domain.Feature
             new FeatureColor(1f,  0.5f,0f),        // orange
         };
 
-        // ── Keys whose values carry a physical unit suffix in the info panel ──
+        // Keys whose values carry a physical unit suffix in the info panel
         public static readonly string[] UnitisedKeys = { "SUM", "PEAK" };
 
-        // ── Typed set registries ──────────────────────────────────────────────
+        // Typed set registries
         private readonly List<FeatureSet> _maskSets     = new List<FeatureSet>();
         private readonly List<FeatureSet> _importedSets = new List<FeatureSet>();
         private readonly List<FeatureSet> _userSets     = new List<FeatureSet>();
@@ -74,20 +56,18 @@ namespace iDaVIE.Domain.Feature
         /// </summary>
         public FeatureSet SelectionSet { get; private set; }
 
-        // ── Session output file name (timestamp-stamped on construction) ──────
+        // Session output file name, timestamped when the catalogue is constructed
         public string SessionOutputFileName { get; }
 
-        // ── Persistence boundary (injected — WP7 provides the implementation) ─
+        // Persistence boundary, injected (WP7 provides the implementation)
         private readonly IFeaturePersistenceService _persistence;
 
-        // ── Domain events ─────────────────────────────────────────────────────
         /// <summary>Raised when a new FeatureSet is registered in any list.</summary>
         public event Action<FeatureSet> SetRegistered;
 
         /// <summary>Raised when a FeatureSet is removed from any list.</summary>
         public event Action<FeatureSet> SetRemoved;
 
-        // ── Constructor ───────────────────────────────────────────────────────
         /// <param name="persistence">
         ///   Persistence service implementation (provided by WP7).
         ///   Pass a <c>NullFeaturePersistenceService</c> in unit tests.
@@ -98,7 +78,7 @@ namespace iDaVIE.Domain.Feature
             SessionOutputFileName = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".ascii";
         }
 
-        // ── FeatureSet factory methods ────────────────────────────────────────
+        // FeatureSet factory methods
 
         /// <summary>
         /// Creates and registers a new mask-derived feature set.
@@ -153,7 +133,7 @@ namespace iDaVIE.Domain.Feature
 
         /// <summary>
         /// Ensures the singleton selection set exists and returns it.
-        /// Idempotent — safe to call multiple times.
+        /// Safe to call repeatedly; returns the existing set once created.
         /// </summary>
         public FeatureSet EnsureSelectionSet()
         {
@@ -184,12 +164,11 @@ namespace iDaVIE.Domain.Feature
             return removed;
         }
 
-        // ── Persistence (delegates to WP7 service) ────────────────────────────
+        // Persistence (delegates to the WP7 service)
 
         /// <summary>
         /// Persists a user-created feature to the session ASCII file.
-        /// FeatureCatalog owns the decision of *when* to write;
-        /// IFeaturePersistenceService owns *how* to write.
+        /// The catalogue decides when to write; the persistence service decides how.
         /// </summary>
         public void AppendFeatureToSessionFile(Feature feature)
         {
@@ -207,11 +186,11 @@ namespace iDaVIE.Domain.Feature
             return _persistence.ExportToVoTable(set);
         }
 
-        // ── Utility ───────────────────────────────────────────────────────────
+        // Utility
 
         /// <summary>
-        /// Iterates all registered sets regardless of type.
-        /// Useful for selection hit-testing across the full catalogue.
+        /// Iterates all registered sets regardless of type, for hit-testing
+        /// selection across the full catalogue.
         /// </summary>
         public IEnumerable<FeatureSet> AllSets()
         {

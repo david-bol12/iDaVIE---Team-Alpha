@@ -154,7 +154,7 @@ namespace DataFeatures
             FeatureSetParent?.NotifyDirty(Index);
         }
 
-        // ── Service-layer API aliases ─────────────────────────────────────────
+        // Service-layer API aliases
         public bool  BoundsContains(Vec3 point) => ContainsPoint(point);
         public float BoundsVolume()             => Volume;
 

@@ -1,46 +1,26 @@
 /*
- * REFACTORING EXAMPLE 2 — VOTable Export
+ * Refactoring example 2: VOTable export
  * Sub-team 5: Feature System and Domain Model
  *
- * VoTableExportService.cs — AFTER STATE (new file, design-level example)
- * =======================================================================
- * Design role: concrete implementation of IVoTableExporter.
+ * VoTableExportService.cs (after state, new file, design-level example)
  *
- * NAMESPACE
- * ─────────
- * iDaVIE.Infrastructure.Persistence  (ADR-008)
+ * The concrete implementation of IVoTableExporter, in
+ * iDaVIE.Infrastructure.Persistence (ADR-008). XML serialisation is an
+ * infrastructure concern, so it can't sit in iDaVIE.Domain.Feature without
+ * pointing the dependency the wrong way. From here it depends inward on the
+ * domain interfaces (IVoTableExporter, ICoordinateTransformer, FeatureSet,
+ * Feature), which is the right direction per ADR-001. It imports no UnityEngine
+ * (ADR-002) and works only on the iDaVIE.Domain.Feature model and
+ * System.Xml.Linq, so it can be tested without a running Unity instance.
  *
- * This class does XML serialisation — that is an Infrastructure concern.
- * It must NOT live in iDaVIE.Domain.Feature; the dependency direction would
- * be wrong (domain layer referencing a concrete Infrastructure class).
- * Here in Infrastructure.Persistence it depends *inward* on the domain
- * interfaces (IVoTableExporter, ICoordinateTransformer, FeatureSet, Feature)
- * — the correct downward dependency direction per ADR-001.
- *
- * KEY CONSTRAINT
- * ──────────────
- * This class contains ZERO UnityEngine imports (ADR-002).
- * It operates entirely on the plain iDaVIE.Domain.Feature model and
- * System.Xml.Linq, making it unit-testable without a running Unity instance.
- *
- * WHAT CHANGED FROM VoTableSaver
- * ────────────────────────────────
- * Before                              After
- * ──────────────────────────────────  ──────────────────────────────────────
- * static class, not injectable        implements IVoTableExporter
- * takes FeatureSetRenderer (Unity)    takes FeatureSet (plain domain object)
- * calls AstTool.* directly (DLL)      calls ICoordinateTransformer (injected)
- * passes IntPtr into DLL wrapper      passes IAstFrame — no unsafe types
- * reads VolumeRenderer.SourceStats    reads FeatureSet.Features (domain list)
- * writes to file (doc.Save)           returns XML string (caller writes file)
- * namespace VoTableReader             namespace iDaVIE.Infrastructure.Persistence
- *
- * CK METRICS (target)
- * ───────────────────
- * WMC  ≤  6   (Export + 3 private helpers)
- * CBO  ≤  3   (FeatureSet, Feature, ICoordinateTransformer — domain inward deps)
- * RFC  ≤  8
- * LCOM =  0   (single public method drives all helpers)
+ * Compared with the old VoTableSaver:
+ *   - was a static class; now implements IVoTableExporter
+ *   - took a FeatureSetRenderer (Unity); now takes a plain FeatureSet
+ *   - called AstTool.* directly; now calls an injected ICoordinateTransformer
+ *   - passed an IntPtr into a DLL wrapper; now passes IAstFrame, no unsafe types
+ *   - read VolumeRenderer.SourceStats; now reads FeatureSet.Features
+ *   - wrote to file (doc.Save); now returns an XML string for the caller to write
+ *   - lived in namespace VoTableReader; now in iDaVIE.Infrastructure.Persistence
  */
 
 using System;
@@ -48,17 +28,17 @@ using System.Collections.Generic;
 using System.Xml.Linq;
 using iDaVIE.Domain.Feature;
 
-// NOTE: No "using UnityEngine" — this class is intentionally Unity-free (ADR-002).
+// No "using UnityEngine" here on purpose: the class stays Unity-free (ADR-002).
 
 namespace iDaVIE.Infrastructure.Persistence
 {
     /// <summary>
-    /// Pure-C# VOTable 1.3 XML serialiser.
+    /// VOTable 1.3 XML serialiser.
     /// <para>
     /// Implements <see cref="IVoTableExporter"/> and depends only on
     /// <see cref="ICoordinateTransformer"/> for WCS conversion and the
     /// <see cref="IAstFrame"/> domain handle for the coordinate frame.
-    /// No Unity types are referenced — the class is fully unit-testable.
+    /// It references no Unity types, so it can be unit tested directly.
     /// </para>
     /// <para>
     /// Injected into <see cref="IFeaturePersistenceService"/> at the
@@ -68,21 +48,19 @@ namespace iDaVIE.Infrastructure.Persistence
     /// </summary>
     public sealed class VoTableExportService : IVoTableExporter
     {
-        // ── IVoTableExporter ─────────────────────────────────────────────────
-
         /// <inheritdoc/>
         public string Export(FeatureSet featureSet, ICoordinateTransformer transformer)
         {
             if (featureSet  == null) throw new ArgumentNullException(nameof(featureSet));
             if (transformer == null) throw new ArgumentNullException(nameof(transformer));
 
-            // ── 1. Build column headers ──────────────────────────────────────
+            // 1. Build column headers.
             var headers = BuildHeaders(featureSet);
 
-            // ── 2. Build VOTABLE skeleton ────────────────────────────────────
+            // 2. Build the VOTABLE skeleton.
             XDocument doc = BuildDocument(headers, featureSet);
 
-            // ── 3. Populate data rows ────────────────────────────────────────
+            // 3. Populate the data rows.
             XElement tableData = doc.Root
                                     .Element("RESOURCE")
                                     .Element("TABLE")
@@ -91,8 +69,8 @@ namespace iDaVIE.Infrastructure.Persistence
 
             foreach (Feature feature in featureSet.Features)
             {
-                // featureSet.AstFrame is IAstFrame — no IntPtr in this layer.
-                // The Infrastructure AstFrameHandle wraps the real IntPtr;
+                // featureSet.AstFrame is an IAstFrame, so there's no IntPtr in this
+                // layer. The infrastructure AstFrameHandle wraps the real IntPtr;
                 // VoTableExportService never sees it.
                 transformer.Transform(
                     featureSet.AstFrame,
@@ -107,11 +85,11 @@ namespace iDaVIE.Infrastructure.Persistence
                 tableData.Add(BuildRow(feature, normRa, normDec, normZ));
             }
 
-            // ── 4. Return XML string — the caller writes it to disk ──────────
+            // 4. Return the XML string; the caller writes it to disk.
             return doc.ToString();
         }
 
-        // ── Private helpers ──────────────────────────────────────────────────
+        // Private helpers
 
         /// <summary>
         /// Returns the ordered list of column names for the FIELD elements.

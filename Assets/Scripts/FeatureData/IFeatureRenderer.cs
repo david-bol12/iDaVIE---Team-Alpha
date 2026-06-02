@@ -2,20 +2,15 @@
  * iDaVIE (immersive Data Visualisation Interactive Explorer)
  * Copyright (C) 2024 IDIA, INAF-OACT
  *
- * Refactoring proposal — Sub-team 5: Feature System and Domain Model
+ * Sub-team 5: Feature System and Domain Model
  *
- * IFeatureRenderer.cs
- * Rendering boundary between the feature domain layer (sub-team 5) and the
- * GPU rendering layer (WP3 — rendering engine sub-team).
- *
- * The domain defines this interface; WP3 provides the concrete implementation
- * (FeatureSetRenderer). This enforces the Dependency Inversion Principle:
- * FeatureVisualiser depends on an abstraction it defines, not on the concrete
- * MonoBehaviour that drives the ComputeBuffer.
- *
- * Same pattern as IFeaturePersistenceService (WP7 boundary) and
- * IFeatureTableLoader (WP2 boundary) — the domain owns the contract,
- * the implementing sub-team owns the body.
+ * IFeatureRenderer is the rendering boundary between the feature domain layer
+ * (sub-team 5) and the GPU rendering layer (WP3). The domain defines the interface
+ * and WP3 supplies the concrete FeatureSetRenderer, so FeatureVisualiser depends on
+ * an abstraction it owns rather than on the MonoBehaviour that drives the
+ * ComputeBuffer. It follows the same split as IFeaturePersistenceService (WP7) and
+ * IFeatureTableLoader (WP2): the domain owns the contract, the other sub-team owns
+ * the body.
  */
 
 using DataFeatures;
@@ -24,8 +19,8 @@ namespace iDaVIE.Domain.Feature
 {
     /// <summary>
     /// Rendering boundary for a single FeatureSet.
-    /// Implemented by FeatureSetRenderer (WP3 — GPU rendering layer).
-    /// Called only by FeatureVisualiser — never directly by domain objects.
+    /// Implemented by FeatureSetRenderer (WP3, the GPU rendering layer).
+    /// Only FeatureVisualiser calls it; domain objects never do.
     /// </summary>
     public interface IFeatureRenderer
     {
@@ -47,8 +42,8 @@ namespace iDaVIE.Domain.Feature
 
         /// <summary>
         /// Display colour for all features in this set.
-        /// Uses the domain colour type so this interface has no Unity dependency.
-        /// The implementing class is responsible for converting to its internal colour type.
+        /// Uses the domain colour type so this interface has no Unity dependency;
+        /// the implementing class converts it to its own internal colour type.
         /// </summary>
         FeatureColor FeatureColor { get; set; }
     }

@@ -1,37 +1,19 @@
 /*
- * REFACTORING EXAMPLE 1 — Moment-Map Generation
+ * Refactoring example 1: moment-map generation
  * Sub-team 5: Feature System and Domain Model
  *
- * MomentMapResult.cs — AFTER STATE (new file, design-level example)
- * ==================================================================
- * Design role: immutable value object describing the OUTPUT of
- *              IMomentMapService.GenerateMomentMaps().
+ * MomentMapResult.cs (after state, new file, design-level example)
  *
- * NAMESPACE
- * ─────────
- * iDaVIE.Application.Feature  (ADR-008)
+ * An immutable value object describing the output of
+ * IMomentMapService.GenerateMomentMaps(), in iDaVIE.Application.Feature (ADR-008).
  *
- * WHAT THIS REPLACES
- * ──────────────────
- * In the before state, MomentMapRenderer exposed output as Unity RenderTexture
- * properties (Moment0Map, Moment1Map, ImageOutput) that could only be consumed
- * inside a running Unity scene. Bounds were stored in private Vector2 fields
- * (_moment0Bounds, _moment1Bounds) with no external accessor.
- *
- * MomentMapResult packages the same outputs as plain C# arrays and scalar
- * bounds — all consumable without UnityEngine. The Infrastructure adapter
- * (MomentMapRendererAdapter) receives the result and uploads it to GPU
- * textures and UI elements in the Unity-aware layer.
- *
- * Zero UnityEngine types — the result can be asserted in unit tests with
- * standard float array comparisons.
- *
- * CK METRICS (target)
- * ───────────────────
- * WMC  = 1   (one constructor)
- * CBO  = 0   (no dependencies beyond BCL)
- * RFC  = 1
- * LCOM = 0
+ * The old MomentMapRenderer exposed its output as Unity RenderTexture properties
+ * (Moment0Map, Moment1Map, ImageOutput) that only worked inside a running scene,
+ * and kept bounds in private Vector2 fields with no accessor. This class packages
+ * the same outputs as plain C# arrays and scalar bounds, so they can be read
+ * without UnityEngine. The infrastructure adapter (MomentMapRendererAdapter) takes
+ * the result and uploads it to GPU textures and UI elements, and a unit test can
+ * assert on it with ordinary float-array comparisons.
  */
 
 using System;
@@ -41,7 +23,7 @@ namespace iDaVIE.Application.Feature
     /// <summary>
     /// Immutable value object containing the computed moment-0 and moment-1
     /// pixel arrays and their display bounds.
-    /// All data is expressed as plain C# arrays — no Unity types.
+    /// All data is plain C# arrays, with no Unity types.
     /// </summary>
     public sealed class MomentMapResult
     {

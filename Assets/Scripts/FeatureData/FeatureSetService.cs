@@ -2,35 +2,19 @@
  * iDaVIE (immersive Data Visualisation Interactive Explorer)
  * Copyright (C) 2024 IDIA, INAF-OACT
  *
- * Refactoring proposal — Sub-team 5: Feature System and Domain Model
+ * Sub-team 5: Feature System and Domain Model
  *
- * FeatureSetService.cs
- * Application-layer service: orchestrates use-cases that cross FeatureSet
- * and Feature boundaries.
+ * FeatureSetService is the application-layer service that runs the use-cases
+ * spanning FeatureSet and Feature: importing catalogues, creating and selecting
+ * features, adding a selection to a user set, and exporting. These all used to
+ * be tangled into FeatureSetManager alongside rendering and GUI calls.
  *
- * BEFORE (these lived scattered across FeatureSetManager):
- *   • ImportFeatureSetFromTable — mixed catalogue loading with rendering setup
- *   • CreateSelectionFeature   — created Feature + manipulated Unity GameObject
- *   • SelectFeature / DeselectFeature — modified domain state + spawned anchors
- *   • AddFeatureToNewSet       — use-case logic + GUI refresh calls
- *   • AppendFeatureToFile      — directly called StreamWriter
- *
- * AFTER (FeatureSetService responsibilities):
- *   • Orchestrates all use-cases purely in terms of domain objects
- *   • Delegates persistence to FeatureCatalog (which delegates to WP7)
- *   • Delegates import/loading to IFeatureTableLoader (WP2 owns the impl.)
- *   • Raises domain events; FeatureVisualiser and GUI react via those events
- *   • Zero Unity types — pure C#, fully unit-testable with mocks
- *
- * Dependencies (constructor-injected — testable, invertible):
- *   FeatureCatalog          — registry + persistence gateway
- *   IFeatureTableLoader     — data I/O boundary (WP2)
- *   IFeatureStatisticsProvider — statistics boundary (PluginInterface/DataAnalysis)
- *
- * CK metric targets (post-refactor projection):
- *   WMC  ≤ 18
- *   CBO  ≤ 10
- *   LCOM ≤ 0.4
+ * It works only on domain objects and raises events for FeatureVisualiser and
+ * the GUI to react to, so it has no Unity types and can be tested with mocks.
+ * Dependencies are constructor-injected:
+ *   FeatureCatalog              registry and persistence gateway
+ *   IFeatureTableLoader         data I/O boundary (WP2)
+ *   IFeatureStatisticsProvider  statistics boundary (PluginInterface/DataAnalysis)
  */
 
 using System;
@@ -41,7 +25,7 @@ using iDaVIE.Domain.Feature;
 
 namespace iDaVIE.Application.Feature
 {
-    // ── Boundary interfaces (defined here; implemented by other WPs) ──────────
+    // Boundary interfaces (defined here, implemented by other WPs)
 
     /// <summary>
     /// Loads a FeatureTable from a file path.
@@ -55,11 +39,8 @@ namespace iDaVIE.Application.Feature
 
     // IFeatureStatisticsProvider and FeatureStatistics live in FeatureStatistics.cs.
 
-    // ── FeatureSetService ─────────────────────────────────────────────────────
-
     /// <summary>
-    /// Orchestrates feature domain use-cases.
-    /// Pure C# — no Unity dependency.
+    /// Orchestrates feature domain use-cases. Has no Unity dependency.
     /// </summary>
     public sealed class FeatureSetService
     {
@@ -67,7 +48,7 @@ namespace iDaVIE.Application.Feature
         private readonly IFeatureTableLoader         _loader;
         private readonly IFeatureStatisticsProvider  _statistics;
 
-        // ── Selection state ───────────────────────────────────────────────────
+        // Selection state
         private Feature _selectedFeature;
 
         /// <summary>The currently selected feature, or null.</summary>
@@ -82,11 +63,11 @@ namespace iDaVIE.Application.Feature
             }
         }
 
-        // ── Domain events ─────────────────────────────────────────────────────
+        // Domain events
 
         /// <summary>
         /// Raised when the selection changes.
-        /// Args: (previousFeature, newFeature) — either may be null.
+        /// Args are (previousFeature, newFeature); either may be null.
         /// FeatureVisualiser subscribes to spawn/hide anchor handles.
         /// </summary>
         public event Action<Feature, Feature> FeatureSelectionChanged;
@@ -97,7 +78,6 @@ namespace iDaVIE.Application.Feature
         /// <summary>Raised after a FeatureSet is fully imported and populated.</summary>
         public event Action<FeatureSet> FeatureSetImported;
 
-        // ── Constructor ───────────────────────────────────────────────────────
         public FeatureSetService(
             FeatureCatalog             catalog,
             IFeatureTableLoader        loader,
@@ -108,7 +88,7 @@ namespace iDaVIE.Application.Feature
             _statistics = statistics ?? throw new ArgumentNullException(nameof(statistics));
         }
 
-        // ── Use-case: import from file ────────────────────────────────────────
+        // Use-case: import from file
 
         /// <summary>
         /// Loads a VOTable or FITS catalogue from <paramref name="filePath"/>,
@@ -134,9 +114,8 @@ namespace iDaVIE.Application.Feature
             var table = _loader.Load(filePath, out string error);
             if (table == null)
             {
-                // FeatureSetService does not know about Unity Debug.Log.
-                // The caller (FeatureVisualiser or GUI) is responsible for
-                // surfacing the error message to the user.
+                // No Unity Debug.Log down here. The caller (FeatureVisualiser
+                // or GUI) surfaces the error message to the user.
                 LastImportError = error;
                 return null;
             }
@@ -153,11 +132,11 @@ namespace iDaVIE.Application.Feature
         /// <summary>Last error message from a failed import (for GUI display).</summary>
         public string LastImportError { get; private set; }
 
-        // ── Use-case: create selection feature ───────────────────────────────
+        // Use-case: create selection feature
 
         /// <summary>
-        /// Creates (or replaces) the transient selection feature.
-        /// The selection feature is always temporary — it disappears on deselect.
+        /// Creates (or replaces) the transient selection feature. This feature is
+        /// always temporary and disappears on deselect.
         /// </summary>
         /// <param name="boundsMin">Lower-left-back corner in voxel space.</param>
         /// <param name="boundsMax">Upper-right-front corner in voxel space.</param>
@@ -187,7 +166,7 @@ namespace iDaVIE.Application.Feature
             return selectionFeature;
         }
 
-        // ── Use-case: selection ───────────────────────────────────────────────
+        // Use-case: selection
 
         /// <summary>
         /// Selects the smallest feature whose bounding box contains
@@ -245,7 +224,7 @@ namespace iDaVIE.Application.Feature
             SelectedFeature = null;
         }
 
-        // ── Use-case: add selected feature to user set ────────────────────────
+        // Use-case: add selected feature to user set
 
         /// <summary>
         /// Duplicates the currently selected feature into the first user-created set
@@ -261,7 +240,7 @@ namespace iDaVIE.Application.Feature
 
             var targetSet = _catalog.UserSets[0];
 
-            // Duplicate — features are value-like in the domain model
+            // Copy it across; features behave like values in the domain model.
             var duplicate = new Feature(
                 cornerMin: SelectedFeature.CornerMin,
                 cornerMax: SelectedFeature.CornerMax,
@@ -283,7 +262,7 @@ namespace iDaVIE.Application.Feature
             return true;
         }
 
-        // ── Use-case: export ──────────────────────────────────────────────────
+        // Use-case: export
 
         /// <summary>
         /// Exports a FeatureSet to VOTable XML.
@@ -294,13 +273,13 @@ namespace iDaVIE.Application.Feature
             return _catalog.ExportToVoTable(set);
         }
 
-        // ── Use-case: real-time statistics ────────────────────────────────────
+        // Use-case: real-time statistics
 
         /// <summary>
-        /// Returns up-to-date statistics for the given feature.
-        /// Delegates to IFeatureStatisticsProvider, which wraps DataAnalysis.
-        /// Pure pass-through here; the service is the correct place to add
-        /// caching or throttling if statistics become expensive.
+        /// Returns up-to-date statistics for the given feature, delegating to
+        /// IFeatureStatisticsProvider (which wraps DataAnalysis). It's a pass-through
+        /// for now; this is the place to add caching or throttling later if
+        /// statistics get expensive.
         /// </summary>
         public FeatureStatistics GetStatistics(Feature feature)
         {
@@ -308,7 +287,7 @@ namespace iDaVIE.Application.Feature
             return _statistics.GetStatistics(feature);
         }
 
-        // ── Internal helpers ──────────────────────────────────────────────────
+        // Internal helpers
 
         private static void PopulateFromTable(
             FeatureSet                               set,
@@ -340,11 +319,11 @@ namespace iDaVIE.Application.Feature
             bool containsBoxes = keys.Contains(SourceMappingOptions.Xmin);
             bool containsXYZ   = keys.Contains(SourceMappingOptions.X);
 
-            // Sky-coordinate transforms (Ra/Dec + Velo/Freq/Redshift) require AstTool,
-            // which is a Unity/native dependency outside the domain layer. The IFeatureTableLoader
-            // implementation (WP2) is responsible for converting sky coords to pixel coords
-            // before returning the FeatureTable, so by the time we get here the mapping
-            // should contain X/Y/Z or Xmin/Xmax columns.
+            // Sky-coordinate transforms (Ra/Dec + Velo/Freq/Redshift) need AstTool,
+            // a native dependency that sits outside the domain layer. WP2's
+            // IFeatureTableLoader converts sky coords to pixel coords before handing
+            // back the FeatureTable, so by this point the mapping should already
+            // contain X/Y/Z or Xmin/Xmax columns.
             if (!containsBoxes && !containsXYZ)
                 return;
 
@@ -405,7 +384,7 @@ namespace iDaVIE.Application.Feature
                 }
                 else
                 {
-                    // Point coordinate — expand to a 1-voxel box (mirrors SpawnFeaturesFromTable).
+                    // Point coordinate: expand to a 1-voxel box, matching SpawnFeaturesFromTable.
                     float x = ParseColFloat(table.Rows[row].ColumnData[posIndices[0]]);
                     float y = ParseColFloat(table.Rows[row].ColumnData[posIndices[1]]);
                     float z = ParseColFloat(table.Rows[row].ColumnData[posIndices[2]]);

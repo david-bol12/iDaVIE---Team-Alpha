@@ -1,56 +1,29 @@
 /*
- * REFACTORING EXAMPLE 2 — VOTable Export
+ * Refactoring example 2: VOTable export
  * Sub-team 5: Feature System and Domain Model
  *
- * ICoordinateTransformer.cs — AFTER STATE (new file, design-level example)
- * =========================================================================
- * Design role: abstraction boundary over the AstTool native DLL calls.
+ * ICoordinateTransformer.cs (after state, new file, design-level example)
  *
- * WHY THIS INTERFACE EXISTS
- * ─────────────────────────
- * In the before state, VoTableSaver called AstTool.Transform3D and
- * AstTool.Norm as static methods directly inside the export loop.
- * AstTool is a P/Invoke wrapper around the DataAnalysis.dll native library.
- * This meant:
- *   • The exporter could not run in a test without the DLL present.
- *   • Coordinate values in tests were non-deterministic (real WCS maths).
- *   • The exporter's CBO included couplings to AstTool and AstFrame.
+ * The boundary over the AstTool native DLL calls, in iDaVIE.Domain.Feature
+ * (ADR-008).
  *
- * ICoordinateTransformer removes both couplings. In production, the concrete
- * AstToolCoordinateTransformer (owned by Sub-team 2, WCS plug-in boundary)
- * wraps the real DLL calls. In tests, a StubCoordinateTransformer returns
- * fixed values so assertions are predictable.
+ * The old VoTableSaver called AstTool.Transform3D and AstTool.Norm as static
+ * methods straight inside the export loop. AstTool is a P/Invoke wrapper around
+ * DataAnalysis.dll, so the exporter couldn't run in a test without the DLL, its
+ * coordinate values came from real WCS maths and weren't deterministic, and it
+ * was coupled to AstTool and AstFrame. This interface removes both couplings: in
+ * production the concrete AstToolCoordinateTransformer (owned by sub-team 2's WCS
+ * plug-in) wraps the real DLL calls, and in tests a StubCoordinateTransformer
+ * returns fixed values so assertions stay predictable.
  *
- * INTPTR REMOVED (ADR-002 Anti-Corruption Layer)
- * ───────────────────────────────────────────────
- * The previous design passed IntPtr astFrame to both Transform() and
- * Normalise(). IntPtr is a native-boundary type — it belongs in
- * iDaVIE.Infrastructure.NativePlugins, not in a domain interface.
+ * It also drops the IntPtr. The previous design passed IntPtr astFrame to both
+ * Transform() and Normalise(); a native-boundary type like that belongs in
+ * iDaVIE.Infrastructure.NativePlugins, not in a domain interface. Both methods now
+ * take IAstFrame (see IAstFrame.cs), and the infrastructure AstFrameHandle holds
+ * the real IntPtr out of sight, so domain code never touches unmanaged memory.
  *
- * The fix: both methods now accept IAstFrame (see IAstFrame.cs), an opaque
- * domain marker. The Infrastructure implementation (AstFrameHandle) holds
- * the real IntPtr invisibly. Domain code never touches unmanaged memory.
- *
- * CROSS-TEAM BOUNDARY NOTE
- * ────────────────────────
- * This interface is defined here (Sub-team 5) in iDaVIE.Domain.Feature.
- * The concrete implementation (AstToolCoordinateTransformer) is owned by
- * Sub-team 2 as part of the WCS transform plug-in boundary and will live
- * in iDaVIE.Infrastructure.NativePlugins.
- * The interface name must be agreed between both sub-teams before Sprint 2.
- *
- * NAMESPACE
- * ─────────
- * iDaVIE.Domain.Feature  (ADR-008)
- * Domain interfaces that FeatureCatalog and VoTableExportService depend on
- * must live in the Domain namespace — the direction of dependency is inward.
- *
- * CK METRICS (target)
- * ───────────────────
- * WMC  = 2   (two methods)
- * CBO  = 1   (IAstFrame in same namespace — one intra-namespace reference)
- * RFC  = 2
- * LCOM = 0
+ * Sub-team 2 owns the concrete AstToolCoordinateTransformer, so the two teams need
+ * to agree the interface name before sprint 2.
  */
 
 namespace iDaVIE.Domain.Feature
@@ -77,7 +50,7 @@ namespace iDaVIE.Domain.Feature
         /// <param name="frame">
         ///   Opaque domain handle to the AST World Coordinate System frame
         ///   (see <see cref="IAstFrame"/>). Pass a <c>NullAstFrame</c> stub
-        ///   in unit tests — no unsafe or unmanaged code required.
+        ///   in unit tests, with no unsafe or unmanaged code required.
         /// </param>
         /// <param name="x">Pixel X coordinate.</param>
         /// <param name="y">Pixel Y coordinate.</param>

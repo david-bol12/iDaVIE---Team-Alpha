@@ -82,7 +82,7 @@ namespace iDaVIE.Application.Feature
 
             if (!state.HasPoints) return;
 
-            // Committed as a selection feature — same domain path as box-select.
+            // Commit it as a selection feature, the same domain path as box-select.
             // The FeatureSelectionChanged event fires so Team 4 can react.
             _service.CreateSelectionFeature(state.Min, state.Max);
         }

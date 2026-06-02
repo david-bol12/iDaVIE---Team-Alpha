@@ -1,44 +1,26 @@
 /*
- * REFACTORING EXAMPLE 1 — Moment-Map Generation
+ * Refactoring example 1: moment-map generation
  * Sub-team 5: Feature System and Domain Model
  *
- * IMomentMapAdapter.cs — AFTER STATE (new file, design-level example)
- * ====================================================================
- * Design role: Anti-Corruption Layer interface for GPU compute-shader dispatch.
+ * IMomentMapAdapter.cs (after state, new file, design-level example)
  *
- * NAMESPACE
- * ─────────
- * iDaVIE.Application.Feature  (ADR-008)
+ * The anti-corruption-layer interface for GPU compute-shader dispatch, in
+ * iDaVIE.Application.Feature (ADR-008).
  *
- * ADR-002 ANTI-CORRUPTION LAYER
- * ──────────────────────────────
- * The before state (MomentMapRenderer) dispatched ComputeShader kernels directly
- * inside the same class that held domain state (threshold, useMask, colour maps).
- * This made the computation path impossible to test without a Unity GPU context.
+ * The old MomentMapRenderer dispatched ComputeShader kernels inside the same
+ * class that held domain state (threshold, useMask, colour maps), so the
+ * computation path couldn't be tested without a Unity GPU context. This interface
+ * is the seam: application and domain code depend on it, the production
+ * implementation (MomentMapRendererAdapter in iDaVIE.Infrastructure.Unity) is the
+ * only class that imports UnityEngine to do GPU work, and a unit test can inject a
+ * StubMomentMapAdapter that returns pre-computed float arrays with no
+ * ComputeShader, RenderTexture, or Unity runtime.
  *
- * IMomentMapAdapter is the ACL seam:
- *   • Application/Domain code depends on this interface (inward dependency ✓)
- *   • The production implementation (MomentMapRendererAdapter) lives in
- *     iDaVIE.Infrastructure.Unity and is the ONLY class that imports UnityEngine
- *     to do GPU work.
- *   • In unit tests, inject a StubMomentMapAdapter that returns pre-computed
- *     float arrays — no ComputeShader, no RenderTexture, no Unity runtime.
- *
- * RESPONSIBILITY SPLIT
- * ────────────────────
- * IMomentMapAdapter.Compute()  — raw pixel extraction (GPU in prod, float[] in tests)
- * MomentMapCalculator          — bounds computation (pure math, always CPU)
- * MomentMapService             — orchestrates both, returns MomentMapResult
- *
- * This respects SRP: the adapter knows how to dispatch GPU work; it does not
- * know what to do with the results (that is the service's job).
- *
- * CK METRICS (target)
- * ───────────────────
- * WMC  = 1   (single method)
- * CBO  = 2   (MomentMapRequest, tuple return type — same namespace)
- * RFC  = 1
- * LCOM = 0
+ * The work splits cleanly: Compute() extracts raw pixels (GPU in production,
+ * float[] in tests), MomentMapCalculator computes bounds (CPU maths), and
+ * MomentMapService orchestrates both and returns a MomentMapResult. The adapter
+ * knows how to dispatch GPU work but not what to do with the results; that is the
+ * service's job.
  */
 
 namespace iDaVIE.Application.Feature
@@ -46,7 +28,7 @@ namespace iDaVIE.Application.Feature
     /// <summary>
     /// Anti-Corruption Layer interface for the moment-map GPU computation back-end.
     /// <para>
-    /// Abstracts Unity <c>ComputeShader</c> dispatch behind a testable boundary.
+    /// Hides Unity <c>ComputeShader</c> dispatch behind a testable boundary.
     /// The production implementation (<c>MomentMapRendererAdapter</c>) lives in
     /// <c>iDaVIE.Infrastructure.Unity</c> and dispatches GPU kernels.
     /// A stub can be injected in unit tests without a Unity runtime.

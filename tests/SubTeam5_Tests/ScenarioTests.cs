@@ -6,15 +6,16 @@ using System.Xml.Linq;
 namespace SubTeam5_Tests;
 
 /// <summary>
-/// End-to-end scenario: mask → masked features → edited feature → exported VOTable.
+/// End-to-end scenario: mask, masked features, an edited feature, then an exported
+/// VOTable.
 ///
-/// Every assertion targets real domain logic — computed properties (Center, Size),
+/// Every assertion targets real domain logic: computed properties (Center, Size),
 /// containment behaviour that changes after SetBounds, parent wiring, and the
-/// dirty-event chain. Trivial round-trips (set a field, read it back) are absent.
+/// dirty-event chain. There are no trivial round-trips (set a field, read it back).
 ///
-/// The real <see cref="VoTableExportService"/> is used throughout — no in-test stubs.
-/// <see cref="IdentityTransformer"/> replaces the native AstTool DLL with a
-/// pass-through so coordinate assertions remain deterministic.
+/// The real <see cref="VoTableExportService"/> is used throughout, with no in-test
+/// stubs. <see cref="IdentityTransformer"/> replaces the native AstTool DLL with a
+/// pass-through so coordinate assertions stay deterministic.
 /// </summary>
 [TestFixture]
 public class MaskEditExportScenarioTests
@@ -24,7 +25,7 @@ public class MaskEditExportScenarioTests
     [Test]
     public void Scenario_MaskFeaturesEditedAndExported_VoTableReflectsEdits()
     {
-        // ── 1. Mask ───────────────────────────────────────────────────────────
+        // 1. Mask
         var maskSet = new FeatureSet("HI mask run 1", 0, FeatureSetType.Mask, Cyan);
         maskSet.RawDataKeys  = new[] { "SUM", "PEAK" };
         maskSet.RawDataTypes = new[] { "float", "float" };
@@ -32,7 +33,7 @@ public class MaskEditExportScenarioTests
 
         Assert.That(maskSet.SetType, Is.EqualTo(FeatureSetType.Mask));
 
-        // ── 2. Masked features ────────────────────────────────────────────────
+        // 2. Masked features
         var f0 = new Feature(
             new Vec3( 10f,  20f,  5f), new Vec3( 30f,  40f, 15f),
             Cyan, "source_001", "1", 0, 0, new[] { "123.4",  "56.7" }, true);
@@ -51,7 +52,7 @@ public class MaskEditExportScenarioTests
 
         Assert.That(maskSet.Features.Count, Is.EqualTo(3));
 
-        // Add must wire the back-reference — domain logic, not just list insertion.
+        // Add must wire the back-reference; that's domain logic, not just a list insert.
         Assert.That(f1.FeatureSetParent, Is.SameAs(maskSet),
             "Add must set FeatureSetParent so dirty events propagate");
 
@@ -71,7 +72,7 @@ public class MaskEditExportScenarioTests
         Assert.That(f1.ContainsPoint(probePoint), Is.True,
             "probe (51,75,20) is inside initial bounds [50..80, 60..90, 10..30]");
 
-        // ── 3. Edited feature ─────────────────────────────────────────────────
+        // 3. Edited feature
         var dirtyIndices = new List<int>();
         maskSet.FeatureDirty += idx => dirtyIndices.Add(idx);
 
@@ -86,7 +87,7 @@ public class MaskEditExportScenarioTests
             "probe (51,75,20) must be outside after x_min is raised to 52");
 
         // Center re-computed from new corners: ((52+78)/2, (62+88)/2, (11+29)/2) = (65, 75, 20).
-        // The shrink is symmetric, so center is preserved — a wrong formula would differ.
+        // The shrink is symmetric, so the center is preserved; a wrong formula would differ.
         Assert.That(f1.Center.X, Is.EqualTo(65f), "center x preserved by symmetric shrink");
         Assert.That(f1.Center.Y, Is.EqualTo(75f), "center y preserved");
         Assert.That(f1.Center.Z, Is.EqualTo(20f), "center z preserved");
@@ -97,11 +98,12 @@ public class MaskEditExportScenarioTests
         Assert.That(f1.Size.Y, Is.EqualTo(27f), "size y shrank from 31 to 27");
         Assert.That(f1.Size.Z, Is.EqualTo(19f), "size z shrank from 21 to 19");
 
-        // SetBounds calls NotifyDirty → FeatureSet.NotifyDirty → FeatureDirty event.
+        // SetBounds calls NotifyDirty, which calls FeatureSet.NotifyDirty, which
+        // raises the FeatureDirty event.
         Assert.That(dirtyIndices, Has.Member(f1.Index),
             "SetBounds must propagate a dirty notification through to the parent set");
 
-        // Neighbouring features must be unaffected — editing one feature must not
+        // Neighbouring features must be unaffected: editing one feature must not
         // corrupt the domain state of others in the same set.
         Assert.That(f0.FeatureSetParent, Is.SameAs(maskSet), "f0 parent still wired");
         Assert.That(f2.Center.X, Is.EqualTo(110f), "f2 center x untouched");
@@ -109,7 +111,7 @@ public class MaskEditExportScenarioTests
         Assert.That(f2.Center.Z, Is.EqualTo( 30f), "f2 center z untouched");
         Assert.That(f2.Size.X,   Is.EqualTo( 21f), "f2 size x untouched (120-100+1)");
 
-        // ── 4. Exported VOTable ───────────────────────────────────────────────
+        // 4. Exported VOTable
         // VoTableExportService reads domain properties (Center, CornerMin, CornerMax,
         // Flag, RawData) to build each row. The assertions below verify those reads
         // produce the values that the domain computed above.
@@ -127,12 +129,12 @@ public class MaskEditExportScenarioTests
         Assert.That(r1.Count, Is.EqualTo(16), "f1: 14 fixed + 2 RawData columns");
 
         // Column layout: id x y z x_min x_max y_min y_max z_min z_max ra dec v_rad Flag SUM PEAK
-        // f0 — must show original unedited values.
+        // f0 should still show the original, unedited values.
         Assert.That(r0[Col.Flag].Value, Is.EqualTo("1"),     "f0 flag");
         Assert.That(r0[Col.Sum].Value,  Is.EqualTo("123.4"), "f0 SUM");
         Assert.That(r0[Col.Peak].Value, Is.EqualTo("56.7"),  "f0 PEAK");
 
-        // f1 — exporter must read the domain-computed Center and CornerMin/CornerMax.
+        // f1: the exporter must read the domain-computed Center and CornerMin/CornerMax.
         // These columns come from feature.Center.X and feature.CornerMin.X respectively,
         // so a wrong Center or SetBounds implementation would surface here.
         Assert.That(r1[Col.X].Value,    Is.EqualTo("65"),    "f1 computed center x");
@@ -144,13 +146,13 @@ public class MaskEditExportScenarioTests
         Assert.That(r1[Col.Sum].Value,  Is.EqualTo("470.2"), "f1 updated SUM");
         Assert.That(r1[Col.Peak].Value, Is.EqualTo("92.1"),  "f1 updated PEAK");
 
-        // f2 — must be unchanged.
+        // f2 should be unchanged.
         Assert.That(r2[Col.Flag].Value, Is.EqualTo("1"),     "f2 flag");
         Assert.That(r2[Col.Sum].Value,  Is.EqualTo("789.1"), "f2 SUM");
         Assert.That(r2[Col.Peak].Value, Is.EqualTo("120.3"), "f2 PEAK");
     }
 
-    // ── Column index constants ────────────────────────────────────────────────
+    // Column index constants
     private static class Col
     {
         public const int Id    = 0;
@@ -171,12 +173,12 @@ public class MaskEditExportScenarioTests
         public const int Peak  = 15;
     }
 
-    // ── Test double ───────────────────────────────────────────────────────────
+    // Test double
 
     /// <summary>
-    /// Returns pixel coordinates unchanged as world coordinates, making the
-    /// ra/dec/z_phys columns in the XML equal to the pixel center values.
-    /// No native DLL required; no floating-point uncertainty in assertions.
+    /// Returns pixel coordinates unchanged as world coordinates, so the
+    /// ra/dec/z_phys columns in the XML equal the pixel center values.
+    /// No native DLL needed, and no floating-point uncertainty in the assertions.
     /// </summary>
     private sealed class IdentityTransformer : ICoordinateTransformer
     {

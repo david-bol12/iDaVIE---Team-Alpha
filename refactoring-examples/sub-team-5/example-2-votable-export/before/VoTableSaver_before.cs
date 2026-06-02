@@ -1,53 +1,51 @@
 /*
- * REFACTORING EXAMPLE 2 — VOTable Export
+ * Refactoring example 2: VOTable export
  * Sub-team 5: Feature System and Domain Model
  *
- * BEFORE STATE
- * ============
- * This file is an annotated copy of the production VoTableSaver class
- * found in Assets/Scripts/FeatureData/VoTable.cs (lines 428–488).
+ * Before state.
  *
- * No production code has been modified. Annotations use the prefix
- * SMELL to identify each design problem, and reference the CK metric
- * or SOLID principle that is violated.
+ * This file is an annotated copy of the production VoTableSaver class found in
+ * Assets/Scripts/FeatureData/VoTable.cs (lines 428 to 488). No production code has
+ * been modified. The annotations use the prefix SMELL to mark each design problem
+ * and name the CK metric or SOLID principle it breaks.
  *
  * Problems catalogued here:
- *   [1] Static class — no polymorphism, not injectable, not mockable
- *   [2] Unity MonoBehaviour parameter — couples exporter to the UI layer
- *   [3] Law of Demeter violation — navigates 3+ levels into Unity objects
- *   [4] Direct DLL coupling — calls AstTool.Transform3D / AstTool.Norm inline
- *   [5] No export seam — impossible to produce FITS or JSON-LD without edits
- *   [6] Wrong namespace — export logic lives inside VoTableReader (reading layer)
+ *   [1] Static class: no polymorphism, not injectable, not mockable
+ *   [2] Unity MonoBehaviour parameter: couples the exporter to the UI layer
+ *   [3] Law of Demeter: navigates 3+ levels into Unity objects
+ *   [4] Direct DLL coupling: calls AstTool.Transform3D / AstTool.Norm inline
+ *   [5] No export seam: can't produce FITS or JSON-LD without edits
+ *   [6] Wrong namespace: export logic lives inside VoTableReader (the reading layer)
  */
 
 using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
 using DataFeatures;
-using UnityEngine; // SMELL [2][3]: Unity import — export logic depends on runtime
+using UnityEngine; // SMELL [2][3]: Unity import; export logic depends on the runtime
 
 // SMELL [6]: SaveFeatureSetAsVoTable lives in VoTableReader, a reading namespace.
 //            Export and import responsibilities are collapsed into the same file.
 namespace VoTableReader
 {
-    // SMELL [1]: Static class — cannot be injected, subclassed, or replaced.
+    // SMELL [1]: Static class, so it can't be injected, subclassed, or replaced.
     //            There is no IVoTableExporter interface; callers depend directly
-    //            on this concrete type, violating the Dependency Inversion Principle.
+    //            on this concrete type, breaking the Dependency Inversion Principle.
     public static class VoTableSaver
     {
-        // SMELL [2]: First parameter is FeatureSetRenderer — a MonoBehaviour.
-        //            This means the method can only be called from within a running
-        //            Unity scene. It is completely untestable in isolation.
+        // SMELL [2]: The first parameter is a FeatureSetRenderer, a MonoBehaviour,
+        //            so the method only runs inside a live Unity scene and can't be
+        //            tested in isolation.
         //
-        // SMELL [5]: The signature (FeatureSetRenderer, string) provides no seam.
-        //            To support FITS output, a caller would have to modify this
-        //            method or write a parallel copy — Open/Closed violation.
+        // SMELL [5]: The signature (FeatureSetRenderer, string) gives no seam. To
+        //            support FITS output a caller would have to modify this method
+        //            or copy it, which breaks Open/Closed.
         public static void SaveFeatureSetAsVoTable(FeatureSetRenderer featureSet, string filePath)
         {
-            // SMELL [3]: featureSet.VolumeRenderer.Data.GetAstAttribute(...)
-            //            — three levels of navigation into Unity components.
-            //            FeatureCatalog should receive a plain FeatureSet domain
-            //            object, not an object that owns a VolumeDataSetRenderer.
+            // SMELL [3]: featureSet.VolumeRenderer.Data.GetAstAttribute(...) is three
+            //            levels of navigation into Unity components. FeatureCatalog
+            //            should receive a plain FeatureSet domain object, not one that
+            //            owns a VolumeDataSetRenderer.
             string zType = featureSet.VolumeRenderer.Data.GetAstAttribute("System(3)");
 
             List<string> sourceDataHeaders = new List<string>
@@ -94,9 +92,9 @@ namespace VoTableReader
                 double centerX, centerY, centerZ, ra, dec, zPhys, normR, normD, normZ;
                 Feature currentFeature = featureSet.FeatureList[i];
 
-                // SMELL [3]: featureSet.VolumeRenderer.SourceStatsDict
-                //            — reading through two levels of Unity component to reach
-                //            a dictionary that should have been passed as a plain value.
+                // SMELL [3]: featureSet.VolumeRenderer.SourceStatsDict reads through
+                //            two levels of Unity component to reach a dictionary that
+                //            should have been passed in as a plain value.
                 if (featureSet.VolumeRenderer.SourceStatsDict == null)
                 {
                     centerX = currentFeature.Center.x;
@@ -113,17 +111,17 @@ namespace VoTableReader
                                         .ElementAt(currentFeature.Index).Value.cZ;
                 }
 
-                // SMELL [4]: Direct static call to AstTool.Transform3D.
-                //            AstTool is a P/Invoke wrapper around DataAnalysis.dll.
-                //            This makes VoTableSaver untestable without the native DLL
-                //            and impossible to stub for deterministic RA/Dec/Z values.
-                //            CBO rises by one coupling for every DLL entry point used.
+                // SMELL [4]: Direct static call to AstTool.Transform3D. AstTool is a
+                //            P/Invoke wrapper around DataAnalysis.dll, so VoTableSaver
+                //            can't run without the native DLL and can't be stubbed for
+                //            deterministic RA/Dec/Z values. CBO goes up by one for
+                //            every DLL entry point used.
                 AstTool.Transform3D(
                     featureSet.VolumeRenderer.AstFrame,
                     centerX, centerY, centerZ, 1,
                     out ra, out dec, out zPhys);
 
-                // SMELL [4]: Same DLL coupling problem — AstTool.Norm called inline.
+                // SMELL [4]: Same DLL coupling problem; AstTool.Norm is called inline.
                 AstTool.Norm(
                     featureSet.VolumeRenderer.AstFrame,
                     ra, dec, zPhys,
@@ -156,9 +154,9 @@ namespace VoTableReader
                    .Add(voRow);
             }
 
-            // SMELL [1][5]: doc.Save writes directly to disk — no abstraction over
-            //               the output stream. Cannot redirect output to memory,
-            //               network, or a different format without rewriting this method.
+            // SMELL [1][5]: doc.Save writes straight to disk with no abstraction over
+            //               the output stream, so output can't be redirected to memory,
+            //               the network, or another format without rewriting this method.
             doc.Save(filePath);
         }
     }

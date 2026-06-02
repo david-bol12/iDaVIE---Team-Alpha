@@ -2,14 +2,12 @@
  * iDaVIE (immersive Data Visualisation Interactive Explorer)
  * Copyright (C) 2024 IDIA, INAF-OACT
  *
- * Refactoring proposal — Sub-team 5: Feature System and Domain Model
+ * Sub-team 5: Feature System and Domain Model
  *
- * FeatureStatistics.cs
- * Value object carrying per-feature statistics derived from the volume mask,
- * together with the provider interface that computes them.
- *
- * Extracted from FeatureSetService.cs so the statistics types can be tested
- * independently without pulling in FeatureSetService's full dependency tree.
+ * FeatureStatistics is the value object holding per-feature statistics derived
+ * from the volume mask, along with the provider interface that computes them.
+ * It was pulled out of FeatureSetService.cs so the statistics types can be tested
+ * on their own without dragging in the rest of FeatureSetService's dependencies.
  */
 
 namespace iDaVIE.Application.Feature
@@ -24,9 +22,9 @@ namespace iDaVIE.Application.Feature
     }
 
     /// <summary>
-    /// Immutable value object carrying the statistics for one feature.
-    /// Kept separate from <see cref="DataFeatures.Feature"/> so the domain aggregate
-    /// stays a plain bounding-box container with no dependency on the native DataAnalysis DLL.
+    /// Immutable value object holding the statistics for one feature.
+    /// Kept separate from <see cref="DataFeatures.Feature"/> so that class stays a
+    /// plain bounding-box container with no dependency on the native DataAnalysis DLL.
     /// </summary>
     public sealed class FeatureStatistics
     {

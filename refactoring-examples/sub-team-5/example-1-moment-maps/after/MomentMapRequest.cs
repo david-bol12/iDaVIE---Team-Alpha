@@ -1,42 +1,26 @@
 /*
- * REFACTORING EXAMPLE 1 — Moment-Map Generation
+ * Refactoring example 1: moment-map generation
  * Sub-team 5: Feature System and Domain Model
  *
- * MomentMapRequest.cs — AFTER STATE (new file, design-level example)
- * ===================================================================
- * Design role: immutable value object describing the INPUT to
- *              IMomentMapService.GenerateMomentMaps().
+ * MomentMapRequest.cs (after state, new file, design-level example)
  *
- * NAMESPACE
- * ─────────
- * iDaVIE.Application.Feature  (ADR-008)
+ * An immutable value object describing the input to
+ * IMomentMapService.GenerateMomentMaps(), in iDaVIE.Application.Feature (ADR-008).
  *
- * WHAT THIS REPLACES
- * ──────────────────
- * In the before state (MomentMapRenderer), the inputs were scattered across
- * MonoBehaviour fields: _dataCube (Texture3D), _maskCube (Texture3D),
- * MomentMapThreshold (float), UseMask (bool), and the spectrum was assembled
- * inline from _parentVolumeDataSetRenderer.
- * None of these inputs could be constructed or passed around without a
- * running Unity scene.
+ * In the old MomentMapRenderer the inputs were scattered across MonoBehaviour
+ * fields (_dataCube and _maskCube as Texture3D, MomentMapThreshold, UseMask) and
+ * the spectrum was built inline from _parentVolumeDataSetRenderer, so none of it
+ * could be constructed or passed around outside a running Unity scene. This class
+ * gathers them into one plain C# object:
+ *   DataVoxels           flat float[] copied from the data cube (no Texture3D)
+ *   MaskVoxels           flat float[], optional, null when UseMask is false
+ *   SpectrumZ            float[] of physical Z-axis values, pre-computed by the adapter
+ *   Width/Height/Depth   spatial dimensions
+ *   Threshold            the threshold value
+ *   UseMask              whether to apply the mask voxel array
  *
- * MomentMapRequest replaces all of those with a plain C# value object:
- *   • DataVoxels  — flat float[] copied from the data cube (no Texture3D)
- *   • MaskVoxels  — flat float[] (optional; null when UseMask = false)
- *   • SpectrumZ   — float[] of physical Z-axis values (pre-computed by adapter)
- *   • Width/Height/Depth — spatial dimensions
- *   • Threshold   — float threshold value
- *   • UseMask     — whether to apply the mask voxel array
- *
- * Zero UnityEngine types — the request can be constructed in a unit test
- * with raw float arrays and fixed dimensions.
- *
- * CK METRICS (target)
- * ───────────────────
- * WMC  = 1   (one constructor)
- * CBO  = 0   (no dependencies beyond BCL)
- * RFC  = 1
- * LCOM = 0
+ * There are no UnityEngine types, so a unit test can build a request from raw
+ * float arrays and fixed dimensions.
  */
 
 using System;
@@ -45,7 +29,7 @@ namespace iDaVIE.Application.Feature
 {
     /// <summary>
     /// Immutable value object describing the inputs to a moment-map generation
-    /// request. All data is expressed as plain C# arrays — no Unity types.
+    /// request. All data is plain C# arrays, with no Unity types.
     /// </summary>
     public sealed class MomentMapRequest
     {

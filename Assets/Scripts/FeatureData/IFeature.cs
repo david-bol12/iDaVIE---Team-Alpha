@@ -2,20 +2,19 @@
  * iDaVIE (immersive Data Visualisation Interactive Explorer)
  * Copyright (C) 2024 IDIA, INAF-OACT
  *
- * Refactoring proposal — Sub-team 5: Feature System and Domain Model
+ * Sub-team 5: Feature System and Domain Model
  *
- * IFeature.cs
- * Domain abstraction enabling Masked, Imported, and User-defined features to be
- * substituted behind a single interface (Liskov Substitution Principle).
+ * IFeature lets Masked, Imported, and User-defined features sit behind one
+ * interface so callers don't have to care which kind they're handling.
  *
  * Implemented by:
- *   Feature          — concrete base (all three flavours currently share this class)
- *   MaskedFeature    — feature derived from volume mask analysis
- *   ImportedFeature  — feature loaded from a VOTable or FITS catalogue
- *   UserDefinedFeature — feature drawn interactively in VR
+ *   Feature             concrete base (all three kinds share this class for now)
+ *   MaskedFeature       feature derived from volume mask analysis
+ *   ImportedFeature     feature loaded from a VOTable or FITS catalogue
+ *   UserDefinedFeature  feature drawn interactively in VR
  *
- * Consumers (FeatureSetService, VoTableExportService, FeatureCatalog) depend only on
- * IFeature so they remain unaware of which flavour they are processing.
+ * Consumers (FeatureSetService, VoTableExportService, FeatureCatalog) depend only
+ * on IFeature, so they stay unaware of which kind they are processing.
  */
 
 using DataFeatures;
@@ -23,14 +22,14 @@ using DataFeatures;
 namespace iDaVIE.Domain.Feature
 {
     /// <summary>
-    /// Observable domain contract for a single marked region in the data volume.
-    /// All three feature flavours (Masked, Imported, User-defined) must satisfy this
-    /// contract; callers that need only query or export features should depend on
-    /// this interface rather than on the concrete <see cref="Feature"/> class.
+    /// Domain contract for a single marked region in the data volume.
+    /// All three feature kinds (Masked, Imported, User-defined) satisfy it; callers
+    /// that only query or export features should depend on this interface rather than
+    /// the concrete <see cref="Feature"/> class.
     /// </summary>
     public interface IFeature
     {
-        // ── Identity ─────────────────────────────────────────────────────────────
+        // Identity
 
         /// <summary>Position of this feature within its parent <see cref="FeatureSet"/>.</summary>
         int Index { get; set; }
@@ -41,7 +40,7 @@ namespace iDaVIE.Domain.Feature
         /// <summary>Human-readable label (e.g. source catalogue name).</summary>
         string Name { get; }
 
-        // ── Mutable domain state ──────────────────────────────────────────────────
+        // Mutable domain state
 
         /// <summary>Quality flag string (e.g. "1" = good, "3" = uncertain).</summary>
         string Flag { get; set; }
@@ -58,7 +57,7 @@ namespace iDaVIE.Domain.Feature
         /// <summary>Whether this feature is currently selected in the UI.</summary>
         bool Selected { get; set; }
 
-        // ── Geometry ──────────────────────────────────────────────────────────────
+        // Geometry
 
         /// <summary>Minimum corner of the axis-aligned bounding box (voxel space).</summary>
         Vec3 CornerMin { get; }
@@ -81,7 +80,7 @@ namespace iDaVIE.Domain.Feature
         /// <summary>Product of <see cref="Size"/> components (voxel count of the bounding box).</summary>
         float Volume { get; }
 
-        // ── Behaviour ─────────────────────────────────────────────────────────────
+        // Behaviour
 
         /// <summary>
         /// Replaces the bounding-box corners and notifies the parent set that this

@@ -2,32 +2,17 @@
  * iDaVIE (immersive Data Visualisation Interactive Explorer)
  * Copyright (C) 2024 IDIA, INAF-OACT
  *
- * Refactoring proposal — Sub-team 5: Feature System and Domain Model
+ * Sub-team 5: Feature System and Domain Model
  *
- * FeatureVisualiser.cs
- * THE ONLY Unity-aware class in the feature domain layer.
+ * FeatureVisualiser is the only Unity-aware class in the feature layer. It is a
+ * MonoBehaviour adapter: it subscribes to FeatureSetService events and turns them
+ * into Unity world-space work (spawning and repositioning anchor handles), and it
+ * holds the prefab references the rest of the layer must not touch.
  *
- * BEFORE (all tangled inside FeatureSetManager):
- *   • Instantiated FeatureAnchorPrefab GameObjects in Awake()
- *   • Repositioned 8 anchor colliders every Update() frame
- *   • Held a direct VolumeDataSetRenderer reference
- *   • Called Debug.Log, FindObjectOfType, Instantiate, etc.
- *   • Mixed all of this with pure domain logic (SelectFeature, DeselectFeature…)
- *
- * AFTER (FeatureVisualiser responsibilities):
- *   • MonoBehaviour adapter — Unity lifecycle → domain event wiring
- *   • Subscribes to FeatureSetService events and translates them into
- *     Unity world-space operations (anchor spawning, anchor repositioning)
- *   • Owns the FeatureSetRendererPrefab + FeatureAnchorPrefab Unity references
- *   • Provides the composition root: constructs FeatureCatalog + FeatureSetService
- *     with their concrete dependencies, so the pure C# objects never call 'new'
- *     on anything Unity-specific
- *   • Contains ZERO domain logic — all if/else decisions live in the service layer
- *
- * CK metric targets (post-refactor projection):
- *   WMC  ≤ 14   (was ~45 in FeatureSetManager)
- *   CBO  ≤ 12   (Unity adapter — coupling to Unity types is expected here)
- *   LCOM ≤ 0.4
+ * It also acts as the composition root. Awake() builds FeatureCatalog and
+ * FeatureSetService with their concrete dependencies, so the pure-C# objects never
+ * have to 'new' anything Unity-specific. The decision logic stays in the service
+ * layer; this class just wires things together.
  */
 
 using System;
@@ -48,7 +33,7 @@ namespace iDaVIE.Infrastructure.Unity
     /// </summary>
     public sealed class FeatureVisualiser : MonoBehaviour
     {
-        // ── Inspector references ─────────────────────────────────────────────
+        // Inspector references
         [Header("Prefabs")]
         [SerializeField] private FeatureSetRenderer  _featureSetRendererPrefab;
         [SerializeField] private GameObject          _featureAnchorPrefab;
@@ -56,12 +41,11 @@ namespace iDaVIE.Infrastructure.Unity
         [Header("Scene references")]
         [SerializeField] private VolumeDataSetRenderer _volumeRenderer;
 
-        // ── Domain objects (constructed in Awake) ─────────────────────────────
+        // Domain objects, constructed in Awake
         public FeatureCatalog     Catalog  { get; private set; }
         public FeatureSetService  Service  { get; private set; }
 
-        // ── Anchor handles ────────────────────────────────────────────────────
-        // 8 corner handles for the selected feature's bounding box.
+        // The 8 corner handles for the selected feature's bounding box.
         private readonly GameObject[] _anchorHandles = new GameObject[8];
 
         // Maps each domain FeatureSet to its GPU renderer so anchors can be
@@ -69,22 +53,21 @@ namespace iDaVIE.Infrastructure.Unity
         private readonly Dictionary<FeatureSet, FeatureSetRenderer> _setRenderers
             = new Dictionary<FeatureSet, FeatureSetRenderer>();
 
-        // ── Unity event forwarding ────────────────────────────────────────────
         /// <summary>
         /// Forwarded from FeatureSetService.MaskFeatureSelected.
-        /// Other MonoBehaviours (e.g. stats panel) subscribe to this.
+        /// Other MonoBehaviours (e.g. the stats panel) subscribe to this.
         /// </summary>
         public event Action MaskFeatureSelected;
 
-        // ── Composition root (Awake = DI container for this scene) ────────────
+        // Composition root: Awake wires up the domain objects for this scene.
         private void Awake()
         {
             // 1. Build the persistence service (WP7 concrete class).
             //    In the shipped product this would be: new FilesystemPersistenceService()
-            //    For now we supply the null object so the domain compiles cleanly.
+            //    For now we use the null object so the domain compiles cleanly.
             IFeaturePersistenceService persistence = new NullFeaturePersistenceService();
 
-            // 2. Build the loader (WP2 concrete class — stub until WP2 delivers).
+            // 2. Build the loader (WP2 concrete class, stubbed until WP2 delivers).
             IFeatureTableLoader loader = new NullFeatureTableLoader();
 
             // 3. Build the statistics provider (wraps DataAnalysis native DLL).
@@ -112,7 +95,6 @@ namespace iDaVIE.Infrastructure.Unity
             Service.FeatureSelectionChanged -= OnSelectionChanged;
         }
 
-        // ── Unity per-frame update ────────────────────────────────────────────
         private void Update()
         {
             var selected = Service?.SelectedFeature;
@@ -122,12 +104,12 @@ namespace iDaVIE.Infrastructure.Unity
                 HideAnchors();
         }
 
-        // ── Domain event handlers ─────────────────────────────────────────────
+        // Domain event handlers
 
         private void OnSelectionChanged(Feature previous, Feature next)
         {
-            // When a new feature is selected the anchor repositioning
-            // happens in Update(); we just need to hide them on deselect.
+            // Repositioning a newly selected feature's anchors happens in
+            // Update(); here we only need to hide them on deselect.
             if (next == null) HideAnchors();
         }
 
@@ -138,12 +120,12 @@ namespace iDaVIE.Infrastructure.Unity
             CreateRendererForSet(set);
         }
 
-        // ── Public API (called by VolumeInputController etc.) ─────────────────
+        // Public API (called by VolumeInputController etc.)
 
         /// <summary>Selects the feature under the cursor in world space.</summary>
         public bool SelectAtWorldPosition(Vector3 worldPosition)
         {
-            // Convert Unity world space → voxel space for the pure-C# layer.
+            // Convert Unity world space to voxel space for the pure-C# layer.
             Vec3 voxelPos = WorldToVoxel(worldPosition);
             return Service.SelectAtPosition(voxelPos);
         }
@@ -183,7 +165,7 @@ namespace iDaVIE.Infrastructure.Unity
             return renderer;
         }
 
-        // ── FeatureSetRenderer factory ────────────────────────────────────────
+        // FeatureSetRenderer factory
 
         /// <summary>
         /// Instantiates a FeatureSetRenderer prefab and configures it for <paramref name="set"/>.
@@ -242,7 +224,7 @@ namespace iDaVIE.Infrastructure.Unity
             return renderer;
         }
 
-        // ── Anchor handle management ──────────────────────────────────────────
+        // Anchor handle management
 
         private void SpawnAnchorHandles()
         {
@@ -295,13 +277,13 @@ namespace iDaVIE.Infrastructure.Unity
                     handle.transform.localScale = Vector3.zero;
         }
 
-        // ── Coordinate conversion helpers ─────────────────────────────────────
+        // Coordinate conversion helpers
 
         private Vec3 WorldToVoxel(Vector3 worldPos)
         {
-            // Each FeatureSetRenderer's transform maps voxel space → world space.
-            // We use the first available renderer's inverse transform.
-            // A more robust implementation would accept a FeatureSet parameter.
+            // Each FeatureSetRenderer's transform maps voxel space to world space.
+            // This uses the visualiser's own inverse transform; ideally it would
+            // take a FeatureSet parameter and use that set's renderer instead.
             var local = transform.InverseTransformPoint(worldPos);
             return new Vec3(local.x, local.y, local.z);
         }
@@ -316,14 +298,14 @@ namespace iDaVIE.Infrastructure.Unity
         }
     }
 
-    // ── Null-object stubs (used in Awake until WP2/WP7 deliver) ──────────────
+    // Null-object stubs, used in Awake until WP2/WP7 deliver
 
     /// <summary>No-op persistence service. Safe to use in tests and early integration.</summary>
     internal sealed class NullFeaturePersistenceService : IFeaturePersistenceService
     {
         public void   AppendFeatureToAscii(Feature f, string fn) { }
         /// <summary>
-        /// Returns <see cref="string.Empty"/> — no file is written.
+        /// Returns <see cref="string.Empty"/>; no file is written.
         /// Callers that display the returned path as a UI confirmation must guard for
         /// empty string (e.g. <c>if (!string.IsNullOrEmpty(path)) ShowMessage(path);</c>).
         /// Replace this stub with the real WP7 implementation before shipping export.
@@ -357,8 +339,8 @@ namespace iDaVIE.Infrastructure.Unity
 
     /// <summary>
     /// Wraps DataAnalysis.SourceStats as an IFeatureStatisticsProvider.
-    /// Holds a VolumeDataSetRenderer reference (the only place the domain
-    /// indirectly touches the rendering layer — through this adapter).
+    /// Holds a VolumeDataSetRenderer reference; this adapter is the only place
+    /// the domain touches the rendering layer, and only indirectly.
     /// </summary>
     internal sealed class DataAnalysisStatisticsProvider : IFeatureStatisticsProvider
     {
@@ -371,9 +353,9 @@ namespace iDaVIE.Infrastructure.Unity
 
         public FeatureStatistics GetStatistics(Feature feature)
         {
-            // Full implementation calls DataAnalysis.GetSourceStats via the
-            // native plugin interface and maps SourceStats fields to FeatureStatistics.
-            // Skeleton shown here — the binding exists in PluginInterface/DataAnalysis.cs.
+            // The full version calls DataAnalysis.GetSourceStats through the native
+            // plugin interface and maps SourceStats fields onto FeatureStatistics.
+            // Only the skeleton is here; the binding lives in PluginInterface/DataAnalysis.cs.
             //
             // var stats = DataAnalysis.GetSourceStats(
             //     _volumeRenderer.DataSet.FitsData,
@@ -389,9 +371,9 @@ namespace iDaVIE.Infrastructure.Unity
             //     CentroidY   = stats.cY,
             //     CentroidZ   = stats.cZ,
             //     W20         = stats.channelW20,
-            //     W50         = 0,   // W50 is NOT in SourceStats; the struct exposes channelW20 and veloW20 only.
-            //                        // veloVsys (previously noted here) is systemic velocity — wrong field for W50.
-            //                        // Confirm with WP2 whether a W50 field will be added to SourceStats.
+            //     W50         = 0,   // SourceStats has no W50; it only exposes channelW20 and veloW20.
+            //                        // veloVsys is systemic velocity, not W50, so don't use it here.
+            //                        // Check with WP2 whether a W50 field will be added to SourceStats.
             // };
 
             return new FeatureStatistics();   // stub until DataAnalysis binding is confirmed

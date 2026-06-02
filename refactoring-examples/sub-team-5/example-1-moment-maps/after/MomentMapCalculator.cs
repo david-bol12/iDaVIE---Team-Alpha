@@ -1,53 +1,27 @@
 /*
- * REFACTORING EXAMPLE 1 — Moment-Map Generation
+ * Refactoring example 1: moment-map generation
  * Sub-team 5: Feature System and Domain Model
  *
- * MomentMapCalculator.cs — AFTER STATE (new file, design-level example)
- * =======================================================================
- * Design role: pure-C# domain math for moment-map post-processing.
+ * MomentMapCalculator.cs (after state, new file, design-level example)
  *
- * NAMESPACE
- * ─────────
- * iDaVIE.Domain.Feature  (ADR-008)
+ * The moment-map post-processing maths, in iDaVIE.Domain.Feature (ADR-008). It is
+ * only stateless operations on float arrays (bounds extraction, moment-0,
+ * moment-1): no orchestration, no I/O, no framework dependency. Maths like this
+ * belongs in the domain layer as a shared utility that application services call.
+ * In GRASP terms the domain layer is the expert on what moment maps mean, and the
+ * application layer is the expert on when to compute them.
  *
- * WHY DOMAIN, NOT APPLICATION
- * ───────────────────────────
- * This class contains only stateless mathematical operations on float arrays
- * (bounds extraction, moment-0, moment-1). It has no orchestration, no I/O,
- * and no framework dependency. Pure math belongs in the Domain layer as a
- * shared utility — Application services call it, but the Domain layer owns it.
+ * The old MomentMapRenderer.GetBounds() did the min/max extraction by reading
+ * pixels back from a RenderTexture into a Texture2D and walking the raw data, so
+ * it was tied to Unity GPU types. This class does the same computation on plain
+ * float[] arrays: in production the infrastructure adapter reads back from the GPU
+ * and passes a float[] in; in tests you pass any float[] directly with no Unity
+ * runtime.
  *
- * This is consistent with GRASP Information Expert: the Domain layer is the
- * expert on what moment maps *mean* mathematically. The Application layer
- * is the expert on *when* to compute them.
- *
- * WHAT THIS REPLACES
- * ──────────────────
- * In the before state, MomentMapRenderer.GetBounds() performed min/max
- * extraction by reading back pixels from a RenderTexture into a Texture2D
- * and iterating the raw data — tightly coupled to Unity GPU types.
- *
- * MomentMapCalculator performs the same bounds computation on plain float[]
- * arrays. In production, the Infrastructure adapter reads back from the GPU,
- * converts to float[], and passes to this class. In tests, pass any float[]
- * directly — no Unity runtime required.
- *
- * NOTE ON CPU MOMENT COMPUTATION
- * ──────────────────────────────
- * ComputeMoment0 and ComputeMoment1 provide CPU-side reference implementations
- * of the same algorithms run on the GPU in MomentMapRendererAdapter.
- * They serve two purposes:
- *   1. Unit-test ground truth — the GPU adapter's output can be compared
- *      against these results for correctness validation.
- *   2. Headless / CI execution — moment maps can be generated in CI without
- *      a GPU or Unity process (useful for integration tests).
- *
- * CK METRICS (target)
- * ───────────────────
- * WMC  = 3   (three static methods)
- * CBO  = 0   (no dependencies beyond BCL)
- * RFC  = 3
- * LCOM = 0   (static — all methods share the same data abstraction)
+ * ComputeMoment0 and ComputeMoment1 are CPU versions of the algorithms the GPU
+ * runs in MomentMapRendererAdapter. They give the tests a ground truth to compare
+ * the GPU output against, and they let moment maps be generated in CI without a
+ * GPU or a Unity process.
  */
 
 using System;
@@ -55,12 +29,12 @@ using System;
 namespace iDaVIE.Domain.Feature
 {
     /// <summary>
-    /// Pure-C# moment-map calculation helpers.
-    /// No Unity or framework dependencies — fully unit-testable in headless CI.
+    /// Moment-map calculation helpers, with no Unity or framework dependencies so
+    /// they run in headless CI.
     /// </summary>
     public static class MomentMapCalculator
     {
-        // ── Bounds extraction ────────────────────────────────────────────────
+        // Bounds extraction
 
         /// <summary>
         /// Returns the (min, max) finite value pair for the given pixel array,
@@ -96,7 +70,7 @@ namespace iDaVIE.Domain.Feature
             return (min, max);
         }
 
-        // ── CPU reference implementations (used for test ground truth) ───────
+        // CPU reference implementations, used as test ground truth
 
         /// <summary>
         /// CPU-side moment-0 (integrated intensity) computation.

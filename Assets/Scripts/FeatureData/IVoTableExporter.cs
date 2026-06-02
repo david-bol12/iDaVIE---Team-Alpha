@@ -11,7 +11,7 @@ namespace iDaVIE.Domain.Feature
     {
         /// <summary>
         /// Serialises <paramref name="featureSet"/> to a VOTable 1.3 XML string.
-        /// The caller is responsible for writing the returned string to disk.
+        /// The caller writes the returned string to disk.
         /// </summary>
         string Export(FeatureSet featureSet, ICoordinateTransformer transformer);
     }

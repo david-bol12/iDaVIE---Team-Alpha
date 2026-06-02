@@ -54,8 +54,8 @@ public class FeatureTests
     // TEST 3: ContainsPoint correctly classifies interior, boundary, and exterior points.
     // Fails if the comparison uses < instead of <= (excludes boundary) or has an axis wrong.
     [TestCase( 5f,    5f,   5f, true)]   // interior
-    [TestCase( 0f,    0f,   0f, true)]   // min corner — included
-    [TestCase(10f,   10f,  10f, true)]   // max corner — included
+    [TestCase( 0f,    0f,   0f, true)]   // min corner, included
+    [TestCase(10f,   10f,  10f, true)]   // max corner, included
     [TestCase(-0.1f,  5f,   5f, false)]  // just outside x_min
     [TestCase(10.1f,  5f,   5f, false)]  // just outside x_max
     public void Feature_ContainsPoint_ReturnsCorrectResult(

@@ -2,14 +2,13 @@
  * iDaVIE (immersive Data Visualisation Interactive Explorer)
  * Copyright (C) 2024 IDIA, INAF-OACT
  *
- * Refactoring proposal — Sub-team 5: Feature System and Domain Model
+ * Sub-team 5: Feature System and Domain Model
  *
- * IFeaturePersistenceService.cs
- * Interface boundary between the feature domain (FeatureCatalog) and the
- * Persistence layer (WP7 — Sewe en sestig). The domain calls this interface;
- * WP7 owns the concrete implementation that touches StreamWriter, XDocument,
- * and Application.dataPath. This enforces the Dependency Inversion Principle:
- * the domain depends on an abstraction it defines, not on a concrete I/O class.
+ * IFeaturePersistenceService is the boundary between the feature domain
+ * (FeatureCatalog) and the persistence layer (WP7). The domain calls this
+ * interface and WP7 owns the implementation that touches StreamWriter, XDocument,
+ * and Application.dataPath, so the domain depends on an abstraction it defines
+ * rather than on a concrete I/O class.
  */
 
 using System.Collections.Generic;
@@ -20,7 +19,7 @@ namespace iDaVIE.Domain.Feature
     /// <summary>
     /// Persistence boundary for the feature domain.
     /// Implemented by WP7 (Persistence and Workspace State).
-    /// Called by FeatureCatalog — never directly by domain objects.
+    /// Only FeatureCatalog calls it; domain objects never do.
     /// </summary>
     public interface IFeaturePersistenceService
     {
@@ -31,8 +30,8 @@ namespace iDaVIE.Domain.Feature
 
         /// <summary>
         /// Exports a complete feature set to a VOTable XML file.
-        /// Path resolution (output directory, timestamp naming) is the
-        /// responsibility of the implementation, not the caller.
+        /// The implementation, not the caller, resolves the path
+        /// (output directory and timestamp naming).
         /// </summary>
         /// <returns>The absolute path of the file that was written.</returns>
         string ExportToVoTable(FeatureSet featureSet);

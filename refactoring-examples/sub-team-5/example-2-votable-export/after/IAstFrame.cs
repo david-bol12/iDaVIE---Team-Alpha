@@ -1,47 +1,29 @@
 /*
- * REFACTORING EXAMPLE 2 — VOTable Export
+ * Refactoring example 2: VOTable export
  * Sub-team 5: Feature System and Domain Model
  *
- * IAstFrame.cs — AFTER STATE (new file, design-level example)
- * ===========================================================
- * Design role: domain-level handle abstraction over the native AST frame pointer.
+ * IAstFrame.cs (after state, new file, design-level example)
  *
- * WHY THIS INTERFACE EXISTS (ADR-002 Anti-Corruption Layer)
- * ──────────────────────────────────────────────────────────
- * In the before state, ICoordinateTransformer.Transform() and .Normalise()
- * both accepted an IntPtr as their first parameter — the raw P/Invoke handle
- * to the native DataAnalysis.dll AST frame object.
+ * A domain-level handle that stands in for the native AST frame pointer
+ * (ADR-002, anti-corruption layer).
  *
- * IntPtr is an unmanaged-memory pointer type. Exposing it in a domain-layer
- * interface means:
- *   • Domain code carries a dependency on the native-plug-in boundary type.
- *   • Unit tests must manufacture or fake an unsafe pointer — unsafe code in tests.
- *   • The ACL (ADR-002) rule "zero native types above Infrastructure" is violated.
+ * Previously ICoordinateTransformer.Transform() and .Normalise() both took an
+ * IntPtr as their first parameter, the raw P/Invoke handle to the native
+ * DataAnalysis.dll AST frame. IntPtr is an unmanaged-memory pointer, so exposing
+ * it in a domain interface pulled the native-plugin boundary type into domain
+ * code, forced unit tests to fake an unsafe pointer, and broke the ACL rule of no
+ * native types above infrastructure.
  *
- * IAstFrame is the fix: an opaque domain marker interface that Domain and
- * Application code can hold a reference to without knowing anything about
- * unmanaged memory. The Infrastructure implementation wraps the real IntPtr.
- *
- * LAYER OWNERSHIP
- * ───────────────
- * Interface defined here  → iDaVIE.Domain.Feature
- * Concrete implementation → iDaVIE.Infrastructure.NativePlugins
- *                            (class AstFrameHandle : IAstFrame, holds IntPtr)
- *
- * In unit tests, pass a stub:
- *   public sealed class NullAstFrame : IAstFrame { }
- *
- * CK METRICS
- * ──────────
- * WMC  = 0   (marker interface, no methods)
- * CBO  = 0   (no dependencies)
- * RFC  = 0
- * LCOM = 0
+ * IAstFrame replaces it with an opaque marker interface that domain and
+ * application code can hold without knowing anything about unmanaged memory. The
+ * interface is defined here in iDaVIE.Domain.Feature; the concrete AstFrameHandle
+ * (which holds the IntPtr) lives in iDaVIE.Infrastructure.NativePlugins. Tests
+ * pass a stub: public sealed class NullAstFrame : IAstFrame { }.
  */
 
-// DOCUMENTATION COPY — NOT COMPILED AS PART OF THE UNITY PROJECT.
+// Documentation copy, not compiled as part of the Unity project.
 // The authoritative production file is Assets/Scripts/FeatureData/IAstFrame.cs.
-// This copy exists only to make Example 2 self-contained for readers.
+// This copy only exists to make example 2 self-contained for readers.
 // If the production IAstFrame changes, update this file to match.
 
 namespace iDaVIE.Domain.Feature
@@ -51,12 +33,12 @@ namespace iDaVIE.Domain.Feature
     /// <para>
     /// Replaces the raw <c>IntPtr</c> that previously leaked the
     /// <c>DataAnalysis.dll</c> P/Invoke boundary into domain-layer interfaces
-    /// (ADR-002 Anti-Corruption Layer violation).
+    /// (an ADR-002 anti-corruption-layer violation).
     /// </para>
     /// <para>
-    /// This is an intentionally empty marker interface. Domain and Application
+    /// This is an intentionally empty marker interface. Domain and application
     /// code holds an <see cref="IAstFrame"/> reference and passes it to
-    /// <see cref="ICoordinateTransformer"/> — neither layer ever sees an
+    /// <see cref="ICoordinateTransformer"/>, and neither layer ever sees an
     /// <c>IntPtr</c> or unsafe code.
     /// </para>
     /// <para>
@@ -67,7 +49,7 @@ namespace iDaVIE.Domain.Feature
     /// </summary>
     public interface IAstFrame
     {
-        // Intentionally empty — opaque handle pattern.
+        // Intentionally empty: this is the opaque handle pattern.
         // Concrete types own the IntPtr; the domain layer never touches it.
     }
 }

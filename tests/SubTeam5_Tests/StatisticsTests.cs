@@ -13,12 +13,12 @@ public class FeatureStatisticsTests
     private static Feature MakeFeature(Vec3 min, Vec3 max) =>
         new Feature(min, max, DefaultColor, "test", "1", 0, 0, Array.Empty<string>(), true);
 
-    // ── Property 1: Centroid inside bounding box ──────────────────────────────
+    // Property 1: centroid inside the bounding box.
     //
     // For any feature with valid bounds, placing the centroid at the exact geometric
     // centre of that feature always satisfies CentroidInsideBounds.
     //
-    // Generator: x0 is an arbitrary int constrained to ±999 via % so all values
+    // Generator: x0 is an arbitrary int constrained to +/-999 via % so all values
     // are exactly representable as float. dx is a PositiveInt constrained to
     // [1, 500], so maxX > minX and the centre is always strictly inside.
 
@@ -43,11 +43,11 @@ public class FeatureStatisticsTests
         return stats.CentroidInsideBounds(feature);
     }
 
-    // Boundary and exterior cases — mirrors Feature_ContainsPoint_ReturnsCorrectResult.
+    // Boundary and exterior cases, mirroring Feature_ContainsPoint_ReturnsCorrectResult.
     // Two boundary rows verify >= / <= (not strict); six exterior rows verify each axis
     // independently so a missing axis check is caught immediately.
-    [TestCase( 0.0,  0.0,  0.0, true,  "at CornerMin — included (tests >=)")]
-    [TestCase(10.0, 10.0, 10.0, true,  "at CornerMax — included (tests <=)")]
+    [TestCase( 0.0,  0.0,  0.0, true,  "at CornerMin, included (tests >=)")]
+    [TestCase(10.0, 10.0, 10.0, true,  "at CornerMax, included (tests <=)")]
     [TestCase( 5.0,  5.0,  5.0, true,  "interior")]
     [TestCase(-0.1,  5.0,  5.0, false, "below x_min")]
     [TestCase(10.1,  5.0,  5.0, false, "above x_max")]
@@ -63,7 +63,7 @@ public class FeatureStatisticsTests
         Assert.That(stats.CentroidInsideBounds(feature), Is.EqualTo(expected));
     }
 
-    // ── Property 2: Flux non-negative ─────────────────────────────────────────
+    // Property 2: flux is non-negative.
     //
     // For any non-negative TotalFlux and PeakFlux, FluxIsNonNegative() is true.
     // NonNegativeInt.Get >= 0; dividing by 100 gives sub-integer values while
@@ -95,7 +95,7 @@ public class FeatureStatisticsTests
         Assert.That(stats.FluxIsNonNegative(), Is.False);
     }
 
-    // ── Property 3: W20 ≥ W50 ────────────────────────────────────────────────
+    // Property 3: W20 is at least W50.
     //
     // The line width at 20% of peak (W20) is always at least as wide as the line
     // width at 50% of peak (W50), because a lower threshold captures more of the
