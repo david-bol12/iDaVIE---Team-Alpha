@@ -22,10 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.Windows.Speech;
+using VolumeData.Voice;
 
 namespace VolumeData
 {
@@ -36,10 +34,20 @@ namespace VolumeData
         public PaintMenuController PaintMenuController;
         public MomentMapMenuController momentMapMenuController;
         public FeatureMenuController featureMenuController;
-        
-        public bool IsVoiceRecognitionActive => _speechKeywordRecognizer.IsRunning;
+
+        public bool IsVoiceRecognitionActive => _voiceRecogniser != null && _voiceRecogniser.IsRunning;
+
+        public VolumeInputController VolumeInput => _volumeInputController;
+        public VideoRecordMenuController VideoRecordMenu => _videoRecordMenuController;
 
         private List<VolumeDataSetRenderer> _dataSets;
+        private IVoiceRecogniser _voiceRecogniser;
+        private IReadOnlyDictionary<string, IVoiceCommand> _voiceCommands;
+        private IVoiceCommandContext _voiceCommandContext;
+        private VolumeInputController _volumeInputController;
+        private VideoRecordMenuController _videoRecordMenuController;
+        private VolumeDataSetRenderer _activeDataSet;
+        private Config _config;
 
         // Keywords
         public struct Keywords
@@ -81,7 +89,7 @@ namespace VolumeData
             public static readonly string HideMaskOutline = "hide mask outline";
             public static readonly string TakePicture = "take picture";
             public static readonly string CursorInfo = "cursor info";
-            public static readonly string LinearScale = "linear scale";            
+            public static readonly string LinearScale = "linear scale";
             public static readonly string LogScale = "log scale";
             public static readonly string SqrtScale = "square root scale";
             public static readonly string AddNewSource = "add new source";
@@ -109,27 +117,25 @@ namespace VolumeData
             };
         }
 
-        private KeywordRecognizer _speechKeywordRecognizer;
-        private VolumeInputController _volumeInputController;
-        private VideoRecordMenuController _videoRecordMenuController;
-
-        private VolumeDataSetRenderer _activeDataSet;
-
-        private Config _config;
-
         void OnEnable()
         {
             _config = Config.Instance;
             _dataSets = new List<VolumeDataSetRenderer>();
-            _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
-            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, _config.voiceCommandConfidenceLevel);
-            _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
+            _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));
+
+            _voiceCommands = VoiceCommandRegistry.Build(this);
+            _voiceCommandContext = new VoiceCommandContext(this, _dataSets);
+
+            var recogniser = new WindowsVoiceRecogniser(Keywords.All, _config.voiceCommandConfidenceLevel);
+            recogniser.PhraseRecognized += OnPhraseRecognized;
+            _voiceRecogniser = recogniser;
+
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _videoRecordMenuController = FindObjectOfType<VideoRecordMenuController>(true);
 
             if (!_config.usePushToTalk)
             {
-                _speechKeywordRecognizer.Start();
+                _voiceRecogniser.Start();
             }
             else
             {
@@ -137,244 +143,65 @@ namespace VolumeData
                 _volumeInputController.PushToTalkButtonReleased += OnPushToTalkReleased;
             }
         }
-        
+
+        private void OnDisable()
+        {
+            if (_voiceRecogniser is WindowsVoiceRecogniser windowsRecogniser)
+            {
+                windowsRecogniser.PhraseRecognized -= OnPhraseRecognized;
+                windowsRecogniser.Dispose();
+            }
+
+            _voiceRecogniser = null;
+        }
+
         private void OnDestroy()
         {
-            if (_config.usePushToTalk)
+            if (_config != null && _config.usePushToTalk && _volumeInputController != null)
             {
                 _volumeInputController.PushToTalkButtonPressed -= OnPushToTalkPressed;
                 _volumeInputController.PushToTalkButtonReleased -= OnPushToTalkReleased;
             }
         }
-        
+
         public void OnPushToTalkPressed()
         {
-            _speechKeywordRecognizer.Start();
-        }
-        
-        public void OnPushToTalkReleased()
-        {
-            _speechKeywordRecognizer.Stop();
+            _voiceRecogniser?.Start();
         }
 
-        private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
+        public void OnPushToTalkReleased()
+        {
+            _voiceRecogniser?.Stop();
+        }
+
+        private void OnPhraseRecognized(object sender, VoicePhraseRecognizedEventArgs args)
         {
             _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
 
-            StringBuilder builder = new StringBuilder();
-            builder.AppendFormat("{0} ({1}){2}", args.text, args.confidence, Environment.NewLine);
-            builder.AppendFormat("\tTimestamp: {0}{1}", args.phraseStartTime, Environment.NewLine);
-            builder.AppendFormat("\tDuration: {0} seconds{1}", args.phraseDuration.TotalSeconds, Environment.NewLine);
+            var builder = new StringBuilder();
+            builder.AppendFormat("{0} ({1}){2}", args.Text, args.Confidence, Environment.NewLine);
+            builder.AppendFormat("\tTimestamp: {0}{1}", args.PhraseStartTime, Environment.NewLine);
+            builder.AppendFormat("\tDuration: {0} seconds{1}", args.PhraseDuration.TotalSeconds, Environment.NewLine);
             Debug.Log(builder.ToString());
-            ExecuteVoiceCommand(args.text);
+            ExecuteVoiceCommand(args.Text);
         }
 
-        /// <summary>
-        /// Function that gets called if a function related to the mask is called without a mask that is loaded.
-        /// </summary>
-        private void throwMissingMaskError()
+        private void ExecuteVoiceCommand(string phrase)
         {
-            ToastNotification.ShowError("No mask loaded for this functionality!");
+            VoiceCommandRegistry.TryExecute(phrase, _voiceCommands, _voiceCommandContext);
         }
 
-        private void ExecuteVoiceCommand(string args)
-        {
-            if (args == Keywords.EditThresholdMin)
-            {
-                startThresholdEditing(false);
-            }
-            else if (args == Keywords.EditThresholdMax)
-            {
-                startThresholdEditing(true);
-            }
-            else if (args == Keywords.EditZAxis || args == Keywords.EditZAxisAlt)
-            {
-                startZAxisEditing();
-            }
-            else if (args == Keywords.SaveZAxis || args == Keywords.SaveZAxisAlt)
-            {
-                endZAxisEditing();
-            }
-            else if (args == Keywords.ResetZAxis || args == Keywords.ResetZAxisAlt)
-            {
-                resetZAxis();
-            }
-            else if (args == Keywords.SaveThreshold)
-            {
-                endThresholdEditing();
-            }
-            else if (args == Keywords.ResetThreshold)
-            {
-                resetThreshold();
-            }
-            else if (args == Keywords.ResetTransform)
-            {
-                resetTransform();
-            }
-            else if (args == Keywords.ColormapPlasma)
-            {
-                setColorMap(ColorMapEnum.Plasma);
-            }
-            else if (args == Keywords.ColormapRainbow)
-            {
-                setColorMap(ColorMapEnum.Rainbow);
-            }
-            else if (args == Keywords.ColormapMagma)
-            {
-                setColorMap(ColorMapEnum.Magma);
-            }
-            else if (args == Keywords.ColormapInferno)
-            {
-                setColorMap(ColorMapEnum.Inferno);
-            }
-            else if (args == Keywords.ColormapViridis)
-            {
-                setColorMap(ColorMapEnum.Viridis);
-            }
-            else if (args == Keywords.ColormapCubeHelix)
-            {
-                setColorMap(ColorMapEnum.Cubehelix);
-            }
-            else if (args == Keywords.ColormapTurbo)
-            {
-                setColorMap(ColorMapEnum.Turbo);
-            }
-            else if (args == Keywords.CropSelection)
-            {
-                cropDataSet();
-            }
-            else if (args == Keywords.ResetCropSelection)
-            {
-                resetCropDataSet();
-            }
-            else if (args == Keywords.Teleport)
-            {
-                teleportToSelection();
-            }
-            else if (args == Keywords.MaskDisabled)
-            {
-                setMask(MaskMode.Disabled);
-            }
-            else if (args == Keywords.MaskEnabled)
-            {
-                setMask(MaskMode.Enabled);
-            }
-            else if (args == Keywords.MaskInverted)
-            {
-                setMask(MaskMode.Inverted);
-            }
-            else if (args == Keywords.MaskIsolated)
-            {
-                setMask(MaskMode.Isolated);
-            }
-            else if (args == Keywords.ProjectionMaximum)
-            {
-                setProjection(ProjectionMode.MaximumIntensityProjection);
-            }
-            else if (args == Keywords.ProjectionAverage)
-            {
-                setProjection(ProjectionMode.AverageIntensityProjection);
-            }
-            else if (args == Keywords.SamplingModeAverage)
-            {
-                SetSamplingMode(false);
-            }
-            else if (args == Keywords.SamplingModeMaximum)
-            {
-                SetSamplingMode(true);
-            }
-            else if (args == Keywords.PaintMode)
-            {
-                EnablePaintMode();
-            }
-            else if (args == Keywords.ExitPaintMode)
-            {
-                DisablePaintMode();
-            }
-            else if (args == Keywords.BrushAdd)
-            {
-                SetBrushAdditive();
-            }
-            else if (args == Keywords.BrushErase)
-            {
-                SetBrushSubtractive();
-            }
-            else if (args == Keywords.ShowMaskOutline)
-            {
-                ShowMaskOutline();
-            }
-            else if (args == Keywords.HideMaskOutline)
-            {
-                HideMaskOutline();
-            }
-            else if (args == Keywords.TakePicture)
-            {
-                TakePicture();
-            }
-            else if (args == Keywords.CursorInfo)
-            {
-                ToggleCursorInfo();
-            }
-            else if (args == Keywords.LogScale)
-            {
-                ChangeScalingType(ScalingType.Log);
-            }
-            else if (args == Keywords.LinearScale)
-            {
-                ChangeScalingType(ScalingType.Linear);
-            }
-            else if (args == Keywords.SqrtScale)
-            {
-                ChangeScalingType(ScalingType.Sqrt);
-            }
-            else if (args == Keywords.AddNewSource)
-            {
-                AddNewSource();
-            }
-            else if (args == Keywords.SetSourceId)
-            {
-                SetMaskValue();
-            }
-            else if (args == Keywords.AddToList)
-            {
-                AddToList();
-            }
-            else if (args == Keywords.Undo)
-            {
-                Undo();
-            }
-            else if (args == Keywords.Redo)
-            {
-                Redo();
-            }
-            else if (args == Keywords.SaveSubCube)
-            {
-                SaveSubCube();
-            }
-            else if (args == Keywords.PreviousSourceList)
-            {
-                PreviousSourceList();
-            }
-            else if (args == Keywords.NextSourceList)
-            {
-                NextSourceList();
-            }
-            else if (args == Keywords.EnterVideoMode)
-            {
-                QuickMenuController.OpenVideoRecordingMenu();
-            }
-            else if (args == Keywords.RecordVideoPosition)
-            {
-                _volumeInputController.AddNewLocation(_volumeInputController.PrimaryHand);
-            }
-            else if (args == Keywords.ExportVideoScript)
-            {
-                _videoRecordMenuController.ExportToFile();
-            }
-        }
-
-        // Update is called once per frame
         void Update()
+        {
+            RefreshActiveDataSetInternal();
+        }
+
+        internal VolumeDataSetRenderer GetActiveDataSetInternal()
+        {
+            return _activeDataSet;
+        }
+
+        internal void RefreshActiveDataSetInternal()
         {
             var firstActive = getFirstActiveDataSet();
             if (firstActive && _activeDataSet != firstActive)
@@ -383,20 +210,14 @@ namespace VolumeData
             }
         }
 
-        /// <summary>
-        /// Function forwarding to featureMenuController, to display the next source list.
-        /// </summary>
-        void NextSourceList()
-        {
-            featureMenuController.DisplayNextSet();
-        }
-
-        /// <summary>
-        /// Function forwarding to featureMenuController, to display the previous source list.
-        /// </summary>
-        void PreviousSourceList()
+        public void PreviousSourceList()
         {
             featureMenuController.DisplayPreviousSet();
+        }
+
+        public void NextSourceList()
+        {
+            featureMenuController.DisplayNextSet();
         }
 
         public void AddDataSet(VolumeDataSetRenderer setToAdd)
@@ -406,7 +227,6 @@ namespace VolumeData
 
         public void RemoveDataSet(VolumeDataSetRenderer setToRemove)
         {
-            // Detach and remove
             setToRemove.transform.parent = null;
             _dataSets.Remove(setToRemove);
             Destroy(setToRemove?.gameObject);
@@ -415,16 +235,14 @@ namespace VolumeData
 
         public void resetThreshold()
         {
-            if (_activeDataSet)
+            if (!_activeDataSet)
             {
-                _activeDataSet.ThresholdMin = _activeDataSet.InitialThresholdMin;
-                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min")
-                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMin;
-
-                _activeDataSet.ThresholdMax = _activeDataSet.InitialThresholdMax;
-                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max")
-                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMax;
+                return;
             }
+
+            _activeDataSet.ThresholdMin = _activeDataSet.InitialThresholdMin;
+            _activeDataSet.ThresholdMax = _activeDataSet.InitialThresholdMax;
+            VoiceDesktopUiSync.SyncThresholdSliders(mainCanvassDesktop, _activeDataSet);
         }
 
         public void resetZAxis()
@@ -444,11 +262,7 @@ namespace VolumeData
         public void endThresholdEditing()
         {
             _volumeInputController.EndEditing();
-
-            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min")
-                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMin;
-            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max")
-                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMax;
+            VoiceDesktopUiSync.SyncThresholdSliders(mainCanvassDesktop, _activeDataSet);
             _volumeInputController.EndEditing();
         }
 
@@ -461,19 +275,18 @@ namespace VolumeData
         {
             _volumeInputController.EndEditing();
         }
-        
+
         public void resetTransform()
         {
-            if (_activeDataSet)
+            if (!_activeDataSet)
             {
-                _activeDataSet.transform.position = _activeDataSet.InitialPosition;
-                _activeDataSet.transform.rotation = _activeDataSet.InitialRotation;
-                _activeDataSet.transform.localScale = _activeDataSet.InitialScale;
-
-                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel")
-                    .gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings")
-                    .gameObject.transform.Find("Ratio_container").gameObject.transform.Find("Ratio_Dropdown").GetComponent<TMP_Dropdown>().value = 0;
+                return;
             }
+
+            _activeDataSet.transform.position = _activeDataSet.InitialPosition;
+            _activeDataSet.transform.rotation = _activeDataSet.InitialRotation;
+            _activeDataSet.transform.localScale = _activeDataSet.InitialScale;
+            VoiceDesktopUiSync.ResetRatioDropdown(mainCanvassDesktop);
         }
 
         public void setColorMap(ColorMapEnum colorMap)
@@ -482,7 +295,7 @@ namespace VolumeData
             {
                 _activeDataSet.ColorMap = colorMap;
             }
-        }               
+        }
 
         public void stepDataSet(bool forwards)
         {
@@ -514,8 +327,7 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ResetCrop();
-
-                Debug.Log("cropped: "+_activeDataSet.IsCropped);
+                Debug.Log("cropped: " + _activeDataSet.IsCropped);
             }
         }
 
@@ -530,27 +342,30 @@ namespace VolumeData
 
         public void setMask(MaskMode mode)
         {
-            if (_activeDataSet.Mask == null)
+            if (_activeDataSet == null)
             {
-                throwMissingMaskError();
                 return;
             }
-            
-            if (_activeDataSet)
+
+            if (_activeDataSet.Mask == null)
             {
-                _activeDataSet.MaskMode = mode;
+                _voiceCommandContext.ShowMissingMaskError();
+                return;
             }
+
+            _activeDataSet.MaskMode = mode;
         }
-        
+
         public void setProjection(ProjectionMode mode)
         {
             if (_activeDataSet)
             {
                 _activeDataSet.ProjectionMode = mode;
             }
+
             ToastNotification.ShowInfo($"Accumulation set to {mode.ToString()}");
         }
-        
+
         public void SetSamplingMode(bool maxMode)
         {
             var config = Config.Instance;
@@ -586,9 +401,9 @@ namespace VolumeData
 
         public void ShowMaskOutline()
         {
-            if (_activeDataSet.Mask == null)
+            if (_activeDataSet == null || _activeDataSet.Mask == null)
             {
-                throwMissingMaskError();
+                _voiceCommandContext.ShowMissingMaskError();
                 return;
             }
 
@@ -600,9 +415,9 @@ namespace VolumeData
 
         public void HideMaskOutline()
         {
-            if (_activeDataSet.Mask == null)
+            if (_activeDataSet == null || _activeDataSet.Mask == null)
             {
-                throwMissingMaskError();
+                _voiceCommandContext.ShowMissingMaskError();
                 return;
             }
 
@@ -635,25 +450,25 @@ namespace VolumeData
 
         public void SetMaskValue()
         {
-            if (_activeDataSet.Mask == null)
+            if (_activeDataSet == null || _activeDataSet.Mask == null)
             {
-                throwMissingMaskError();
+                _voiceCommandContext.ShowMissingMaskError();
                 return;
             }
 
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
         }
 
-        private void AddToList()
+        public void AddSelectionToList()
         {
-            _activeDataSet.AddSelectionToList();
+            _activeDataSet?.AddSelectionToList();
         }
-        
+
         public void Undo()
         {
             _activeDataSet?.Mask?.UndoBrushStroke();
         }
-        
+
         public void Redo()
         {
             _activeDataSet?.Mask?.RedoBrushStroke();
