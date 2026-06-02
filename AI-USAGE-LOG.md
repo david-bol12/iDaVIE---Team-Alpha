@@ -109,7 +109,93 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 
 ## Chris Jo
 
-_Add your AI usage log here. Use the same format as above — one entry per session, with prompt summary, output description, and files affected._
+### Session 1 — SonarQube Setup & Code Health
+**Tool:** Claude Code
+**Task:** Configure SonarQube to scan the iDaVIE project locally.
+**Prompt summary:** Asked Claude to make SonarQube work on the full project so results could be viewed on localhost.
+**Output:** Configured the SonarQube scanner to run against the iDaVIE codebase and display results via the local SonarQube server.
+**Files affected:** SonarQube configuration files (scanner setup).
+
+---
+
+### Session 2 — DV8 / Understand Architecture File
+**Tool:** Claude Code
+**Task:** Extend DV8 architecture analysis beyond the default 9-file cap.
+**Prompt summary:** Asked Claude to create an Understand project file so DV8 architecture testing would not be limited to 9 source files.
+**Output:** Created an Understand project configuration file enabling full codebase analysis in DV8.
+**Files affected:** Understand project file (new).
+
+---
+
+### Session 3 — Unit Tests for Refactoring Examples
+**Tool:** Claude Code
+**Task:** Write unit tests against the refactored C# code and document what is being tested.
+**Prompt summary:** Asked Claude to find the refactoring examples and generate unit tests for the new refactored code, place them in the refactoring folder, and create a markdown file explaining what each test covers and why.
+**Output:** Unit test file(s) for refactored classes; accompanying markdown explanation of test coverage rationale.
+**Files affected:** `refactoring-examples/team3/` (new test file and markdown).
+
+---
+
+### Session 4 — Test Strategy Updated to Reflect New Tests
+**Tool:** Claude Code
+**Task:** Align `test-strategy.md` with the unit tests written in Session 3.
+**Prompt summary:** Asked Claude to update the test strategy document to reflect the new tests in the refactoring examples, keeping it concise, useful, and relevant, and to note short- and long-term codebase impact.
+**Output:** Revised `test-strategy.md` with updated test coverage description and impact analysis. Committed to branch.
+**Files affected:** `docs/team3/test-strategy.md`.
+
+---
+
+### Session 5 — Revised Design Document (Section 5 Merge)
+**Tool:** Claude Code
+**Task:** Merge Section 5 content from the original design document into the revised design document.
+**Prompt summary:** Asked Claude to read the design document, extract Section 5, and write it into the revised design document in a clear, concise style matching the existing content. Also asked Claude to check the document wasn't too long before committing.
+**Output:** `revised_design_document.md` updated with Section 5 content; committed to branch.
+**Files affected:** `docs/team3/revised_design_document.md` (or equivalent).
+
+---
+
+### Session 6 — VolumeDataSetRenderer Top-Down Explanation
+**Tool:** Claude Code
+**Task:** Understand the existing `VolumeDataSetRenderer.cs` class before beginning refactoring work.
+**Prompt summary:** Asked for a top-down explanation of what `VolumeDataSetRenderer.cs` does, its purpose, its dependencies, and how it affects other parts of the system.
+**Output:** Detailed written explanation of the class covering its role in the rendering pipeline, key dependencies (Unity, SteamVR, shader property bindings), and downstream effects on camera, masking, and texture systems.
+**Files affected:** None (informational).
+
+---
+
+### Session 7 — Sequence Diagrams (Before & After)
+**Tool:** Claude Code
+**Task:** Create PlantUML sequence diagrams for one render frame, both before and after refactoring.
+**Prompt summary:** Asked Claude to create a new sequence diagram using the revised design document, the previous sequence diagram file, and the refactored examples. Also asked for an initial sequence diagram based on the original `VolumeDataSetRenderer`.
+**Output:** Two PlantUML sequence diagrams: one representing the original monolithic render frame flow, one showing the refactored multi-class flow.
+**Files affected:** `diagrams/sequence-render-frame.puml` (new/updated), additional diagram file for before state.
+
+---
+
+### Session 8 — Brief Compliance Evaluation & Document Push
+**Tool:** Claude Code
+**Task:** Evaluate whether Sub-team 3 has met all requirements in the assignment brief; push deliverable document to GitHub.
+**Prompt summary:** Provided the assignment brief PDF and asked Claude to evaluate whether Team 3's rendering engine deliverables met everything in the brief. Followed up asking Claude to re-check after a pull and then action the first identified gap.
+**Output:** Compliance gap analysis against the brief. First identified gap actioned. Deliverable document pushed to GitHub.
+**Files affected:** Relevant deliverable document (docs/team3/); GitHub push.
+
+---
+
+### Session 9 — Unity 6 Migration Plan in Test Strategy
+**Tool:** Claude Code
+**Task:** Ensure the Unity 6 migration plan was properly reflected in `test-strategy.md`.
+**Prompt summary:** Asked Claude to check if a migration plan for Unity 6 was included in `test-strategy.md`. Confirmed adding a Section 10 covering Unity 6 migration testing after verifying it was also referenced in the design document.
+**Output:** Section 10 (Unity 6 Migration Testing) added to `test-strategy.md`.
+**Files affected:** `docs/team3/test-strategy.md`.
+
+---
+
+### Session 10 — AI Usage Log Population (current session)
+**Tool:** Claude Code
+**Task:** Populate the AI usage log for Chris Jo from Claude session history.
+**Prompt summary:** Asked Claude to read the existing AI usage log for format reference and fill in all sessions from Claude history.
+**Output:** Sessions 1–10 written into `AI-USAGE-LOG.md` under Chris Jo's section.
+**Files affected:** `AI-USAGE-LOG.md`.
 
 ---
 
