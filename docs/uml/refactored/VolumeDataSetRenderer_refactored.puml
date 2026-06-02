@@ -1,0 +1,291 @@
+@startuml VolumeDataSetRenderer_refactored
+title VolumeDataSetRenderer — ISO/IEC 25010:2023 Refactored Design
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+}
+hide empty members
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Enumerations (unchanged — stable vocabulary, not a modularity problem)
+' ──────────────────────────────────────────────────────────────────────────────
+
+enum ScalingType {
+    Linear
+    Log
+    Sqrt
+    Square
+    Power
+    Gamma
+}
+
+enum MaskMode {
+    Disabled
+    Enabled
+    Inverted
+    Isolated
+}
+
+enum ProjectionMode {
+    MaximumIntensityProjection
+    AverageIntensityProjection
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Value objects — immutable config bundles (ISO 25010: Analysability)
+' Groups related parameters so that a change in one concern touches one type.
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Value Objects" #EEF4FF {
+
+    class RenderingParameters <<value>> {
+        + MaxSteps : int
+        + ProjectionMode : ProjectionMode
+        + TextureFilter : FilterMode
+        + Jitter : float
+        + ThresholdMin : float
+        + ThresholdMax : float
+        + ColorMap : ColorMapEnum
+        + ScalingType : ScalingType
+        + ScalingBias : float
+        + ScalingContrast : float
+        + ScalingAlpha : float
+        + ScalingGamma : float
+        + WithThresholds(min : float, max : float) : RenderingParameters
+        + WithColorMap(map : ColorMapEnum) : RenderingParameters
+    }
+
+    class MaskParameters <<value>> {
+        + Mode : MaskMode
+        + VoxelSize : float
+        + VoxelColor : Color
+        + DisplayMask : bool
+    }
+
+    class FoveationParameters <<value>> {
+        + Enabled : bool
+        + Start : float
+        + End : float
+        + Jitter : float
+        + StepsLow : int
+        + StepsHigh : int
+    }
+
+    class VignetteParameters <<value>> {
+        + FadeStart : float
+        + FadeEnd : float
+        + Intensity : float
+        + Color : Color
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Interfaces — narrow contracts (ISO 25010: Reusability, Modifiability)
+' Each interface has one reason to change; clients depend only on what they use.
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Interfaces" #E8F4E8 {
+
+    interface IVolumeRenderer {
+        + ApplyRenderingParameters(params : RenderingParameters) : void
+        + ApplyMaskParameters(params : MaskParameters) : void
+        + ApplyFoveationParameters(params : FoveationParameters) : void
+        + ApplyVignetteParameters(params : VignetteParameters) : void
+        + RegenerateCubes() : void
+        + ShiftColorMap(delta : int) : void
+    }
+
+    interface IMaskController {
+        + Initialise(dataSet : VolumeDataSet) : void
+        + PaintCursor(value : short) : bool
+        + FinishBrushStroke() : void
+    }
+
+    interface ICoordinateMapper {
+        + WorldToVolume(worldPos : Vector3) : Vector3
+        + WorldRotationToVolume(worldRot : Quaternion) : Quaternion
+        + VolumeToLocal(volumePos : Vector3) : Vector3
+        + LocalToVolume(localPos : Vector3) : Vector3
+        + GetVoxelAtWorldPos(worldPos : Vector3) : Vector3Int
+    }
+
+    interface IRegionController {
+        + SetCursor(worldPos : Vector3, brushSize : int) : void
+        + SetVideoCursor(worldPos : Vector3) : void
+        + ClearVideoCursor() : void
+        + SetRegionStart(worldPos : Vector3) : void
+        + SetRegionEnd(worldPos : Vector3) : void
+        + SetRegionBounds(min : Vector3Int, max : Vector3Int) : void
+        + ClearRegion() : void
+        + CropToFeature(feature : Feature) : bool
+        + CropToRegion(min : Vector3, max : Vector3) : void
+        + ResetCrop() : void
+        + TeleportToRegion() : void
+    }
+
+    interface IRestFrequencyController {
+        + GetAvailableFrequencies() : IReadOnlyDictionary<string, double>
+        + SetFrequencyByIndex(index : int) : void
+        + SetFrequencyOverride(freqGHz : double) : void
+        + ClearOverride() : void
+        + <<event>> FrequencyChanged : Action<double>
+    }
+
+    interface IVolumeDataExporter {
+        + SaveSubCube() : void
+        + SaveMask(overwrite : bool) : void
+        + GetMaskSavedFilePath() : string
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Services — concrete implementations (ISO 25010: Modularity, Testability)
+' Each service has one responsibility and depends on injected abstractions.
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Services" #FFF8E8 {
+
+    class VolumeRenderingService <<service>> {
+        - _material : Material
+        - _maskMaterial : Material
+        - _downsampleConfig : DownsampleConfig
+        + VolumeRenderingService(material : Material, maskMaterial : Material)
+        + ApplyRenderingParameters(params : RenderingParameters) : void
+        + ApplyMaskParameters(params : MaskParameters) : void
+        + ApplyFoveationParameters(params : FoveationParameters) : void
+        + ApplyVignetteParameters(params : VignetteParameters) : void
+        + RegenerateCubes() : void
+        + ShiftColorMap(delta : int) : void
+        - GenerateDownsampledCube() : void
+    }
+
+    class MaskControllerService <<service>> {
+        - _dataSet : VolumeDataSet
+        + MaskControllerService(dataSet : VolumeDataSet)
+        + Initialise(dataSet : VolumeDataSet) : void
+        + PaintCursor(value : short) : bool
+        + FinishBrushStroke() : void
+        - PaintMask(position : Vector3Int, value : short) : bool
+    }
+
+    class VolumeCoordinateMapper <<service>> {
+        - _transform : Transform
+        - _cubeDepthAxis : int
+        + VolumeCoordinateMapper(transform : Transform, cubeDepthAxis : int)
+        + WorldToVolume(worldPos : Vector3) : Vector3
+        + WorldRotationToVolume(worldRot : Quaternion) : Quaternion
+        + VolumeToLocal(volumePos : Vector3) : Vector3
+        + LocalToVolume(localPos : Vector3) : Vector3
+        + GetVoxelAtWorldPos(worldPos : Vector3) : Vector3Int
+    }
+
+    class RegionControllerService <<service>> {
+        - _coordinateMapper : ICoordinateMapper
+        - _lineRenderer : PolyLine
+        + RegionControllerService(coordinateMapper : ICoordinateMapper)
+        + SetCursor(worldPos : Vector3, brushSize : int) : void
+        + SetVideoCursor(worldPos : Vector3) : void
+        + ClearVideoCursor() : void
+        + SetRegionStart(worldPos : Vector3) : void
+        + SetRegionEnd(worldPos : Vector3) : void
+        + SetRegionBounds(min : Vector3Int, max : Vector3Int) : void
+        + ClearRegion() : void
+        + CropToFeature(feature : Feature) : bool
+        + CropToRegion(min : Vector3, max : Vector3) : void
+        + ResetCrop() : void
+        + TeleportToRegion() : void
+    }
+
+    class RestFrequencyService <<service>> {
+        - _dataSet : VolumeDataSet
+        - _frequencies : Dictionary<string, double>
+        + RestFrequencyService(dataSet : VolumeDataSet)
+        + GetAvailableFrequencies() : IReadOnlyDictionary<string, double>
+        + SetFrequencyByIndex(index : int) : void
+        + SetFrequencyOverride(freqGHz : double) : void
+        + ClearOverride() : void
+        + <<event>> FrequencyChanged : Action<double>
+        - LoadFrequencyList() : void
+    }
+
+    class VolumeDataExportService <<service>> {
+        - _dataSet : VolumeDataSet
+        + VolumeDataExportService(dataSet : VolumeDataSet)
+        + SaveSubCube() : void
+        + SaveMask(overwrite : bool) : void
+        + GetMaskSavedFilePath() : string
+        + AddSelectionToList() : void
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Orchestrator — thin MonoBehaviour (ISO 25010: Modularity)
+' Owns no rendering logic; wires Unity lifecycle to injected services.
+' ──────────────────────────────────────────────────────────────────────────────
+
+class VolumeDataSetRenderer <<MonoBehaviour>> {
+    - _renderer : IVolumeRenderer
+    - _maskController : IMaskController
+    - _coordinateMapper : ICoordinateMapper
+    - _regionController : IRegionController
+    - _restFrequency : IRestFrequencyController
+    - _exporter : IVolumeDataExporter
+    .. Serialised file config ..
+    + FileName : string
+    + MaskFileName : string
+    + subsetBounds : int[]
+    + SelectedHdu : int
+    .. Unity lifecycle ..
+    - Start() : void
+    - Update() : void
+    - OnDestroy() : void
+    .. Passthrough to services ..
+    + GetDataSet() : VolumeDataSet
+    + GetMomentMapRenderer() : MomentMapRenderer
+    + GetCubeDimensions() : Vector3Int
+    + updateStatus(label : string, progress : int) : IEnumerator
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Realizations and dependencies
+' ──────────────────────────────────────────────────────────────────────────────
+
+VolumeRenderingService     ..|> IVolumeRenderer
+MaskControllerService      ..|> IMaskController
+VolumeCoordinateMapper     ..|> ICoordinateMapper
+RegionControllerService    ..|> IRegionController
+RestFrequencyService       ..|> IRestFrequencyController
+VolumeDataExportService    ..|> IVolumeDataExporter
+
+VolumeDataSetRenderer o-- IVolumeRenderer
+VolumeDataSetRenderer o-- IMaskController
+VolumeDataSetRenderer o-- ICoordinateMapper
+VolumeDataSetRenderer o-- IRegionController
+VolumeDataSetRenderer o-- IRestFrequencyController
+VolumeDataSetRenderer o-- IVolumeDataExporter
+
+RegionControllerService --> ICoordinateMapper : injected
+
+VolumeRenderingService --> RenderingParameters : consumes
+VolumeRenderingService --> MaskParameters : consumes
+VolumeRenderingService --> FoveationParameters : consumes
+VolumeRenderingService --> VignetteParameters : consumes
+
+VolumeRenderingService --> ScalingType : uses
+VolumeRenderingService --> ProjectionMode : uses
+MaskControllerService --> MaskMode : uses
+
+@enduml
