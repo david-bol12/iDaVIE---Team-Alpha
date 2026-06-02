@@ -19,12 +19,35 @@ _Code metrics, structural cross-reference, and standards (CodeCheck) analysis fo
 | Lines Blank | CountLineBlank | 166 |
 | Lines Comment | CountLineComment | 110 |
 | Ratio Comment to Code | RatioCommentToCode | 0.1 |
-| Number of Methods/Functions | CountDeclFunction | 44 |
+| Number of Methods/Functions (non-accessor) | CountDeclFunction | 44 |
+| Count of Methods (WMC — all incl. properties, ctors, accessors) | CountMethod | 97 |
+| Count of Instance Methods | CountMethodInstance | 97 |
+| Count of Instance Variables | CountDeclInstanceVariable | 84 |
 | Number of Classes/Types | CountDeclClass | 4 |
 | Sum Cyclomatic Complexity | SumCyclomatic | 192 |
 | Average Cyclomatic Complexity | AvgCyclomatic | 4.36 |
 | Max Cyclomatic Complexity | MaxCyclomatic | 28 |
 | Max Nesting | MaxNesting | 3 |
+
+## 1b. CK Metrics (Chidamber–Kemerer Suite)
+
+These are the confirmed CK values produced by the Understand tool for `VolumeDataSetRenderer`. All other files in the project (design document, metrics worksheet, worked examples) use these as the authoritative baseline.
+
+| Understand metric | Abbrev. | Value | Brief target | Status |
+|---|---|---|---|---|
+| Count of Methods (WMC) | CountMethod | **97** | ≤ 20 | ❌ |
+| Count of Instance Methods | CountMethodInstance | 97 | — | — |
+| Count of Instance Variables | CountDeclInstanceVariable | 84 | — | — |
+| Percent Lack of Cohesion (LCOM) | PercentLackOfCohesion | **95** (0.95) | ≤ 0.5 | ❌ |
+| Max Inheritance Tree (DIT) | MaxInheritanceTree | 2 | ≤ 4 | ✅ |
+| Count of Base Classes (IFANIN) | CountClassBase | 1 | — | — |
+| Count of Coupled Classes (CBO) | CountClassCoupled | **28** | ≤ 14 | ❌ |
+| Count of Derived Classes (NOC) | CountClassDerived | 0 | ≤ 5 | ✅ |
+| Count of All Methods (RFC) | CountMethodAll | **97** | ≤ 50 | ❌ |
+
+> **Note on WMC:** `CountDeclFunction = 44` (Section 1) counts only non-accessor function declarations. `CountMethod = 97` counts all methods including property accessors, constructors, and auto-generated members — this is the figure Understand uses for WMC in the CK suite, and is the value used throughout all project deliverables.
+
+---
 
 ## 2. Function-Level Metrics
 
@@ -93,7 +116,12 @@ The file imports 11 namespaces. External (non-System) dependencies indicate the 
 
 ## 6. Observations
 
+- **WMC = 97** (Count of Methods, CK suite): exceeds the ≤ 20 domain target by 4.9×. The 44 non-accessor functions (CountDeclFunction) carry a SumCyclomatic of 192; the remainder are property accessors and constructors counted by CountMethod.
 - `SumCyclomatic` of 192 is concentrated: `_startFunc` alone accounts for 15% of total complexity, making it the primary maintenance risk.
+- **CBO = 28** (Count of Coupled Classes): exceeds the ≤ 14 domain target by 2×. Dominant coupling targets are `_maskDataSet` (92 references) and `_featureManager` (29 references).
+- **LCOM = 0.95** (95% Percent Lack of Cohesion): exceeds ≤ 0.5 target by 1.9×. Confirms four structurally disjoint field clusters (mask, texture, camera, foveation) coexisting in one class.
+- **RFC = 97** (Count of All Methods): exceeds ≤ 50 target by 1.9×.
+- **DIT = 2**: within target. Reflects `VolumeDataSetRenderer → MonoBehaviour → Behaviour`.
 - `RatioCommentToCode` of 0.1 is below the common 0.20 guideline once the license header is excluded.
 - Four functions exceed 60 code lines (`_startFunc`, `Update`, `SaveMask`, `SetCursorPosition`), each a decomposition candidate.
 - 14 public data members reduce encapsulation; the 'avoid public data' CodeCheck would list each with its declaration cross-reference.

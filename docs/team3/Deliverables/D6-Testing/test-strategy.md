@@ -130,3 +130,71 @@ Naming convention: `Stub*` for test doubles with configurable state; `Null*` for
 | `IsolateMaskMode` | 1 + 2 | `ShaderKeyword`, `Apply` |
 | `DisabledMaskMode` | 1 + 2 | `ShaderKeyword`, `Apply` (idempotence, null-safety) |
 | `NullMaskMode` | 1 | `ShaderKeyword` (sentinel check) |
+
+---
+
+## 10. Unity 6 / URP Migration Testing
+
+*Full migration sequence and before/after code examples: `docs/team3/migration_plan.md`*
+*Architectural rationale and 7-phase Strangler Fig plan: design document §4.9 DD-07 and §2.3*
+
+The design document (§5) delegates the migration entry/exit conditions and per-phase test strategy to this document. This section fulfils that commitment.
+
+### 10.1 Key Architectural Guarantee
+
+Because `IRenderPipeline` (DD-01) is in place before migration begins, **all Category 1 render-loop changes are confined to two new files** — `UrpRenderPipeline.cs` and `VolumeRenderFeature.cs`. The five domain classes (`VolumeMaterialBinder`, `VolumeTextureManager`, `VolumeCameraDriver`, `FoveatedSamplingPolicy`, `VolumeRenderCoordinator`) are untouched during the Unity 6 migration. This is a testable invariant: the domain assembly must not import `UnityEngine.Rendering.Universal` at any point during or after migration.
+
+### 10.2 Migration Categories and Test Coverage
+
+The migration plan (`docs/team3/migration_plan.md`) groups the 15 migration steps into four categories. Each maps to a specific test approach:
+
+| Category | Changes | Test approach | Tier |
+|---|---|---|---|
+| 1 — Render Loop (Critical) | `OnRenderObject` → `ScriptableRenderPass`; `DrawProceduralNow` → `cmd.DrawProcedural`; `AddCommandBuffer` → `renderPassEvent` | Visual verification in Unity 6 player; `NullRenderPipeline` confirms domain classes unchanged | Play-mode |
+| 2 — Shader Keywords (High) | `Shader.EnableKeyword` → `material.SetKeyword(LocalKeyword)` | Existing `IMaskMode` Tier 2 edit-mode tests; new `LocalKeyword` round-trip test in `VolumeMaterialBinder` | Tier 1 + 2 |
+| 3 — C# API Deprecations (Medium) | `FindObjectOfType` → `FindAnyObjectByType`; `AddComponent` → DI; `Config.Instance` → `IAppConfig` | Tier 1 unit tests on injected `IAppConfig`; compile-time verification for deprecated API removal | Tier 1 |
+| 4 — Shader Language (CGPROGRAM → HLSL) | Include files, matrix macros, sampler declarations, precision types, depth texture | Shader compilation gate in CI; visual nearest-neighbour filter check (INV-04); VolumeCoordinateService math tests unchanged | Shader compiler + visual |
+
+### 10.3 Steps Testable Without a GPU
+
+From the 15-step migration sequence in `migration_plan.md`, steps 1–6 are verifiable without launching the Unity 6 player:
+
+| Step | Change | Verification |
+|---|---|---|
+| 2 | `FindObjectOfType` → `FindAnyObjectByType` (lines 381, 522) | Compile succeeds; no deprecated API warnings |
+| 3 | `GetComponentInChildren` + `includeInactive: true` (line 382) | Compile succeeds |
+| 4 | `Config.Instance` → injected `IAppConfig` (lines 361, 553, 644) | Tier 1 unit test: `VolumeTextureManager` receives `IAppConfig` stub and reads correct values |
+| 5 | `Shader.EnableKeyword` → `material.SetKeyword(LocalKeyword)` (lines 1099, 1103) | Tier 2 edit-mode test: `VolumeMaterialBinder` sets keyword via `LocalKeyword`; `material.IsKeywordEnabled` assertion |
+| 6 | Mask-mode `EnableKeyword` → `LocalKeyword` in each `IMaskMode.Apply()` | Existing Tier 2 `IMaskMode` tests already cover mutual-exclusion and `_MaskAlpha` — no changes required if test doubles updated to `LocalKeyword` |
+
+Steps 7–15 require a Unity 6 player, a GPU, and (for step 15) the reference headset configuration.
+
+### 10.4 Entry and Exit Conditions per Migration Phase
+
+The design document §4.9 defines a 7-phase Strangler Fig plan. Each phase has a test gate before it can be considered complete:
+
+| Phase | What is introduced | Entry condition | Exit condition (test gate) |
+|---|---|---|---|
+| 1 | `IRenderPipeline` seam | Domain assembly compiles with `NullRenderPipeline` | All Tier 1 domain tests pass; no `UnityEngine.Rendering.Universal` import in domain assembly |
+| 2 | `IMaskMode` strategies | Phase 1 exit passed | All `IMaskMode` Tier 1 + Tier 2 tests pass; `LocalKeyword` variant verified |
+| 3 | `FoveatedSamplingPolicy` | Phase 2 exit passed | `FoveatedSamplingPolicy` Tier 1 tests pass; fallback path (`IsGazeAvailable = false`) verified |
+| 4 | `VolumeMaterialBinder` | Phase 3 exit passed | `VolumeMaterialBinder` Tier 2 tests pass; `DepthTextureAvailable` check verified |
+| 5 | `VolumeCameraDriver` | Phase 4 exit passed | `VolumeCoordinateService` Tier 1 tests pass; `StubCameraDriver` round-trip verified |
+| 6 | `VolumeTextureManager` shadow mode | Phase 5 exit passed | Shadow mode runs for one sprint; frame-comparison output matches between old and new texture path; no 90 fps regression (CI gate: per-frame CPU ≤ 2 ms) |
+| 7 | `VolumeRenderCoordinator` takes over; monolith retired | Phase 6 shadow comparison approved | `CoordinatorWiringTest` passes; 90 fps invariant (INV-01) passes on reference machine; no `VolumeDataSetRenderer` references remain in build |
+
+### 10.5 INV-01 and INV-04 Preservation
+
+Two invariants are at specific risk during the Unity 6 migration:
+
+**INV-01 (90 fps minimum):** Phase 6 shadow mode is the highest-risk point. A CI performance gate (play-mode, reference headset) must confirm per-frame CPU time on the rendering layer remains ≤ 2 ms throughout. If the gate fails at any phase, that phase is rolled back — not the gate.
+
+**INV-04 (nearest-neighbour / blocky filtering):** The URP sampler macro change (Category 4, step 14) must preserve `FilterMode.Point`. The migration plan §4.7 specifies `sampler_point_clamp` in the HLSL sampler declaration. A visual verification test (side-by-side screenshot comparison against a reference render) is run at step 14 to confirm blocky filtering is intact. `VolumeTextureManager` must also continue to set `texture.filterMode = FilterMode.Point` on the C# side — this line is marked with `// INV-04 — do not remove` in the after/ code.
+
+### 10.6 What Is Not Tested Here
+
+| Area | Reason |
+|---|---|
+| HDRP migration | Out of scope for this sprint; `HdrpRenderPipeline` adapter design is complete but testing is deferred |
+| Sub-team 2 / Sub-team 4 interface changes during migration | Covered by contract tests in §4 (Stub and Mock Strategy) |
+| Unity 6 LTS point-release shader API changes | R-03 in design document risk register; `IRenderPipeline` confines blast radius to `UrpRenderPipeline.cs` |

@@ -532,6 +532,8 @@ sysinfo.txt
 *.unitypackage
 *.app
 
+#MACOS
+*.dSYM
 # Crashlytics generated file
 crashlytics-build.properties
 
