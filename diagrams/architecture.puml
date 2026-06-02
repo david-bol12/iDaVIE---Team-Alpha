@@ -91,7 +91,7 @@ package "Mask Mode Abstraction\niDaVIE.Rendering.Masks" <<interface>> as MaskAbs
 '  LAYER 3 — Cross-team interface contracts (stubs)
 ' ══════════════════════════════════════════════════════
 package "Cross-team Interface Contracts\niDaVIE.Rendering.Contracts" <<crossteam>> as Contracts {
-  interface IGazeProvider {
+  interface IGaze {
     GazeDirection : Vector3
     GazeFocusPoint : Vector2
     IsGazeAvailable : bool
@@ -164,7 +164,7 @@ package "Rendering Core\niDaVIE.Rendering" <<core>> as RenderingCore {
     WMC ~ 3 · CBO ~ 1 · LCOM ~ 0.0
     ZERO UnityEngine dependencies
     Pure C# — fully unit-testable
-    Depends: IGazeProvider
+    Depends: IGaze
   }
 
 }
@@ -186,7 +186,7 @@ package "Test Doubles\niDaVIE.Rendering.Tests" <<test>> as TestDoubles {
     ShaderKeyword : ""
   }
   class StubGazeProvider {
-    implements IGazeProvider
+    implements IGaze
     --
     Fixed GazeFocusPoint (0.5, 0.5)
     Simulates centred gaze
@@ -208,7 +208,7 @@ HdrpRenderPipeline ..> HDRP_comp : imports
 ' Test doubles implement interfaces
 NullRenderPipeline ..|> IRenderPipeline
 NullMaskMode       ..|> IMaskMode
-StubGazeProvider   ..|> IGazeProvider
+StubGazeProvider   ..|> IGaze
 
 ' Mask mode concrete classes
 ApplyMaskMode   ..|> IMaskMode
@@ -225,7 +225,7 @@ VolumeRenderCoordinator *--> FoveatedSamplingPolicy : owns
 VolumeMaterialBinder  ---> IRenderPipeline  : uses
 VolumeMaterialBinder  ---> IMaskMode        : uses
 VolumeCameraDriver    ---> IRenderPipeline  : uses
-FoveatedSamplingPolicy --> IGazeProvider    : uses
+FoveatedSamplingPolicy --> IGaze    : uses
 VolumeTextureManager  ---> IRawVolumeData   : uses
 
 ' Coordinator inherits MonoBehaviour (class, not component)

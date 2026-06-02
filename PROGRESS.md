@@ -45,7 +45,7 @@ Format: date, what was completed, what's in progress, any blockers.
 - [x] Formal smoke-test of all 5 tools on VolumeDataSetRenderer.cs (S2-CO05) — reports in `tests/`; CodeScene report added 25 May 2026
 - [x] Document tool versions and setup notes in CONTEXT.md (S2-CO06) — `## Tool Versions and Setup Notes` section added 25 May 2026
 - [ ] Log cross-team interface agreements in blockers table (S2-CO07)
-- [ ] Chase Sub-team 4 for `IGazeProvider` (S2-CO08)
+- [x] Chase Sub-team 4 for `IGazeProvider` (S2-CO08) — confirmed 2 June 2026: unified `IGaze` interface; `IsGazeAvailable` → `IsTracking`, interface renamed. `FoveatedSamplingPolicy.cs`, diagrams, and TESTS.md updated.
 - [x] Chase Sub-team 2 for `RawVolumeData` (S2-CO09) — confirmed 2 June 2026: `byte[] Voxels` (not float[]), `long` dims (not int), same struct for mask cube (nullable). See `docs/integration/meeting-subteam2.md`
 
 ### ⏳ Sprint 2 — Design Document
@@ -118,7 +118,7 @@ Format: date, what was completed, what's in progress, any blockers.
 
 | Blocker | Waiting on | Status |
 |---------|-----------|--------|
-| `IGazeProvider` interface definition | Sub-team 4 (Interaction) | ⏳ Pending — chased 20 May; stub in place |
+| `IGaze` interface definition | Sub-team 4 (Interaction) | ✅ Confirmed 2 June 2026 — unified `IGaze`; `IsTracking` replaces `IsGazeAvailable`. All references updated. |
 | `RawVolumeData` texture format contract | Sub-team 2 (Data I/O) | ✅ Confirmed 2 June 2026 — `byte[] Voxels`, `long` dims, nullable mask. `VolumeTextureManager.cs` comment updated. |
 | `ISessionPersistenceService` interface agreement | Sub-team 7 (Persistence) | ⏳ Pending — contract designed 26 May; needs sign-off. See `docs/integration/team7-persistence-contract.md` |
 | Shared assembly location for `VolumeSessionState` | Sub-team 7 (Persistence) | ⏳ Pending — must agree which assembly owns the contract struct before either side codes to it |

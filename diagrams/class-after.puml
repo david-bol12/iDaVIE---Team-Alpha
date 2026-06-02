@@ -44,7 +44,7 @@ interface IMaskMode <<interface>> {
   + ShaderKeyword : string
 }
 
-interface IGazeProvider <<interface>> {
+interface IGaze <<interface>> {
   + GazeDirection : Vector3
   + GazeFocusPoint : Vector2
   + IsGazeAvailable : bool
@@ -58,7 +58,7 @@ interface IRawVolumeData <<interface>> {
   + GetVoxelSlice(z : int) : NativeArray<short>
 }
 
-note top of IGazeProvider
+note top of IGaze
   Provided by Sub-team 4 (Interaction)
   Stub: StubGazeProvider
   Blocker: ⏳ pending S2-CO08
@@ -233,7 +233,7 @@ end note
 ' ══════════════════════════════════════════════════════
 class FoveatedSamplingPolicy {
   ' ── Gaze (injected interface — DIP) ───────────────
-  - _gaze : IGazeProvider
+  - _gaze : IGaze
 
   ' ── Foveation parameters ──────────────────────────
   - _foveatedRendering : bool
@@ -373,7 +373,7 @@ InverseMaskMode ..|> IMaskMode
 IsolateMaskMode ..|> IMaskMode
 NullMaskMode    ..|> IMaskMode
 
-StubGazeProvider ..|> IGazeProvider
+StubGazeProvider ..|> IGaze
 
 ' ══════════════════════════════════════════════════════
 '  COMPOSITION (VolumeRenderCoordinator owns the four classes)
@@ -389,7 +389,7 @@ VolumeRenderCoordinator *--> FoveatedSamplingPolicy : owns
 VolumeMaterialBinder   ---> IRenderPipeline  : uses
 VolumeMaterialBinder   ---> IMaskMode        : uses
 VolumeCameraDriver     ---> IRenderPipeline  : uses
-FoveatedSamplingPolicy ---> IGazeProvider    : uses
+FoveatedSamplingPolicy ---> IGaze    : uses
 VolumeTextureManager   ---> IRawVolumeData   : uses
 
 ' ══════════════════════════════════════════════════════

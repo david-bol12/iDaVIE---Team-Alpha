@@ -54,12 +54,12 @@ Three calls in `VolumeDataSetRenderer` are incompatible with Unity 6 URP: `Graph
 
 `VolumeDataSetRenderer.cs` is the subject of this refactor. 
 
-We own the GPU-side volume rendering layer: all classes, interfaces, and shader files that convert a loaded FITS cube into a visible 3D image in the VR headset. This covers the five target classes, the `IRenderPipeline` and `IMaskMode` interfaces and their implementations, and the test doubles in `iDaVIE.Rendering.Tests`. Sub-team 3 also owns the `IGazeProvider` interface as the consuming party and the `MockGazeProvider` stub, but holds no dependency on any SteamVR SDK type in its domain assemblies.
+We own the GPU-side volume rendering layer: all classes, interfaces, and shader files that convert a loaded FITS cube into a visible 3D image in the VR headset. This covers the five target classes, the `IRenderPipeline` and `IMaskMode` interfaces and their implementations, and the test doubles in `iDaVIE.Rendering.Tests`. Sub-team 3 consumes the `IGaze` interface (defined jointly with Sub-team 4; confirmed 2 June 2026) and owns the `StubGazeProvider` test double, but holds no dependency on any SteamVR SDK type in its domain assemblies.
 
 ### 3.2 Out of Scope
 
 - **FITS data ingest (Sub-team 2)** — Sub-team 3 consumes volume data only through `IRawVolumeDataSource` and `RawVolumeData`; it never reads a FITS file directly.
-- **VR interaction and gaze SDK (Sub-team 4)** — The concrete `SteamVRGazeProvider` is Sub-team 4's responsibility. `VolumeCameraDriver` has no dependency on VR-specific input beyond the `IGazeProvider` interface.
+- **VR interaction and gaze SDK (Sub-team 4)** — The concrete gaze implementation is Sub-team 4's responsibility. `FoveatedSamplingPolicy` has no dependency on VR-specific input beyond the `IGaze` interface.
 - **Application shell (Sub-team 7)** — Scene lifecycle, menus, and session save/restore are out of scope. `VolumeRenderCoordinator` is Sub-team 3's sole contribution to the scene graph. `RegionSelectionController` and `CursorPaintController` remain untouched in the monolith this sprint.
 
 ## 4. Design Decisions
@@ -181,23 +181,36 @@ Each extracted class operates on a single field cluster — the structural guara
 
 ### 4.6 DD-04 — Foveated Rendering Extraction (`FoveatedSamplingPolicy`)
 
-The current code calls the SteamVR gaze API directly inside `Update()` — a DIP breach (V-07). `FoveatedSamplingPolicy` takes an `IGazeProvider` interface at construction. When `IsGazeAvailable == false`, it falls back to a uniform sample rate, preserving INV-01. Sub-team 4 will implement the concrete `SteamVRGazeProvider`; `MockGazeProvider` covers all unit tests until then.
+The current code calls the SteamVR gaze API directly inside `Update()` — a DIP breach (V-07). `FoveatedSamplingPolicy` takes an `IGaze` interface at construction. When `IsTracking == false`, it falls back to a uniform sample rate, preserving INV-01. Sub-team 4 implements the concrete gaze class; `StubGazeProvider` covers all unit tests.
+
+**Confirmed interface — agreed with Sub-team 4, 2 June 2026:**
 
 ```csharp
-public interface IGazeProvider
+// Defined jointly with Sub-team 4. Sub-team 3 consumes; Sub-team 4 implements.
+// We use GazeFocusPoint, GazeDirection, and IsTracking only.
+public interface IGaze
 {
-    Vector3 GetGazeDirection();   // normalised world-space gaze; only valid when IsGazeAvailable is true
-    bool IsGazeAvailable { get; } // false during HMD absence, SteamVR init window, or non-eye-tracking headsets
+    Vector3 GazeDirection  { get; }  // world-space; valid when IsTracking is true
+    Vector2 GazeFocusPoint { get; }  // normalised screen coords [0,1]; (0.5, 0.5) = centre
+    bool    IsTracking     { get; }  // false = no HMD / not worn / not calibrated
 }
 ```
 
-**Fallback:** `IsGazeAvailable == false` → `FoveatedSamplingPolicy.Evaluate()` returns `FoveatedSamplingConfig.UniformSampleStep` — identical to today's HMD-absent path; INV-01 preserved.
+Sub-team 4 owns a unified `IGaze` interface used by both teams. We consume only the three members above; any additional members on their full interface are irrelevant to `FoveatedSamplingPolicy`.
+
+**Fallback:** `IsTracking == false` → `FoveatedSamplingPolicy.ComputeParameters()` returns `FoveationParameters.Uniform(maxSteps)` — identical to today's HMD-absent path; INV-01 preserved.
+
+**Unity 6 migration:** `VolumeRenderCoordinator` wires the gaze provider as a serialised field:
+```csharp
+[SerializeField] private IGaze _gazeProvider;
+```
+Swapping the eye-tracking SDK = swap the component in the Inspector. No code changes in the rendering layer.
 
 **DIP dependency direction:**
-- `FoveatedSamplingPolicy` (high-level) → `IGazeProvider` (abstraction it controls)
-- `SteamVRGazeProvider` (low-level, Sub-team 4) → implements `IGazeProvider`
+- `FoveatedSamplingPolicy` (high-level) → `IGaze` (abstraction)
+- Concrete gaze class (low-level, Sub-team 4) → implements `IGaze`
 
-The domain assembly never names `SteamVRGazeProvider`. Swapping HMD SDK or targeting a non-SteamVR platform = new `IGazeProvider` implementation, zero domain changes. Resolves V-07 and V-15.
+The domain assembly never names the concrete type. Resolves V-07 and V-15.
 
 ### 4.7 DD-05 — Constructor Injection / Composition Root
 
@@ -363,12 +376,63 @@ All diagrams are PlantUML source in `diagrams/`:
 
 ## 8. Sub-team Dependencies
 
-| Dependency | Interface | Status |
+| Dependency | Interface / Struct | Status |
 |---|---|---|
-| Sub-team 2 (Data I/O) | `IRawVolumeDataSource` / `RawVolumeData` | Pending — `StubVolumeDataSource` in place |
-| Sub-team 4 (Interaction / Gaze) | `IGazeProvider` | Pending — `MockGazeProvider` in place |
+| Sub-team 2 (Data I/O) | `RawVolumeData` | ✅ Confirmed 2 June 2026 |
+| Sub-team 4 (Interaction / Gaze) | `IGaze` | ✅ Confirmed 2 June 2026 |
+| Sub-team 7 (Persistence) | `ISessionPersistenceService` / `VolumeSessionState` | ⏳ Pending sign-off — integration deferred to Sprint 3 |
 
-Sub-team 3 exposes camera state via `VolumeCameraDriver` (available to Sub-team 4 if needed). No upstream dependencies on Sub-teams 1, 5, 6, or 7.
+Sub-team 3 exposes camera state via `CameraFrameState` (available to Sub-team 4 if needed). No upstream dependencies on Sub-teams 1, 5, 6, or 7.
+
+### 8.1 Sub-team 2 — `RawVolumeData` (Data I/O boundary)
+
+`VolumeTextureManager` receives voxel data through a shared `RawVolumeData` struct produced by Sub-team 2's data layer. The confirmed struct:
+
+```csharp
+public readonly struct RawVolumeData
+{
+    public byte[]      Voxels  { get; init; }  // raw bytes; interpret via Format
+    public long        XDim    { get; init; }  // long: astronomical cubes exceed int range
+    public long        YDim    { get; init; }
+    public long        ZDim    { get; init; }
+    public DataFormat  Format  { get; init; }  // Float32 (data cube) | Int16 (mask cube)
+}
+```
+
+Key decisions: `byte[]` rather than `float[]` because the data cube uses `FitsReadSubImageFloat` (Float32) while the mask cube uses `FitsReadSubImageInt16` (Int16) — a single typed array cannot carry both without silent upcast or memory waste. `DataFormat` tells `VolumeTextureManager` whether to call `Texture3D.SetPixelData<float>` or `SetPixelData<short>`. Dimensions are `long` to match `VolumeDataSet`'s existing field types and avoid narrowing conversion.
+
+Constructor: `VolumeTextureManager(VolumeTextureConfig config, RawVolumeData dataCube, RawVolumeData? maskCube)` — nullable mask because not every volume has one. Downsample factors are computed by `VolumeTextureManager` (not pre-computed by Sub-team 2).
+
+### 8.2 Sub-team 4 — `IGaze` (Gaze / Interaction boundary)
+
+`FoveatedSamplingPolicy` consumes gaze data through `IGaze`, a unified interface owned jointly with Sub-team 4. See §4.6 for the full interface definition and DIP rationale. Sub-team 4 implements the concrete class; we implement `StubGazeProvider` for unit tests.
+
+The three members we use: `GazeFocusPoint` (screen-space Vector2, normalised [0,1]), `GazeDirection` (world-space Vector3), `IsTracking` (bool). `IsTracking == false` triggers the uniform-sampling fallback — no null checks, no throws.
+
+### 8.3 Sub-team 7 — `ISessionPersistenceService` (Persistence boundary)
+
+`VolumeRenderCoordinator` exposes `CaptureState()` / `RestoreState()` for session save/load. Each of the four domain classes captures its own slice; the coordinator assembles them into `VolumeSessionState` and passes it to `ISessionPersistenceService.Save()`.
+
+```csharp
+// Sub-team 7 owns this interface
+public interface ISessionPersistenceService
+{
+    void              Save(VolumeSessionState state, string path);
+    VolumeSessionState Load(string path);
+}
+
+// Shared struct — assembly ownership TBD (see docs/integration/meeting-subteam7.md)
+public readonly struct VolumeSessionState
+{
+    public RenderingState  Rendering  { get; init; }  // VolumeMaterialBinder
+    public VolumeDataState VolumeData { get; init; }  // VolumeTextureManager
+    public SpatialState    Spatial    { get; init; }  // VolumeCameraDriver
+    public FoveationState  Foveation  { get; init; }  // FoveatedSamplingPolicy
+    public MaskState       Mask       { get; init; }  // VolumeMaterialBinder
+}
+```
+
+No `UnityEngine` types anywhere in the struct tree — plain floats only, fully serialisable without a Unity context. `VolumeSessionState` must live in a shared contracts assembly (not Sub-team 3's or Sub-team 7's); assembly location is TBD pending Sub-team 7 sign-off. Integration deferred to Sprint 3.
 
 ---
 
@@ -396,7 +460,7 @@ Mitigations:
 
 ### 9.3 Interface Versioning Risk
 
-Three cross-team interfaces (`IGazeProvider`, `IRawVolumeDataSource`, `ISessionPersistenceService`) are agreed verbally but not yet formally signed off. A signature change after either side has coded to it causes rework.
+Two of the three cross-team contracts are now formally confirmed (`IGaze` and `RawVolumeData`, both 2 June 2026). `ISessionPersistenceService` / `VolumeSessionState` is designed but awaiting Sub-team 7 sign-off. A signature change after either side has coded to it causes rework.
 
 Mitigations:
 - `[InterfaceVersion("1.0")]` attribute on all cross-team interfaces. A reflection-based guard in the test suite asserts the attribute is present and that its value matches the expected version string. Any unannounced change to a method signature triggers a build failure on both sides.
@@ -407,8 +471,8 @@ Mitigations:
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 |----|------|-----------|--------|------------|
-| R-01 | `IGazeProvider` not delivered before freeze | Medium | Low | `MockGazeProvider` covers all unit tests |
-| R-02 | `RawVolumeData` struct changes post-implementation | Medium | Medium | Interface adaptor — one conversion point to update |
+| R-01 | ~~`IGaze` not delivered before freeze~~ | ~~Medium~~ | ~~Low~~ | ✅ Resolved 2 June 2026 — `IGaze` confirmed with Sub-team 4 |
+| R-02 | ~~`RawVolumeData` struct changes post-implementation~~ | ~~Medium~~ | ~~Medium~~ | ✅ Resolved 2 June 2026 — `RawVolumeData` confirmed with Sub-team 2 |
 | R-03 | URP command buffer API changes in Unity 6 LTS | Low | High | `IRenderPipeline` isolates changes to `UrpRenderPipeline` only |
 | R-04 | `VolumeRenderState` struct grows beyond 64 bytes | Low | Medium | NFR-08 cap; SonarQube custom rule flags additions |
 | R-05 | `VolumeRenderCoordinator` accumulates domain logic | Medium | High | WMC ≤ 10 + CC > 2 = build failure (§8.2) |

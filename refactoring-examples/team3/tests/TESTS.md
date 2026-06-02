@@ -53,7 +53,7 @@ The core foveation decision class. Extracted from the ~30-line block in
 | Test group | What is checked | Why it matters |
 |---|---|---|
 | **Constructor guard** | `ArgumentNullException` when `gazeProvider` is null | Prevents a silent null-ref crash inside the per-frame hot path |
-| **IsGazeAvailable** | Delegates faithfully to the injected `IGazeProvider` | Any code branching on this property must get the true hardware state |
+| **IsGazeAvailable** | Delegates faithfully to the injected `IGaze` | Any code branching on this property must get the true hardware state |
 | **ComputeParameters — active** | `FoveationActive = true`, step counts and radii match `FoveatedSamplingConfig` | Shader receives correct per-zone values each frame |
 | **ComputeParameters — fallback** | `FoveationActive = false`, both step counts equal `MaxSteps`, gaze centred | Mirrors the before/ else-branch (lines 1163–1165); preserves full quality when no HMD is present |
 | **ComputeMipBias** | Returns 0 when gaze unavailable or `maxMips ≤ 1`; result clamped to `[0, maxMips−1]` | Prevents out-of-bounds mip requests; confirms the new LOD capability (absent in before/) |

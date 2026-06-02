@@ -34,7 +34,7 @@
 //   DIP  — VolumeRenderCoordinator and VolumeMaterialBinder depend on
 //          FoveatedSamplingPolicy via constructor injection. They never import
 //          SteamVR, OpenXR, or any HMD SDK type. Swapping the underlying
-//          eye-tracking system only affects the IGazeProvider implementation,
+//          eye-tracking system only affects the IGaze implementation,
 //          nothing in the rendering core.
 //
 //   OCP  — New sampling strategies (e.g. predictive gaze, saccade-aware foveation)
@@ -57,7 +57,7 @@
 // --------------------------------------
 //   Metric  Value  Target        Note
 //   WMC     6      ≤ 20  ✓       NIM=6, NIV=2
-//   CBO     6      ≤ 14  ✓       IGazeProvider, FoveatedSamplingConfig,
+//   CBO     6      ≤ 14  ✓       IGaze, FoveatedSamplingConfig,
 //                                FoveationParameters, FoveationZone, Vector2,
 //                                and related types
 //   RFC     6      ≤ 50  ✓
@@ -72,53 +72,46 @@ using UnityEngine;
 namespace iDaVIE.Rendering
 {
     // =========================================================================
-    // IGazeProvider — DEPENDENCY PLACEHOLDER (Sub-team 4 contract)
+    // IGaze — CONFIRMED with Sub-team 4 (Interaction), 2 June 2026
     // =========================================================================
     //
-    // ⚠  THIS IS OUR ASSUMED VERSION — NOT YET CONFIRMED WITH SUB-TEAM 4.
+    // ✅  Contract agreed. Sub-team 4 owns a unified IGaze interface used by
+    //     both teams. We consume it here; they implement it in their Interaction
+    //     layer. We only use GazeFocusPoint, GazeDirection, and IsTracking.
+    //     Any additional members on their full interface are irrelevant to us
+    //     and can be ignored — we only depend on what FoveatedSamplingPolicy calls.
     //
-    // When Sub-team 4 delivers the real interface (task S2-CO08 / blocker in
-    // PROGRESS.md), reconcile against what is below and update accordingly.
-    // Specific things to verify:
-    //   • GazeFocusPoint: confirm it returns normalised screen coords in [0,1]
-    //     (i.e. (0.5, 0.5) is screen centre). If it returns pixel coords,
-    //     divide by Screen.width / Screen.height in ComputeParameters().
-    //   • IsGazeAvailable: confirm it returns false (not throws) when no
-    //     eye-tracking hardware is present (e.g. a standard Vive without eye
-    //     module, or a desktop non-VR session).
-    //   • GazeDirection: confirm it is in world space, not camera-local space.
-    //     FoveatedSamplingPolicy does not currently use GazeDirection directly
-    //     (the shader receives GazeFocusPoint as a screen-space uniform), but
-    //     future saccade prediction work will need the world-space vector.
+    // Name changes from our original stub:
+    //   • IGaze  → IGaze          (their canonical name)
+    //   • IsGazeAvailable → IsTracking    (their canonical name; semantics identical)
+    //   • GazeFocusPoint, GazeDirection   — unchanged
     //
-    // This interface lives here temporarily. Once Sub-team 4 publishes their
-    // version, this declaration should be DELETED and the real assembly reference
-    // added to the project.
+    // Wire-up in VolumeRenderCoordinator (Sprint 3):
+    //   [SerializeField] private IGaze _gazeProvider;
+    //   — Unity 6 migration: swap the component in the Inspector, code unchanged.
+    //
+    // This declaration should be DELETED once Sub-team 4 publishes their assembly;
+    // replace with a project reference to their IGaze definition.
     // =========================================================================
 
     /// <summary>
     /// Provides gaze direction and screen focus point from the HMD's eye-tracking system.
     /// Defined by Sub-team 4 (Interaction); consumed here under DIP.
+    /// Confirmed interface name and member names: 2 June 2026.
     /// </summary>
-    /// <remarks>
-    /// [PLACEHOLDER — update when Sub-team 4 publishes the real interface. See file header.]
-    /// </remarks>
-    public interface IGazeProvider
+    public interface IGaze
     {
         /// <summary>
         /// Gaze direction vector in world space.
-        /// Valid when <see cref="IsGazeAvailable"/> is <c>true</c>; undefined otherwise.
+        /// Valid when <see cref="IsTracking"/> is <c>true</c>; undefined otherwise.
         /// </summary>
         Vector3 GazeDirection { get; }
 
         /// <summary>
         /// Gaze focus point in normalised screen coordinates, range [0, 1].
         /// (0.5, 0.5) is the screen centre.
-        /// Valid when <see cref="IsGazeAvailable"/> is <c>true</c>; returns (0.5, 0.5) otherwise.
+        /// Valid when <see cref="IsTracking"/> is <c>true</c>; returns (0.5, 0.5) otherwise.
         /// </summary>
-        /// <remarks>
-        /// [PLACEHOLDER — confirm coord space and fallback value with Sub-team 4.]
-        /// </remarks>
         Vector2 GazeFocusPoint { get; }
 
         /// <summary>
@@ -126,7 +119,7 @@ namespace iDaVIE.Rendering
         /// <c>false</c> when no eye-tracking hardware is present, the HMD is not worn,
         /// or the tracking system has not yet completed its calibration.
         /// </summary>
-        bool IsGazeAvailable { get; }
+        bool IsTracking { get; }
     }
 
     // =========================================================================
@@ -407,7 +400,7 @@ namespace iDaVIE.Rendering
     /// own any Unity lifecycle hooks.</para>
     ///
     /// <para><b>DIP:</b> the dependency on eye-tracking hardware is hidden behind
-    /// <see cref="IGazeProvider"/>. The coordinator passes a concrete
+    /// <see cref="IGaze"/>. The coordinator passes a concrete
     /// implementation (real SteamVR/OpenXR provider in production, a
     /// <see cref="StubGazeProvider"/> in tests).</para>
     ///
@@ -416,8 +409,8 @@ namespace iDaVIE.Rendering
     /// </remarks>
     public sealed class FoveatedSamplingPolicy
     {
-        // CBO drivers: IGazeProvider, FoveatedSamplingConfig (2 fields — all methods use both)
-        private readonly IGazeProvider          _gazeProvider;   // [CBO] Sub-team 4 contract
+        // CBO drivers: IGaze, FoveatedSamplingConfig (2 fields — all methods use both)
+        private readonly IGaze          _gazeProvider;   // [CBO] Sub-team 4 contract
         private readonly FoveatedSamplingConfig _config;         // [CBO] extracted constants
 
         /// <summary>
@@ -432,7 +425,7 @@ namespace iDaVIE.Rendering
         /// <see cref="FoveatedSamplingConfig.Default"/> to match the original
         /// Inspector values from <c>VolumeDataSetRenderer</c>.
         /// </param>
-        public FoveatedSamplingPolicy(IGazeProvider gazeProvider, FoveatedSamplingConfig config)
+        public FoveatedSamplingPolicy(IGaze gazeProvider, FoveatedSamplingConfig config)
         {
             _gazeProvider = gazeProvider ?? throw new System.ArgumentNullException(nameof(gazeProvider));
             _config       = config;
@@ -602,7 +595,7 @@ namespace iDaVIE.Rendering
         // developer must remember to uncheck the box.
         //
         // In the after/ design, IsGazeAvailable is driven at runtime by
-        // IGazeProvider.IsGazeAvailable. When it returns false, ComputeParameters()
+        // IGaze.IsTracking. When it returns false, ComputeParameters()
         // automatically returns a uniform full-quality parameter set (behaviour 1).
         // ComputeMipBias() returns 0 (behaviour 2). WriteReprojectionMask() can be
         // skipped by the coordinator. No Inspector toggle is required.
@@ -618,10 +611,10 @@ namespace iDaVIE.Rendering
         /// </summary>
         /// <remarks>
         /// Mirrors <c>FoveatedRendering</c> (before/ line 140) but driven automatically
-        /// at runtime from <see cref="IGazeProvider.IsGazeAvailable"/> rather than
+        /// at runtime from <see cref="IGaze.IsTracking"/> rather than
         /// requiring a manual Inspector toggle.
         /// </remarks>
-        public bool IsGazeAvailable => _gazeProvider.IsGazeAvailable;
+        public bool IsGazeAvailable => _gazeProvider.IsTracking;
 
         // -----------------------------------------------------------------------
         // Private utilities
@@ -727,10 +720,10 @@ namespace iDaVIE.Rendering.Tests
     using UnityEngine;
 
     /// <summary>
-    /// Test double for <see cref="IGazeProvider"/>.
+    /// Test double for <see cref="IGaze"/>.
     /// Returns a fixed gaze direction and focus point — no VR hardware required.
     /// </summary>
-    public sealed class StubGazeProvider : IGazeProvider
+    public sealed class StubGazeProvider : IGaze
     {
         private readonly Vector2 _fixedFocus;
         private readonly bool    _gazeAvailable;
@@ -743,7 +736,7 @@ namespace iDaVIE.Rendering.Tests
         /// Defaults to screen centre <c>(0.5, 0.5)</c>.
         /// </param>
         /// <param name="gazeAvailable">
-        /// Value returned by <see cref="IsGazeAvailable"/>.
+        /// Value returned by <see cref="IsTracking"/>.
         /// Pass <c>false</c> to exercise the HMD-absent fallback path.
         /// </param>
         public StubGazeProvider(Vector2 fixedFocus = default, bool gazeAvailable = true)
