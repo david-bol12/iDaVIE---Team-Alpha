@@ -629,7 +629,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
                 memoryProbe:   null!));
         }
 
-        // ── Setters that no-op when the value hasn't changed ──────────────────
+        // Setters that no-op when the value hasn't changed
 
         [Test]
         public async Task SelectedHduIndex_SetToSameValue_DoesNotRaisePropertyChanged()
@@ -671,7 +671,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.AreEqual(0, notifications);
         }
 
-        // ── Setters poked before any image is open ────────────────────────────
+        // Setters poked before any image is open
 
         [Test]
         public void SelectedHduIndex_SetBeforeImage_NoOpAndDoesNotThrow()
@@ -686,7 +686,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.IsLoadable);
         }
 
-        // ── Dispose on a VM that never opened anything ────────────────────────
+        // Dispose on a VM that never opened anything
 
         [Test]
         public void Dispose_VmWithNoOpenFiles_DoesNotThrow()
@@ -699,7 +699,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.DoesNotThrow(() => vm.Dispose());
         }
 
-        // ── IsLoadable: needs at least three real axes ────────────────────────
+        // IsLoadable: needs at least three real axes
 
         [Test]
         public async Task IsLoadable_ThreeAxesButOnlyTwoNonTrivial_False()
@@ -723,7 +723,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.IsLoadable);
         }
 
-        // ── BrowseMask edge cases (cancel, replace, X/Y mismatch) ─────────────
+        // BrowseMask edge cases (cancel, replace, X/Y mismatch)
 
         [Test]
         public async Task BrowseMask_UserCancels_LeavesStateUnchanged()
