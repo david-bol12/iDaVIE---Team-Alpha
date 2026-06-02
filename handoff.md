@@ -136,4 +136,38 @@ VolumeDataSetRenderer
 
 ## Test Project
 
-`tests/SubTeam5_Tests/UnitTest1.cs` — 3 NUnit test classes, 15 parameterised cases covering centroid-in-bounds, non-negative flux, and W20 ≥ W50. All tests construct `Feature` objects directly with no Unity runtime required.
+**Project:** `tests/SubTeam5_Tests/` — NUnit 4 + FsCheck 3, targeting `net10.0`. No Unity runtime required; production source files are compiled directly into the test project via `<Compile Include="...">` references, so tests run with a plain `dotnet test`.
+
+### Test files
+
+| File | Class | Approach | Cases |
+|---|---|---|---|
+| `UnitTest1.cs` | `FeatureTests` | Parameterised NUnit | 15 — 5 cases × 3 methods (Center midpoint, Size +1 padding, ContainsPoint boundary) |
+| `StatisticsTests.cs` | `FeatureStatisticsTests` | FsCheck property-based + parameterised NUnit | 3 FsCheck properties (100 random inputs each) + 12 explicit cases |
+| `ScenarioTests.cs` | `MaskEditExportScenarioTests` | Integration scenario | 1 — mask → edit → VOTable export end-to-end |
+
+### What each file covers
+
+**`UnitTest1.cs` — `Feature` geometry (unit)**
+- `Feature_Center_IsExactMidpoint` — `Center` is the exact `(min + max) / 2` midpoint on all three axes.
+- `Feature_Size_IsPaddedByOneVoxel` — `Size` is `(max − min + 1)` per axis; catches a missing `+1` on any axis.
+- `Feature_ContainsPoint_ReturnsCorrectResult` — interior, both corners (inclusive), and points just outside each face.
+
+**`StatisticsTests.cs` — `FeatureStatistics` invariants (property-based)**
+- `CentroidInsideBounds` — FsCheck generates arbitrary valid bounding boxes; placing the centroid at the geometric centre always satisfies `CentroidInsideBounds`. Nine explicit boundary/exterior cases cover `>=`/`<=` edge cases per axis.
+- `FluxIsNonNegative` — FsCheck generates non-negative `TotalFlux`/`PeakFlux` pairs; two explicit tests assert `false` when either value is negative.
+- `W20GeqW50` — FsCheck generates `w50` and a non-negative delta so `w20 >= w50` by construction; one explicit test asserts `false` when `W20 < W50`.
+
+**`ScenarioTests.cs` — mask-edit-export pipeline (integration)**
+- Constructs a `FeatureSet` with three features, verifies initial `Center`/`Size`/`ContainsPoint`, mutates one feature via `SetBounds` and checks that:
+  - `ContainsPoint` reflects the new bounds.
+  - `FeatureDirty` events propagate through to the parent set.
+  - Neighbouring features are unaffected.
+- Exports via the real `VoTableExportService` with an `IdentityTransformer` (pass-through `ICoordinateTransformer` — no native DLL needed) and asserts the correct values appear in the XML `<TR>/<TD>` rows.
+
+### Running the tests
+
+```bash
+cd tests/SubTeam5_Tests
+dotnet test
+```
