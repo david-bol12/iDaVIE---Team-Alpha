@@ -288,16 +288,16 @@ public class MomentMapMenuController : MonoBehaviour
         var moment1Array = RenderTextureToArray(getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map);
 
         IntPtr mainFitsFilePtr = IntPtr.Zero;
-        FitsFile.FitsOpenFile(out mainFitsFilePtr, getFirstActiveDataSet().FileName, out int status, true);
+        FitsReader.FitsOpenFile(out mainFitsFilePtr, getFirstActiveDataSet().FileName, out int status, true);
 
-        FitsImage.WriteMomentMap(mainFitsFilePtr, path0, moment0Array,
+        FitsReader.WriteMomentMap(mainFitsFilePtr, path0, moment0Array,
             getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.width,
             getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.height, 0);
-        FitsImage.WriteMomentMap(mainFitsFilePtr, path1, moment1Array,
+        FitsReader.WriteMomentMap(mainFitsFilePtr, path1, moment1Array,
             getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.width,
             getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.height, 1);
         
-        FitsFile.FitsCloseFile(mainFitsFilePtr, out status);
+        FitsReader.FitsCloseFile(mainFitsFilePtr, out status);
         
         Debug.Log($"Moment maps saved to {path0} and {path1}");
         ToastNotification.ShowSuccess($"Moment map 0 saved to {path0}");

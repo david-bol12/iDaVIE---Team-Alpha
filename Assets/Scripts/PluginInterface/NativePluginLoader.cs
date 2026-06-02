@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace fts
 {
@@ -37,55 +38,70 @@ namespace fts
 
 
     // ------------------------------------------------------------------------
-    // Static class to help with loading and unloading of native plugins.
-    // Call Initialize(pluginPath) at application startup before using any
-    // [PluginAttr]-decorated class (e.g. DataAnalysis).
-    // Call Shutdown() on application exit to release library handles.
+    // Singleton class to help with loading and unloading of native plugins
     // ------------------------------------------------------------------------
-    public static class NativePluginLoader
+    [System.Serializable]
+    public class NativePluginLoader : MonoBehaviour, ISerializationCallbackReceiver
     {
         // Constants
         const string EXT = ".dll"; // TODO: Handle different platforms
 
-        // Private fields
-        static readonly Dictionary<string, IntPtr> _loadedPlugins = new Dictionary<string, IntPtr>();
-        static string _path;
+        // Static fields
+        static NativePluginLoader _singleton;
 
-        // ------------------------------------------------------------------------
-        // Initialize the loader with the directory that contains the native DLLs.
-        // Must be called once before any [PluginAttr]-decorated type is used.
-        // ------------------------------------------------------------------------
-        public static void Initialize(string pluginPath)
-        {
-            if (_path != null)
+        // Private fields
+        Dictionary<string, IntPtr> _loadedPlugins = new Dictionary<string, IntPtr>();
+        string _path;
+
+        // Static Properties
+        static NativePluginLoader singleton {
+            get {
+                if (_singleton == null) {
+                    var go = new GameObject("PluginLoader");
+                    var pl = go.AddComponent<NativePluginLoader>();
+                    Debug.Assert(_singleton == pl); // should be set by awake
+                }
+
+                return _singleton;
+            }
+        }
+
+        // Methods
+        void Awake() {
+            if (_singleton != null)
             {
-                Console.Error.WriteLine("NativePluginLoader.Initialize called more than once; ignoring duplicate.");
+                Debug.LogError(
+                    string.Format("Created multiple NativePluginLoader objects. Destroying duplicate created on GameObject [{0}]",
+                    this.gameObject.name));
+                Destroy(this);
                 return;
             }
-            _path = pluginPath;
+
+            _singleton = this;
+            DontDestroyOnLoad(this.gameObject);
+            _path = Application.dataPath + "/Plugins/";
+            if (!Application.isEditor)
+                _path += "x86_64/";
             LoadAll();
         }
 
-        // ------------------------------------------------------------------------
-        // Release all loaded library handles.  Call on application exit.
-        // ------------------------------------------------------------------------
-        public static void Shutdown()
-        {
+        void OnDestroy() {
             UnloadAll();
-            _path = null;
+            _singleton = null;
         }
 
         // Free all loaded libraries
-        static void UnloadAll()
+        void UnloadAll()
         {
-            foreach (var kvp in _loadedPlugins)
-                SystemLibrary.FreeLibrary(kvp.Value);
+            foreach (var kvp in _loadedPlugins) {
+                bool result = SystemLibrary.FreeLibrary(kvp.Value);
+            }
             _loadedPlugins.Clear();
         }
 
         // Load all plugins with 'PluginAttr'
         // Load all functions with 'PluginFunctionAttr'
-        static void LoadAll() {
+        void LoadAll() {
             // TODO: Could loop over just Assembly-CSharp.dll in most cases?
 
             // Loop over all assemblies
@@ -97,7 +113,7 @@ namespace fts
                     var typeAttributes = type.GetCustomAttributes(typeof(PluginAttr), true);
                     if (typeAttributes.Length > 0)
                     {
-                        System.Diagnostics.Debug.Assert(typeAttributes.Length == 1); // should not be possible
+                        Debug.Assert(typeAttributes.Length == 1); // should not be possible
 
                         var typeAttribute = typeAttributes[0] as PluginAttr;
 
@@ -106,10 +122,10 @@ namespace fts
                         if (!_loadedPlugins.TryGetValue(pluginName, out pluginHandle)) {
                             var pluginPath = _path + pluginName + EXT;
                             if (!SystemLibrary.SetDllDirectory(_path))
-                                throw new Exception("Failed to set dll directory [" + pluginPath + "]");
+                                throw new System.Exception("Failed to set dll directory [" + pluginPath + "]");
                             pluginHandle = SystemLibrary.LoadLibrary(pluginPath);
                             if (pluginHandle == IntPtr.Zero)
-                                throw new Exception("Failed to load plugin [" + pluginPath + "]");
+                                throw new System.Exception("Failed to load plugin [" + pluginPath + "]");
 
                             _loadedPlugins.Add(pluginName, pluginHandle);
                         }
@@ -120,7 +136,7 @@ namespace fts
                             // Get custom attributes for field
                             var fieldAttributes = field.GetCustomAttributes(typeof(PluginFunctionAttr), true);
                             if (fieldAttributes.Length > 0) {
-                                System.Diagnostics.Debug.Assert(fieldAttributes.Length == 1); // should not be possible
+                                Debug.Assert(fieldAttributes.Length == 1); // should not be possible
 
                                 // Get PluginFunctionAttr attribute
                                 var fieldAttribute = fieldAttributes[0] as PluginFunctionAttr;
@@ -129,7 +145,7 @@ namespace fts
                                 // Get function pointer
                                 var fnPtr = SystemLibrary.GetProcAddress(pluginHandle, functionName);
                                 if (fnPtr == IntPtr.Zero) {
-                                    Console.Error.WriteLine(string.Format("Failed to find function [{0}] in plugin [{1}]. Err: [{2}]", functionName, pluginName, SystemLibrary.GetLastError()));
+                                    Debug.LogError(string.Format("Failed to find function [{0}] in plugin [{1}]. Err: [{2}]", functionName, pluginName, SystemLibrary.GetLastError()));
                                     continue;
                                 }
 
@@ -142,6 +158,26 @@ namespace fts
                         }
                     }
                 }
+            }            
+        }
+
+
+        // It is *strongly* recommended to set Editor->Preferences->Script Changes While Playing = Recompile After Finished Playing
+        // Properly support reload of native assemblies requires extra work.
+        // However the following code will re-fixup delegates.
+        // More importantly, it prevents a dangling DLL which results in a mandatory Editor reboot
+        bool _reloadAfterDeserialize = false;
+        void ISerializationCallbackReceiver.OnBeforeSerialize() {
+            if (_loadedPlugins.Count > 0) {
+                UnloadAll();
+                _reloadAfterDeserialize = true;
+            }
+        }
+
+        void ISerializationCallbackReceiver.OnAfterDeserialize()  {
+            if (_reloadAfterDeserialize) { 
+                LoadAll();
+                _reloadAfterDeserialize = false;
             }
         }
     }

@@ -1306,7 +1306,7 @@ namespace VolumeData
                 {
                     datasetFileName += $"[{_dataSet.SelectedHdu}]";
                 }    
-                FitsFile.FitsOpenFileReadOnly(out cubeFitsPtr, datasetFileName, out status);
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, datasetFileName, out status);
                 string directory = Path.GetDirectoryName(_dataSet.FileName);
                 _maskDataSet.FileName = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
                 if (_maskDataSet.SaveMask(cubeFitsPtr, _maskDataSet.FileName, false) != 0)
@@ -1324,7 +1324,7 @@ namespace VolumeData
             {
                 // Save a copy
                 Debug.Log("Attempting to save new mask copy.");
-                FitsFile.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
                 Regex regex = new Regex(@"_copy_\d{8}_\d{5}");
                 string fileName = Path.GetFileNameWithoutExtension(_maskDataSet.FileName);
                 Match match = regex.Match(fileName);
@@ -1353,7 +1353,7 @@ namespace VolumeData
             {
                 // Overwrite existing mask
                 Debug.Log("Attempting to overwrite existing mask.");
-                FitsFile.FitsOpenFileReadWrite(out cubeFitsPtr, _maskDataSet.FileName, out status);
+                FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, _maskDataSet.FileName, out status);
                 if (_maskDataSet.SaveMask(cubeFitsPtr, null, false) != 0)
                 {
                     ToastNotification.ShowError("Error overwriting existing mask!");
@@ -1368,7 +1368,7 @@ namespace VolumeData
             if (cubeFitsPtr != IntPtr.Zero)
             {
                 Debug.Log("cubeFitsPtr != IntPtr.Zero, closing file.");
-                FitsFile.FitsCloseFile(cubeFitsPtr, out status);
+                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
             }
         }
 

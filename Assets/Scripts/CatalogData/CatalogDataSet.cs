@@ -266,7 +266,7 @@ namespace CatalogData
             IntPtr fptr; // pointer to the FITS file, defined in fitsio.h
             int status, hdunum, hdutype, ncols;
             long nrows;
-            if (FitsFile.FitsOpenFile(out fptr, dataSet.FileName, out status, true) != 0)
+            if (FitsReader.FitsOpenFile(out fptr, dataSet.FileName, out status, true) != 0)
             {
                 Debug.Log("Fits Failure... cfits code #" + status.ToString());
                 return dataSet;
@@ -277,17 +277,17 @@ namespace CatalogData
             int dataColumnCounter = 0;
             int metaColumnCounter = 0;
             // move to the HDU
-            if (FitsFile.FitsMovabsHdu(fptr, hdunum, out hdutype, out status) != 0)
+            if (FitsReader.FitsMovabsHdu(fptr, hdunum, out hdutype, out status) != 0)
             {
                 Debug.Log("Fits HDU Read error #" + status.ToString());
-                FitsFile.FitsCloseFile(fptr, out status);
+                FitsReader.FitsCloseFile(fptr, out status);
                 return dataSet;
             }
             // Need to specify which table??
-            if (FitsFile.FitsGetNumRows(fptr, out nrows, out status) != 0 || FitsFile.FitsGetNumCols(fptr, out ncols, out status) != 0)
+            if (FitsReader.FitsGetNumRows(fptr, out nrows, out status) != 0 || FitsReader.FitsGetNumCols(fptr, out ncols, out status) != 0)
             {
                 Debug.Log("Fits Read table size error #" + status.ToString());
-                FitsFile.FitsCloseFile(fptr, out status);
+                FitsReader.FitsCloseFile(fptr, out status);
                 return dataSet;
             }
             dataSet.ColumnDefinitions = new ColumnInfo[ncols];
@@ -299,25 +299,25 @@ namespace CatalogData
 
             for (int col = 0; col < ncols; col++)
             {
-                FitsHeader.FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
-                if (FitsHeader.FitsReadKey(fptr, 16, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
+                FitsReader.FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
+                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
                 {
                     Debug.Log("Fits Read column name error #" + status.ToString());
-                    FitsFile.FitsCloseFile(fptr, out status);
+                    FitsReader.FitsCloseFile(fptr, out status);
                     return dataSet;
                 }
                 keyword.Clear();
-                FitsHeader.FitsMakeKeyN("TFORM", col + 1, keyword, out status);
-                if (FitsHeader.FitsReadKey(fptr, 16, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
+                FitsReader.FitsMakeKeyN("TFORM", col + 1, keyword, out status);
+                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
                 {
                     Debug.Log("Fits Read column format error #" + status.ToString());
-                    FitsFile.FitsCloseFile(fptr, out status);
+                    FitsReader.FitsCloseFile(fptr, out status);
                     return dataSet;
                 }
                 string colFormatLetter = new String(colFormat.ToString().Where(Char.IsLetter).ToArray());
                 keyword.Clear();
-                FitsHeader.FitsMakeKeyN("TUNIT", col + 1, keyword, out status);
-                if (FitsHeader.FitsReadKey(fptr, 16, keyword.ToString(), colUnit, IntPtr.Zero, out status) != 0)
+                FitsReader.FitsMakeKeyN("TUNIT", col + 1, keyword, out status);
+                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colUnit, IntPtr.Zero, out status) != 0)
                 {
                     if (status == 202)
                     {
@@ -327,7 +327,7 @@ namespace CatalogData
                     else
                     {
                         Debug.Log("Fits Read unit error #" + status.ToString());
-                        FitsFile.FitsCloseFile(fptr, out status);
+                        FitsReader.FitsCloseFile(fptr, out status);
                         return dataSet;
                     }
                 }
@@ -374,25 +374,25 @@ namespace CatalogData
             {
                 if (column.Type == ColumnType.Numeric)
                 {
-                    if (FitsTable.FitsReadColFloat(fptr, column.Index + 1, frow, felem, nrows, out ptrDataFromColumn, out status) != 0)
+                    if (FitsReader.FitsReadColFloat(fptr, column.Index + 1, frow, felem, nrows, out ptrDataFromColumn, out status) != 0)
                     {
                         Debug.Log("Fits Read column numeric data error #" + status.ToString());
-                        FitsFile.FitsCloseFile(fptr, out status);
+                        FitsReader.FitsCloseFile(fptr, out status);
                         return dataSet;
                     }
                     float[] numericDataFromColumn = new float[nrows];
                     Marshal.Copy(ptrDataFromColumn, numericDataFromColumn, 0, (int)nrows);
                     dataSet.DataColumns[column.NumericIndex] = numericDataFromColumn;
-                    FitsImage.FreeFitsPtrMemory(ptrDataFromColumn);
+                    FitsReader.FreeFitsPtrMemory(ptrDataFromColumn);
 
                 }
                 else if (loadMeta)
                     {
                     IntPtr ptrRawDataFromColumn;
-                    if (FitsTable.FitsReadColString(fptr, column.Index + 1, frow, felem, nrows, out ptrDataFromColumn, out ptrRawDataFromColumn, out status) != 0)
+                    if (FitsReader.FitsReadColString(fptr, column.Index + 1, frow, felem, nrows, out ptrDataFromColumn, out ptrRawDataFromColumn, out status) != 0)
                         {
                             Debug.Log("Fits Read column meta data error #" + status.ToString());
-                            FitsFile.FitsCloseFile(fptr, out status);
+                            FitsReader.FitsCloseFile(fptr, out status);
                             return dataSet;
                         }
                     IntPtr[] metaDataFromColumn = new IntPtr[nrows];
@@ -401,11 +401,11 @@ namespace CatalogData
                     {
                         dataSet.MetaColumns[column.MetaIndex][row] = Marshal.PtrToStringAnsi(metaDataFromColumn[row]);
                     }
-                    FitsImage.FreeFitsPtrMemory(ptrDataFromColumn);
-                    FitsImage.FreeFitsPtrMemory(ptrRawDataFromColumn);
+                    FitsReader.FreeFitsPtrMemory(ptrDataFromColumn);
+                    FitsReader.FreeFitsPtrMemory(ptrRawDataFromColumn);
                 }
             }
-            FitsFile.FitsCloseFile(fptr, out status);
+            FitsReader.FitsCloseFile(fptr, out status);
             return dataSet;
         }
 

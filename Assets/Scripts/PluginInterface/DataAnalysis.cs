@@ -23,8 +23,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using fts;
+using UnityEngine;
 
-[PluginAttr("idavie_data")]
+[PluginAttr("idavie_native")]
 public static class DataAnalysis
 {
     [PluginFunctionAttr("FindMaxMin")] 
@@ -177,43 +178,49 @@ public static class DataAnalysis
     public static readonly FreeDataAnalysisMemoryDelegate FreeDataAnalysisMemory = null;
     public delegate int FreeDataAnalysisMemoryDelegate(IntPtr pointerToDelete);
 
-    private static float[] CopyAndFreeProfile(IntPtr profilePtr, long count)
+    public static float[] GetXProfileAsArray(IntPtr dataPtr, long dimX, long dimY, long dimZ, long y, long z)
     {
-        float[] profile = new float[count];
-        Marshal.Copy(profilePtr, profile, 0, (int)count);
+        float[] profile = new float[dimX];
+        IntPtr profilePtr = IntPtr.Zero;
+        if (GetXProfile(dataPtr, out profilePtr, dimX, dimY, dimZ, y, z) != 0)
+        {
+            Debug.Log("Error finding profile");
+            return profile;
+        }
+        Marshal.Copy(profilePtr, profile, 0, (int)dimX);
         if (profilePtr != IntPtr.Zero)
             FreeDataAnalysisMemory(profilePtr);
         return profile;
     }
 
-    public static float[] GetXProfileAsArray(IntPtr dataPtr, long dimX, long dimY, long dimZ, long y, long z)
-    {
-        if (GetXProfile(dataPtr, out IntPtr ptr, dimX, dimY, dimZ, y, z) != 0)
-        {
-            Console.Error.WriteLine("Error finding profile");
-            return new float[dimX];
-        }
-        return CopyAndFreeProfile(ptr, dimX);
-    }
-
     public static float[] GetYProfileAsArray(IntPtr dataPtr, long dimX, long dimY, long dimZ, long x, long z)
     {
-        if (GetYProfile(dataPtr, out IntPtr ptr, dimX, dimY, dimZ, x, z) != 0)
+        float[] profile = new float[dimY];
+        IntPtr profilePtr = IntPtr.Zero;
+        if (GetYProfile(dataPtr, out profilePtr, dimX, dimY, dimZ, x, z) != 0)
         {
-            Console.Error.WriteLine("Error finding profile");
-            return new float[dimY];
+            Debug.Log("Error finding profile");
+            return profile;
         }
-        return CopyAndFreeProfile(ptr, dimY);
+        Marshal.Copy(profilePtr, profile, 0, (int)dimY);
+        if (profilePtr != IntPtr.Zero)
+            FreeDataAnalysisMemory(profilePtr);
+        return profile;
     }
 
     public static float[] GetZProfileAsArray(IntPtr dataPtr, int dimX, int dimY, int dimZ, int x, int y)
     {
-        if (GetZProfile(dataPtr, out IntPtr ptr, dimX, dimY, dimZ, x, y) != 0)
+        float[] profile = new float[dimZ];
+        IntPtr profilePtr = IntPtr.Zero;
+        if (GetZProfile(dataPtr, out profilePtr, dimX, dimY, dimZ, x, y) != 0)
         {
-            Console.Error.WriteLine("Error finding profile");
-            return new float[dimZ];
+            Debug.Log("Error finding profile");
+            return profile;
         }
-        return CopyAndFreeProfile(ptr, dimZ);
+        Marshal.Copy(profilePtr, profile, 0, (int)dimZ);
+        if (profilePtr != IntPtr.Zero)
+            FreeDataAnalysisMemory(profilePtr);
+        return profile;
     }
 
     public static unsafe List<SourceInfo> GetMaskedSourceArray(IntPtr maskDataPtr, long dimX, long dimY, long dimZ)
@@ -224,7 +231,7 @@ public static class DataAnalysis
         
         if (GetMaskedSources(maskDataPtr, dimX, dimY, dimZ, out maskCount, out sourcesPtr) != 0)
         {
-            Console.Error.WriteLine("Error extracting sources");
+            Debug.Log("Error extracting sources");
             return sources;
         }
         try
