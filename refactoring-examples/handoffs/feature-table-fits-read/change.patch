@@ -1,0 +1,78 @@
+diff --git a/Assets/Scripts/FeatureData/FeatureTable.cs b/Assets/Scripts/FeatureData/FeatureTable.cs
+index 6c826a0..a576c00 100644
+--- a/Assets/Scripts/FeatureData/FeatureTable.cs
++++ b/Assets/Scripts/FeatureData/FeatureTable.cs
+@@ -140,35 +140,55 @@ namespace DataFeatures
+             }
+ 
+             FitsReader.FitsGetNumRows(fitsPtr, out long numRows, out status);
+-            for (int i = 0; i < numRows; i++)
++
++            for (long i = 0; i < numRows; i++)
+             {
+                 FeatureRow featureRow = new FeatureRow(featureTable);
+                 featureRow.ColumnData = new object[numCols];
+-                IntPtr ptrDataFromColumn = IntPtr.Zero;
++                featureTable.Rows.Add(featureRow);
++            }
+ 
+-                for (int j = 0; j < numCols; j++)
++            // Read column-major: one native call per column reads all numRows elements.
++            // Every pointer returned by the native plugin must be released with FreeFitsPtrMemory —
++            // the previous per-cell loop leaked one allocation per cell (two per string cell).
++            for (int j = 0; j < numCols; j++)
++            {
++                var colFormat = FitsReader.FitsTableGetColFormat(fitsPtr, j);
++                IntPtr ptrDataFromColumn = IntPtr.Zero;
++                if (colFormat.Contains("A"))
++                {
++                    IntPtr ptrRawDataFromColumn = IntPtr.Zero;
++                    if (FitsReader.FitsReadColString(fitsPtr, j + 1, 1, 1, numRows, out ptrDataFromColumn, out ptrRawDataFromColumn, out status) != 0)
++                    {
++                        Debug.LogError($"FITS read string column {j} error #{status}");
++                        continue;
++                    }
++                    IntPtr[] stringPtrs = new IntPtr[numRows];
++                    Marshal.Copy(ptrDataFromColumn, stringPtrs, 0, (int)numRows);
++                    for (long i = 0; i < numRows; i++)
++                    {
++                        featureTable.Rows[(int)i].ColumnData[j] = Marshal.PtrToStringAnsi(stringPtrs[i]);
++                    }
++                    FitsReader.FreeFitsPtrMemory(ptrDataFromColumn);
++                    FitsReader.FreeFitsPtrMemory(ptrRawDataFromColumn);
++                }
++                else
+                 {
+-                    var colFormat = FitsReader.FitsTableGetColFormat(fitsPtr, j);
+-                    if (colFormat.Contains("A"))
++                    if (FitsReader.FitsReadColFloat(fitsPtr, j + 1, 1, 1, numRows, out ptrDataFromColumn, out status) != 0)
+                     {
+-                        FitsReader.FitsReadColString(fitsPtr, j + 1, i + 1, 1, 1, out ptrDataFromColumn, out _,
+-                            out status);
+-                        IntPtr[] ptrArray = new IntPtr[1];
+-                        Marshal.Copy(ptrDataFromColumn, ptrArray, 0, 1);
+-                        featureRow.ColumnData[j] = Marshal.PtrToStringAnsi(ptrArray[0]);
++                        Debug.LogError($"FITS read float column {j} error #{status}");
++                        continue;
+                     }
+-                    else
++                    float[] floatArray = new float[numRows];
++                    Marshal.Copy(ptrDataFromColumn, floatArray, 0, (int)numRows);
++                    for (long i = 0; i < numRows; i++)
+                     {
+-                        FitsReader.FitsReadColFloat(fitsPtr, j + 1, i + 1, 1, 1, out ptrDataFromColumn, out status);
+-                        float[] floatArray = new float[1];
+-                        Marshal.Copy(ptrDataFromColumn, floatArray, 0, 1);
+-                        //Not a good way of doing this, but makes it compatible with current VOTable functionality.
++                        //Stored as string to stay compatible with VOTable consumers.
+                         //TODO: Separate the numeric and string data types.
+-                        featureRow.ColumnData[j] = floatArray[0].ToString();
++                        featureTable.Rows[(int)i].ColumnData[j] = floatArray[i].ToString();
+                     }
++                    FitsReader.FreeFitsPtrMemory(ptrDataFromColumn);
+                 }
+-
+-                featureTable.Rows.Add(featureRow);
+             }
+ 
+             return featureTable;
