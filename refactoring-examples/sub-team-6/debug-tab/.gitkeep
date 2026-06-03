@@ -1,9 +1,0 @@
-# Debug tab worked example lives here.
-# Backlog: WE2-1..5. Owner: POL. Sprint 2.
-#
-# Expected contents by Day 9:
-#   before/        UML (PlantUML)
-#   after/         UML showing Observer of IStructuredLogStream (PlantUML)
-#                  + sequence diagram
-#   skeleton/      C# project, ViewModel + ILogStream + ILogObserver, compiles in isolation
-#   metrics.md     CK + ISO 25010 delta worksheet
