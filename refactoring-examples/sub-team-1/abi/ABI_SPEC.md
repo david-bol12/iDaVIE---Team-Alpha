@@ -2,16 +2,19 @@
 
 **Status:** DRAFT v0.1.0
 **Owner:** Sub-team 1 (Architecture and Micro-kernel Core), Team Alpha
-**Companion artefacts:** `idavie_abi.h`, `MIGRATION.md`, `CONFORMANCE.md`, ADRs 001–005
+**Companion artefacts:** `CONFORMANCE.md`, ADRs 001–005
+The C binding header that realises this contract (`idavie_abi.h`) is a **Sub-team 2**
+deliverable ("C ABI binding header samples", assignment §6.2), produced against this spec.
 
 This document specifies the C Application Binary Interface (ABI) between the
 iDaVIE micro-kernel and its C/C++ plug-ins. It is a design-only deliverable
 produced as part of the iDaVIE refactoring proposal; no production code is
 modified.
 
-The header `idavie_abi.h` is the normative contract. This document explains
-the *why* behind each design decision and states the rules a plug-in must
-follow to be considered ABI-conformant.
+This specification is the normative contract; Sub-team 2's binding header sample
+(`idavie_abi.h`) realises it in C. This document explains the *why* behind each
+design decision and states the rules a plug-in must follow to be considered
+ABI-conformant.
 
 ---
 
@@ -63,7 +66,7 @@ The ABI follows Semantic Versioning 2.0.0:
 
 ### 2.2 Compile-time version
 
-`idavie_abi.h` defines:
+The binding header defines:
 
 ```c
 #define IDAVIE_ABI_VERSION_MAJOR 0
@@ -313,7 +316,7 @@ A plug-in is **ABI-conformant** if and only if it:
 5. Allocates every returned buffer such that it is freeable via `idavie_free`.
 6. Honours the threading contract (default re-entrancy; documented
    exceptions only).
-7. Compiles cleanly against `idavie_abi.h` with `-Wall -Wextra -Werror`
+7. Compiles cleanly against the binding header with `-Wall -Wextra -Werror`
    (or `/W4 /WX`) and with `-fvisibility=hidden` (Linux/macOS) so only
    `IDAVIE_API` symbols are exported.
 8. Passes the contract test suite specified in `CONFORMANCE.md`.
@@ -345,12 +348,9 @@ or the Sprint 1 review on Fri 22 May:
 
 ## 9. Related Documents
 
-- `idavie_abi.h` — the normative header.
-- `MIGRATION.md` — every current symbol mapped to its revised signature
-  with one-line reason.
-- `CONFORMANCE.md` — conformance checklist and contract test suite spec.
-- `worked_example/` — `idavie_analysis_find_stats` shown end-to-end:
-  revised C declaration, C# binding, test against a stub plug-in.
+- `CONFORMANCE.md` — conformance definition and contract test suite specification.
+- `idavie_abi.h` — the C binding header sample realising this contract; a
+  Sub-team 2 deliverable (assignment §6.2, "C ABI binding header samples").
 - `docs/adr/ADR-001-c-abi-over-grpc.md` and subsequent ADRs.
 - iDaVIE Refactoring Assignment §4.2 (mandatory constraints), §6.1
   (Sub-team 1 deliverables).
