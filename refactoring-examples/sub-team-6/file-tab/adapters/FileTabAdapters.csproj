@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Sub-team 6 — File-tab adapter assembly (post-rewire).
+
+    Only FitsServiceAdapter.cs compiles here. Once rewired through
+    IServiceGateway it has no UnityEngine / [DllImport] dependency, so it can
+    build and run in CI alongside the skeleton csproj. The other adapter files
+    in this directory (FileTabView, FileTabCompositionRoot,
+    FileDialogServiceAdapter, VolumeServiceAdapter, MemoryProbeAdapter) still
+    need Unity and are compiled inside the Unity project, not here.
+
+    EnableDefaultCompileItems=false so .NET does NOT auto-glob the directory.
+    Add new Unity-free adapters as explicit <Compile Include="..."/> entries.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>iDaVIE.Desktop.Adapters.FileTab</RootNamespace>
+    <AssemblyName>iDaVIE.Desktop.Adapters.FileTab</AssemblyName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="FitsServiceAdapter.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\skeleton\FileTabSkeleton.csproj" />
+    <ProjectReference Include="..\..\contracts-team1\GatewayContracts.csproj" />
+  </ItemGroup>
+
+</Project>
