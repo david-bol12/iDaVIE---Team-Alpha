@@ -52,18 +52,16 @@ namespace iDaVIE.Client.Gateway
 
         public event Action<JsonRpcNotification>? OnNotification;
 
-        /// <summary>One outbound request the fake recorded.</summary>
+        /// One outbound request the fake recorded.
         public sealed record SentCall(string Method, JsonElement? Params);
 
-        /// <summary>Outbound calls in the order they were sent. This is a snapshot, so it's safe to enumerate.</summary>
+        /// Outbound calls in the order they were sent. This is a snapshot, so it's safe to enumerate.
         public IReadOnlyList<SentCall> Sent
         {
             get { lock (_lock) return _sent.ToArray(); }
         }
 
         // Stubbing API
-
-        /// <summary>Stub the result returned for <paramref name="method"/>.</summary>
         public void SetResponse<T>(string method, T response)
         {
             lock (_lock)
@@ -73,7 +71,6 @@ namespace iDaVIE.Client.Gateway
             }
         }
 
-        /// <summary>Stub a JSON-RPC error for <paramref name="method"/>.</summary>
         public void SetError(string method, int code, string message)
         {
             lock (_lock)

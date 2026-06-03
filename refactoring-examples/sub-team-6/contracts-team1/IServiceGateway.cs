@@ -15,39 +15,16 @@ using System.Threading.Tasks;
 
 namespace iDaVIE.Client.Gateway
 {
-    /// <summary>
-    /// Talks to the iDaVIE server. Sends typed JSON-RPC requests and hands back
-    /// any notifications the server pushes. The composition root decides which
-    /// implementation to wire up: <see cref="JsonRpcPipeGateway"/> for the real
-    /// named-pipe transport, or <see cref="FakeGateway"/> in unit tests.
-    /// </summary>
+    /// Talks to the iDaVIE server. Sends typed JSON-RPC requests and hands back any notifications the server pushes. The composition root decides which
     public interface IServiceGateway : System.IAsyncDisposable
     {
-        /// <summary>
-        /// Open the transport. The named-pipe implementation connects to the
-        /// server's listening pipe; the fake just flips an in-memory connected
-        /// flag. Call this before <see cref="SendAsync{TResult}"/>.
-        /// </summary>
+        /// Open the transport. The named-pipe implementation connects to the server's listening pipe; the fake just flips an in-memory connected flag.
         Task ConnectAsync(CancellationToken ct = default);
 
-        /// <summary>
-        /// Send a JSON-RPC request and wait for the typed result. The wire format
-        /// and method names come from the "Method catalogue (v1)" section of the
-        /// Gateway Contract; the namespaces are <c>file.*</c>, <c>dataset.*</c>,
-        /// <c>log.*</c> and <c>progress.*</c>. If the server returns an error you
-        /// get a <see cref="JsonRpcException"/>.
-        /// </summary>
-        /// <typeparam name="TResult">DTO type to deserialise <c>result</c> into.</typeparam>
-        /// <param name="method">Dotted method name, e.g. <c>"file.open"</c>.</param>
-        /// <param name="params">Plain object that becomes the <c>params</c> field; can be null.</param>
-        /// <param name="ct">Cancellation token; only cancels this one request.</param>
+        /// Send a JSON-RPC request and wait for the typed result. The wire format and method names come from the "Method catalogue (v1)" section of the Gateway Contract; the namespaces are file.*, dataset.*,
         Task<TResult> SendAsync<TResult>(string method, object? @params, CancellationToken ct = default);
 
-        /// <summary>
-        /// Raised for every notification the server sends (a JSON-RPC message with
-        /// no <c>id</c>). The Debug tab listens here for <c>log.emit</c> records,
-        /// and the File tab listens for <c>progress.update</c>.
-        /// </summary>
+        /// Raised for every notification the server sends (a JSON-RPC message with no id). The Debug tab listens here for log.emit records, and the File tab listens for progress.update.
         event System.Action<JsonRpcNotification>? OnNotification;
     }
 }

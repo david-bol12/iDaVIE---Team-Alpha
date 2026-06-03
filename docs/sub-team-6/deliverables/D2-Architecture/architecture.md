@@ -13,7 +13,7 @@
 This document covers the **Desktop GUI and Client Shell** work package (§6.6 of the assignment spec). Sub-team 6 owns:
 
 - `CanvassDesktop` — the 1,899-line `MonoBehaviour` that is the primary refactoring target.
-- `DesktopPaintController` — the 1,558-line `MonoBehaviour` behind the PAINT tab; the second refactoring target, bidirectionally coupled to `CanvassDesktop`.
+- `DesktopPaintController` — the 1,558-line `MonoBehaviour` behind the PAINT tab; bidirectionally coupled to `CanvassDesktop`.
 - File and mask loaders (FILE tab).
 - Parameter panels (RENDER, STATS, SOURCES tabs).
 - Desktop mask painting (PAINT tab).
@@ -40,7 +40,7 @@ This section slots into the team architecture document as the **client-shell cha
 
 ### 2.2 Baseline Evidence
 
-The CK measurement taken on Day 2 (BNCH-1) confirms the problem quantitatively:
+The CK measurement taken confirms the problem quantitatively:
 
 | Metric | `CanvassDesktop` | §7.1 threshold | Status |
 |---|---|---|---|
