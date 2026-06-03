@@ -1,8 +1,0 @@
-# File tab worked example lives here.
-# Backlog: WE1-1..6. Owner: TL. Sprint 2.
-#
-# Expected contents by Day 9:
-#   before/        UML + dep graph (PlantUML)
-#   after/         UML + sequence diagram (PlantUML)
-#   skeleton/      C# project, View / ViewModel / Gateway, compiles in isolation
-#   metrics.md     CK + ISO 25010 delta worksheet
