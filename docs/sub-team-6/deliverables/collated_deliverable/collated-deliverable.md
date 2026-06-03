@@ -1,10 +1,10 @@
 # iDaVIE Refactoring Proposal — Desktop GUI & Client Shell
 ## Integrated Sub-team Deliverable (Section 9.2)
 
-**Team:** Team Alpha · Sub-team 5 "Die Boks" · Work package §6.6 (informally "Team 6")
-**Work package:** Desktop GUI and Client Shell
-**Module:** CS4443 — Computation and Architecture 2, 2025/6
-**Assignment:** ISE EPIC — Refactoring the iDaVIE Codebase for Maintainability (Mon 18 May – Fri 5 June 2026)
+**Team:** Team Alpha · Sub-team 5 "Die Boks" · Work package §6.6 (informally "Team 6")  
+**Work package:** Desktop GUI and Client Shell  
+**Module:** CS4443 — Computation and Architecture 2, 2025/6  
+**Assignment:** ISE EPIC — Refactoring the iDaVIE Codebase for Maintainability (Mon 18 May – Fri 5 June 2026)  
 **Status:** Design-only refactoring proposal — no upstream production code is changed.
 
 ---
@@ -15,7 +15,8 @@ The brief asks each sub-team to hand in one document that pulls together its fiv
 outputs. This is ours. Nothing has been summarised away: the requirements document, the design
 document, both mandated worked examples (File tab and Debug tab, each with its own before/after
 UML, dependency graph, CK metric deltas, skeleton code and unit tests), the test strategy, and
-the three end-of-sprint Kanban snapshots all appear here in full.
+the three end-of-sprint Kanban snapshots all appear here in full (as well as daily stand-up notes
+as outlined in the initial brief but not asked for explicitly in the Brightspace submission).
 
 ### Section 9.2 traceability
 
@@ -26,14 +27,7 @@ the three end-of-sprint Kanban snapshots all appear here in full.
 | 3. Worked refactoring examples (two, for a 4-person team) | — | [Part 3 — File tab](#part-3worked-example-1--file-tab) · [Part 4 — Debug tab](#part-4worked-example-2--debug-tab) | ✅ |
 | 4. Sub-team test strategy | 2–4 pages | [Part 5 — Test Strategy](#part-5test-strategy) | ✅ |
 | 5. Sub-team Kanban/Trello snapshot at end of each sprint | 3 sprints | [Part 6 — Kanban Snapshots](#part-6kanban-snapshots) | ✅ |
-| 6. Daily stand-up notes (single shared file) | — | [Part 7 — Stand-up highlights](#part-7daily-stand-up-notes-highlights) | ✅ included (see note) |
-
-> A note on item 6. The Brightspace specification only asks this collation for the five items
-> above — it does not list the daily stand-up notes. The original assignment brief does list
-> them, as a sixth per-sub-team artefact (a single shared file). Since the brief asked for them,
-> we've kept them in rather than drop them on a technicality: the highlights are in
-> [Part 7](#part-7daily-stand-up-notes-highlights), and the full day-by-day log lives in its own
-> file at `Sprint-Documents/standups.md`.
+| 6. Daily stand-up notes (single shared file) | — | [Part 7 — Stand-up highlights](#part-7daily-stand-up-notes-highlights) | ✅ |
 
 ### The two mandated worked examples (brief §6.6)
 
@@ -74,13 +68,14 @@ embedded section keeps its `Source:` path, so anything here can be traced back t
 
 # Sub-team 6 (Die Boks / Team Alpha) — Desktop GUI & Client Shell — Requirements (D1)
 
-**Owner:** PO Liaison (Sprint 1) · **Revised:** 2026-05-26 (Day 7) · **Length target:** 2 pages.
+**Length target:** 2 pages.  
 **Feeds:** brief §6.6 (sub-team scope), §9.2.1 (1–2 page requirements deliverable), LO2 (NFR → testable architectural drivers).
 
 
 ## 1. Scope
 
-The **Desktop GUI and Client Shell** as defined in brief §6.6: `Assets/Scripts/UI/CanvassDesktop.cs` (1899 LOC, single `MonoBehaviour`), file / mask loaders, parameter panels, debug consoles, and the client-side composition root that wires the GUI to the future server. The after-state must satisfy the four architectural non-negotiables in §4.2 (no SOLID/GRASP violation without an ADR trade-off; zero circular deps between top-level components; domain code free of transitive `UnityEngine` / `SteamVR` deps; every public boundary an interface with ≥ 1 test double). **Out of scope:** server-side service implementation (Sub-team 1), VR menus (Sub-team 4), native plug-in internals (Sub-team 2), volume rendering (Sub-team 3), feature/source domain model (Sub-team 5), persistence schema and lifecycle (Sub-team 7 — we only hand them ARQ-2's state contract).
+The **Desktop GUI and Client Shell** as defined in brief §6.6: `Assets/Scripts/UI/CanvassDesktop.cs` (1899 LOC, single `MonoBehaviour`), file / mask loaders, parameter panels, debug consoles, and the client-side composition root that wires the GUI to the future server. The after-state must satisfy the four architectural non-negotiables in §4.2 (no SOLID/GRASP violation without an ADR trade-off; zero circular deps between top-level components; domain code free of transitive `UnityEngine` / `SteamVR` deps; every public boundary an interface with ≥ 1 test double).  
+**Out of scope:** server-side service implementation (Sub-team 1), VR menus (Sub-team 4), native plug-in internals (Sub-team 2), volume rendering (Sub-team 3), feature/source domain model (Sub-team 5), persistence schema and lifecycle (Sub-team 7).
 
 ## 2. REQ-1 — Current behaviour and coupling catalogue
 
@@ -152,10 +147,7 @@ The two roadmap features named in §6.6 (Python console; workspace save) are tra
 - **Status:** final
 - **Date:** 2026-05-27
 - **Authors:** Sub-team 6 (Desktop GUI & Client Shell)
-- **Backlog:** ARCH-1, ARCH-9
 - **Supersedes:** ADR-009 draft (decision rationale folded in)
-- **Related:** [ADR-0002 — Client–server transport](../D2-Architecture/architecture.md#adr-0002--clientserver-transport-json-rpc-over-named-pipes--grpc)
-- **Numbering:** local `ADR-0001`..`ADR-0004` ↔ central `ADR-001`..`ADR-012` — see the cross-walk table at the top of [D2 §4](../D2-Architecture/architecture.md#4-architecture-decisions). Note especially that local `ADR-0003` ↔ central `ADR-002` (number reversal).
 
 ---
 
@@ -572,19 +564,6 @@ Notes on the FileTabViewModel WMC = 27 measurement: this is hand-counted from th
 
 ---
 
-## 10. References
-
-- [ADR-0002 — Client–server transport](../D2-Architecture/architecture.md#adr-0002--clientserver-transport-json-rpc-over-named-pipes--grpc)
-- [D4 — File-tab worked example](../D4-worked-examples/README.md#example-1--file-tab)
-- [D4 — Debug-tab worked example](../D4-worked-examples/README.md#example-2--debug-tab)
-- [D5 — ViewModel unit tests](../D5-testing/viewmodel-unit-tests.md)
-- [D5 — UI Toolkit page-object pattern](../D5-testing/ui-toolkit.md)
-- [Integration risk register](../../../team-alpha/integration-risk-register.md) — R01 (Sub-team 1 gateway contract), R04 (Sub-team 4 VR menus)
-- Assignment spec §4.1 (target architectural style), §4.2.2 (no cycles), §4.2.3 (no Unity in domain), §4.2.4 (interfaces on public APIs), §6.6 (MVVM prescription + binding-policy deliverable), §7.1 (CK thresholds).
-
-
----
-
 
 
 <div style="page-break-before: always;"></div>
@@ -606,13 +585,11 @@ the code itself — pure-C# skeleton, Unity/gateway adapters, and the NUnit test
 
 ## TL;DR
 
-A code-anchored walkthrough of the File-tab path as it runs today, inside the 1899-line `CanvassDesktop` god-class. It takes two clicks. First Browse: the UI reads FITS metadata itself, calling `[DllImport]` straight from the view layer. Then Load: a coroutine builds the cube by poking public fields on `VolumeDataSetRenderer`, then busy-waits on a `started` flag. Every step below cites a real file:line, so the before-state sequence diagram holds up under questioning. The trace catalogues eight smells (S1–S8): DLL calls from the UI, the god class itself, `transform.Find` chains, `FindObjectOfType` singletons, public field writes, busy-wait polling, Inspector-wired handlers, and an unmanaged `fptr` whose lifetime sprawls across the class. The thing to take away: loading a cube is a forced two-click ritual, and every metadata read leaks a native handle into MonoBehaviour scope.
+A code-anchored walkthrough of the File-tab path as it runs today, inside the 1899-line `CanvassDesktop` god-class. It takes two clicks. First Browse: the UI reads FITS metadata itself, calling `[DllImport]` straight from the view layer. Then Load: a coroutine builds the cube by poking public fields on `VolumeDataSetRenderer`, then busy-waits on a `started` flag. Every step below cites a real file:line. The trace catalogues eight smells (S1–S8): DLL calls from the UI, the god class itself, `transform.Find` chains, `FindObjectOfType` singletons, public field writes, busy-wait polling, Inspector-wired handlers, and an unmanaged `fptr` whose lifetime sprawls across the class. The thing to take away: loading a cube is a forced two-click ritual, and every metadata read leaks a native handle into MonoBehaviour scope.
 
 ---
 
 Raw code-side trace of the production behaviour as of branch `team6`. Every message below is anchored to a file and line in the live codebase so the resulting sequence diagram is defensible at the maintainer panel.
-
-User-visible controls (button labels, panel names, scene-file line numbers) are taken from `docs/sub-team-6/archived/ex1-file-tab/file-tab-info-docs/file-tab-scope.md` §§1, 5, 7, which is anchored to `Assets/Scenes/ui.unity` line numbers — not invented.
 
 The Mermaid rendering of this trace lives in [`before-sequence.md`](before-sequence.md). Pairs with [`after-sequence.md`](after-sequence.md) for side-by-side panel display.
 
@@ -1776,18 +1753,6 @@ No back-edges. No `Adapters → Domain.concrete` edges except via the compositio
 | Test-runner reach | Unity required | `dotnet test` from any CI runner |
 | Section 4.2 compliance | ❌ | ✅ |
 
----
-
-## Tool verification needed
-
-Once the Quality Guild's tooling is wired up (Day 2 baseline, Day 13 projected snapshot), confirm:
-
-1. **NDepend rule:** `Application_Code.AreInNamespace("iDaVIE.Desktop.FileTab")` does **not** transitively reach `Application_Code.AreInNamespace("UnityEngine")` — should report 0 violations on the AFTER skeleton.
-2. **DV8 architecture model:** declare the three packages above and assert the only legal direction is `Adapters → Domain`. The DSM should be strictly lower-triangular.
-3. **CodeScene hotspots:** `CanvassDesktop.cs` should appear in the top-5 hotspots on the BEFORE snapshot; after our refactor the same lines (now distributed across 7 small classes) should drop out of the hotspot list entirely.
-
-A short follow-up commit on Day 13 will paste tool screenshots / DSM exports alongside this document.
-
 
 ---
 
@@ -1801,9 +1766,7 @@ These numbers are tool-verified from the Day-13 Understand export, which is the 
 
 ---
 
-> **Status: hand-counted projection — pending Quality Guild tool verification on Day 13.**
-> Numbers below were counted from the live `team6` branch using `grep`/`awk` against `Assets/Scripts/UI/CanvassDesktop.cs` (BEFORE) and the skeleton + adapter files in this folder (AFTER). They are submitted **alongside** the SonarQube Cloud + Understand baseline that the Quality Guild owns; if their tooling reports different values, those numbers supersede this document.
->
+
 > **Revision (May 25):** numbers now reflect Gap 1 (`RatioMode` end-to-end), Gap 2 (`IMemoryProbe` / RAM warning), Gap 3 (`CubeLoaded` event on `IVolumeService`), and the parallel `IFitsHandle` lifetime fix. The new types add one class (`MemoryProbeAdapter`) and one interface (`IFitsHandle`) to the AFTER slice; smell S6 (busy-wait) is now *eliminated* rather than contained (see `VolumeServiceAdapter` notes).
 >
 > Counting conventions used here:
@@ -1813,7 +1776,7 @@ These numbers are tool-verified from the Day-13 Understand export, which is the 
 > - **RFC** = WMC + distinct external methods called. Hand-count is approximate; tool-verified value is authoritative.
 > - **LCOM** = LCOM hs (Henderson-Sellers). 0 = perfectly cohesive; 1 = completely incoherent; threshold ≤ 0.5.
 >
-> Threshold source: `CLAUDE.md` § *Mandatory metric tools*, Section 7.1 of the brief.
+> Threshold source: § *Mandatory metric tools*, Section 7.1 of the brief.
 >
 > | Metric | Domain threshold | Adapter/Orchestrator threshold |
 > |---|---:|---:|
@@ -1935,9 +1898,9 @@ The BEFORE god-class is decomposed into 8 classes (post-Gap 1/2/3 work, up from 
 
 All figures in this document are from the Understand static analysis export. The open questions noted in previous versions of this file have been resolved:
 
-1. **WMC for `FileTabViewModel`** — tool reports **43** (not the hand-estimated 27). **Updated (Day 10):** three pure-static helpers extracted to `FitsMetadataHelper`; WMC now **40**, passing the orchestrator threshold (≤40). Class re-classified as orchestrator.
-2. **CBO for `FileTabViewModel`** — tool reports **19** (not the estimated 9). Exceeds the domain threshold (≤14); within the adapter threshold (≤25).
-3. **CBO for `CanvassDesktop`** — tool confirms **30** (not ~32 or ~47). Exceeds the ≤25 orchestrator threshold.
+1. **WMC for `FileTabViewModel`** — tool reports **43**. **Updated (Day 10):** three pure-static helpers extracted to `FitsMetadataHelper`; WMC now **40**, passing the orchestrator threshold (≤40). Class re-classified as orchestrator.
+2. **CBO for `FileTabViewModel`** — tool reports **19**. Exceeds the domain threshold (≤14); within the adapter threshold (≤25).
+3. **CBO for `CanvassDesktop`** — tool confirms **30**. Exceeds the ≤25 orchestrator threshold.
 4. **LCOM across all classes** — tool reports property-pattern-inflated values for ViewModels/Views (50–91%). See LCOM note in AFTER table.
 5. **NDepend / DV8 dependency cycles** — hand inspection confirms zero cycles in the AFTER package set; tool verification by Quality Guild pending.
 
@@ -5125,15 +5088,6 @@ The Mermaid rendering of this trace lives in [`before-sequence.md`](before-seque
 
 ---
 
-## What's missing before this trace is complete
-
-1. **GUI walkthrough notes** for C12, D1 — exact tab label, panel location, text format as shown in the running app.
-2. **Before-state DSM** showing `DebugLogging`'s coupling fan-out — see [`dependency-graph.md`](dependency-graph.md) for the current treatment.
-3. **SOLID/GRASP audit** for the debug tab — the smell table above is the input; the audit format should match the file-tab audit once that is written.
-
-
----
-
 ## 4.2 Before-state sequence diagram
 
 # Debug tab — BEFORE sequence diagram (Mermaid)
@@ -5416,36 +5370,7 @@ Mapped to the smell IDs from [`before-trace.md`](before-trace.md):
 
 ---
 
-## Open question: `source` field
-
-[`log-origin-trace.md`](log-origin-trace.md) catalogues 44 call sites and argues the contract should be `Publish(LogLevel, string source, string message)` so the Debug tab can filter by `"FileTab"` / `"VolumeLoader"` / `"HistogramController"` / `"SourcesTab"` / `"DataAnalysis"`. The implemented contract is `Publish(LogLevel, string)` — no `source`.
-
-This is deliberately surfaced rather than papered over. Two paths forward:
-
-1. **Add `source` to `ILogStream.Publish` and `LogEntry`.** Required only for the `ILogStream.Publish(...)` path (direct, structured callers). Captures via `Application.logMessageReceived` cannot recover the source string — Unity does not expose the caller. Worth the schema change only if at least one consumer (e.g. a level-filter or a per-tab error counter) actually uses it.
-2. **Defer.** `LogEntry` is an immutable `record` — adding `Source` is a single-line change later. Until a consumer needs it, the field would be unused metadata.
-
-Decision belongs in the desktop client architecture document.
-
----
-
-## Open question: Save/autosave
-
-`DebugLogging.cs` (BEFORE) had two file-related responsibilities: log-rotation on startup and `StreamWriter`-per-message autosave during `HandleLog`. Neither survives in the AFTER skeleton — there is no autosave path through `LogStream`.
-
-This is intentional for the worked example (the WE2 scope is capture → display, not persistence). If autosave is required in the final architecture, the right shape is:
-
-- A `FileLogObserver : ILogObserver` (one long-lived `StreamWriter`, opened in constructor, closed in `Dispose`).
-- Subscribed by `CompositionRoot` at `Awake`, disposed in `OnDestroy`.
-- Sees the same `LogEntry` stream as `DebugTabViewModel` — no special hook.
-
-Adding this is one ~30-line class plus one composition-root line. The interface does not change.
-
----
-
 ## Known limitations
-
-Items the panel should expect questions on — surfaced honestly rather than hidden:
 
 1. **`source` field is not in `LogEntry`.** Captures via `Application.logMessageReceived` cannot recover it; structured `Publish` callers do not yet exist. See [Open question: source field](#open-question-source-field).
 2. **TMP text is rebuilt on every entry (S5/S6).** Capped at 500 lines, so practical impact is bounded — but a virtualised list (Unity UI Toolkit `ListView`) would be the structural fix. Out of scope for WE2.
@@ -5453,7 +5378,7 @@ Items the panel should expect questions on — surfaced honestly rather than hid
 
 4. **`DebugTabViewModel._entries` has no synchronisation.** `LogStream.Publish` dispatches observers on whatever thread calls it — which is the `IServiceGateway` read-loop thread for `GatewayLogStreamAdapter`. `AppendEntry` mutates `_entries` on that thread while `LogEntries` may be read by the UI thread. A future `IUIDispatcher` injection (marshal to main thread before calling `AppendEntry`) would resolve this; until then, production builds with high-frequency logging carry a low-probability race. All 31 existing tests run single-threaded and are unaffected.
 
-All four items live entirely behind the existing interfaces and require no test changes to the 31 existing debug-tab tests.
+All four items live entirely behind the existing interfaces and require no test changes to the existing debug-tab tests.
 
 ---
 
@@ -6127,18 +6052,6 @@ The graph above shows the 44 existing `Debug.Log*` callers (`CanvassDesktop`, `D
 - Make the producer testable in isolation, since the `Debug.Log*` static dependency is replaced by an interface injection.
 
 **This migration is explicitly out of scope for the WE2 worked example.** Each producer becomes its own ADR/refactoring slice (e.g. WE3-DataAnalysis, WE4-CanvassDesktop) and is owned by whichever sub-team owns the producer. The Debug-tab refactor is structured so that both pathways (legacy `Debug.Log*` capture, structured `Publish`) coexist behind the same `ILogStream` interface — the producer-side migration can happen file-by-file without breaking the consumer side.
-
----
-
-## Tool verification needed
-
-Once the Quality Guild's tooling is wired up (Day 2 baseline, Day 13 projected snapshot), confirm:
-
-1. **NDepend rule:** `Application_Code.AreInNamespace("iDaVIE.Desktop.DebugTab")` does **not** transitively reach `Application_Code.AreInNamespace("UnityEngine")` — should report 0 violations on the AFTER skeleton.
-2. **DV8 architecture model:** declare the three packages above and assert the only legal direction is `Adapters → Domain` (and `Producers → UnityEngine.Debug`, which is unchanged). The DSM should be strictly lower-triangular for the Domain/Adapters slice.
-3. **CodeScene hotspots:** `Assets/Scripts/Debuggers/DebugLogging.cs` should appear on the BEFORE snapshot's churn-vs-complexity list; after our refactor the equivalent responsibilities (now split across `LogStream`, `DebugTabViewModel`, `UnityLogStreamAdapter`, `DebugTabView`) should each be below the hotspot threshold.
-
-A short follow-up commit on Day 13 will paste tool screenshots / DSM exports alongside this document.
 
 
 ---
@@ -7563,8 +7476,7 @@ namespace iDaVIE.Desktop.Adapters.DebugTab.Tests
 
 **Owner:** Sub-team 6 (Die Boks / Team Alpha)
 **Spec refs:** §6.6 ST · §9.2.4 · §4.2 · §7.1–7.2 · LO6
-**Last revised:** 2026-05-27 (Day 8 — Tier 2 brought in scope after the gateway rewire closed audit F9 / F10)
-**Status:** Complete. Tier-1 and tier-3 detail specs live alongside this doc — [`viewmodel-unit-tests.md`](viewmodel-unit-tests.md) and [`ui-toolkit.md`](ui-toolkit.md). Tier-2 spec is §4 of this document.
+**Status:** Complete.
 
 ---
 
@@ -7968,7 +7880,7 @@ end-of-sprint board snapshots are reproduced below (PNG, source-controlled under
 
 The Brightspace specification didn't ask for these, but the original assignment brief did, so
 we kept them. The full log is one shared file, `Sprint-Documents/standups.md` — one entry per
-day, 09:00–09:10, with the usual three questions each (yesterday, today, blockers). What follows
+day, with the usual three questions each (yesterday, today, blockers). What follows
 is a read of that log, grouped by sprint, rather than a re-paste of every table.
 
 ### Sprint 1 (Days 2–5, 19–22 May)
@@ -7991,20 +7903,16 @@ is a read of that log, grouped by sprint, rather than a re-paste of every table.
 - Wrote the sequence and phasing docs and finalised the requirements document, the architecture
   document and the main testing doc.
 - Finished the second worked example and ran the SOLID/GRASP audit (Day 9).
-- Built the pitch slide deck and ran a mock interview.
 - Day 10 was the Sprint 2 review and retro alongside the mid-assessment visit from the iDaVIE
   team. We also caught a mix-up between the sub-team and team interview formats and re-planned
   around it.
 
-### Sprint 3 (Days 11–13, 1–3 June)
+### Sprint 3 (Days 11–12, 2–3 June)
 
 - The closing stretch, run from the schedule rather than a formal planning session: no sprint
   planning on Day 11, the final work day plus the 17:00 artefact freeze and the sub-team retro
   on Day 12, and interview day on 3 June with the stand-up brought forward to 08:55.
-- Day 10's hand-off into this sprint was Q&A and interview-support material for the pitch.
-
-Blockers were rare across the whole log. The one technical snag worth recording was NDepend
-throwing errors during setup on Day 7; it was cleared by Day 8.
+- Day 10's hand-off into this sprint was Q&A and interview-support material.
 
 ---
 
