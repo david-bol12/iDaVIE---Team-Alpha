@@ -34,7 +34,7 @@ Every NFR is testable: MoSCoW priority (M = must, S = should). All five ISO 2501
 | **NFR-MOD-1** | Modularity | View, ViewModel and Service Gateway live in separate assemblies; no circular deps | Cycle count = 0 (NDepend / DV8 DSM) | M | §4.2.2; ADR-009 |
 | **NFR-MOD-2** | Modularity | CBO ≤ 14 (domain), ≤ 25 (orchestrators) | Understand | M | §7.1 |
 | **NFR-MOD-3** | Modularity | Instability I = Ce / (Ca + Ce) decreases View → ViewModel → Domain (Stable Dependencies Principle) | Per-package I (NDepend) | S | §7.2 |
-| **NFR-REU-1** | Reusability | Every public boundary is an interface with ≥ 1 test double | Coverage + NDepend CQLinq | M | §4.2.4 |
+| **NFR-REU-1** | Reusability | Every public boundary is an interface with ≥ 1 test double | Coverage | M | §4.2.4 |
 | **NFR-REU-2** | Reusability | ISP (Interface Segregation Principle) — interfaces ≤ 7 public members | Audit table (BNCH-7) | M | §7.2 |
 | **NFR-REU-3** | Reusability | ViewModel layer has zero transitive dependency on `UnityEngine` / `SteamVR` | NDepend "no Unity refs from `ViewModel.*`" on every PR | M | §4.2.3; ADR-009 |
 | **NFR-ANA-1** | Analysability | WMC ≤ 20 (domain), ≤ 40 (adapter) | Understand | M | §7.1 |

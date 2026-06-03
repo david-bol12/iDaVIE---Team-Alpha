@@ -1,13 +1,14 @@
-// Sub-team 6 — IServiceGateway (ADR-009 Decision §1 · Gateway Contract v1 wire spec).
+// IServiceGateway: the one seam between the ViewModels and the server.
+// (Background: ADR-009 decision 1, and the Gateway Contract v1 wire spec.)
 //
-// The single transport-agnostic seam between the ViewModel layer and the server
-// kernel. Every cross-process call from the desktop client passes through this
-// interface — both request/response (file.open, dataset.getAxes, ...) and
-// server-pushed notifications (log.emit, progress.update).
+// Everything the desktop client sends across the process boundary comes through
+// here. That's both normal request/response calls (file.open, dataset.getAxes,
+// and so on) and the notifications the server pushes back at us on its own
+// (log.emit, progress.update).
 //
-// Pure C#. No UnityEngine reference, no transport library reference at the
-// interface level — JsonRpcPipeGateway is one concrete implementation;
-// FakeGateway is another. ViewModels and tests depend on this interface only.
+// There's deliberately no UnityEngine or transport library referenced at this
+// level. JsonRpcPipeGateway is the real implementation, FakeGateway is the one
+// we use in tests, and ViewModels/tests only ever see this interface.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,39 +16,37 @@ using System.Threading.Tasks;
 namespace iDaVIE.Client.Gateway
 {
     /// <summary>
-    /// Client-side transport seam to the iDaVIE server. Sends typed JSON-RPC
-    /// requests and surfaces server-pushed notifications. Implementations are
-    /// chosen at the composition root: <see cref="JsonRpcPipeGateway"/> for the
-    /// real named-pipe transport, <see cref="FakeGateway"/> for unit tests.
+    /// Talks to the iDaVIE server. Sends typed JSON-RPC requests and hands back
+    /// any notifications the server pushes. The composition root decides which
+    /// implementation to wire up: <see cref="JsonRpcPipeGateway"/> for the real
+    /// named-pipe transport, or <see cref="FakeGateway"/> in unit tests.
     /// </summary>
     public interface IServiceGateway : System.IAsyncDisposable
     {
         /// <summary>
-        /// Open the underlying transport. For the named-pipe implementation this
-        /// connects to the server's listening pipe; for the fake implementation it
-        /// flips an in-memory <c>IsConnected</c> flag. Must be called before
-        /// <see cref="SendAsync{TResult}"/>.
+        /// Open the transport. The named-pipe implementation connects to the
+        /// server's listening pipe; the fake just flips an in-memory connected
+        /// flag. Call this before <see cref="SendAsync{TResult}"/>.
         /// </summary>
         Task ConnectAsync(CancellationToken ct = default);
 
         /// <summary>
-        /// Send a JSON-RPC request and await the strongly-typed result. The wire
-        /// format and method-name discipline are defined by Gateway Contract v1 §"Method
-        /// catalogue (v1)" — namespaces are <c>file.*</c>, <c>dataset.*</c>,
-        /// <c>log.*</c>, <c>progress.*</c>.
-        /// Server errors surface as <see cref="JsonRpcException"/>.
+        /// Send a JSON-RPC request and wait for the typed result. The wire format
+        /// and method names come from the "Method catalogue (v1)" section of the
+        /// Gateway Contract; the namespaces are <c>file.*</c>, <c>dataset.*</c>,
+        /// <c>log.*</c> and <c>progress.*</c>. If the server returns an error you
+        /// get a <see cref="JsonRpcException"/>.
         /// </summary>
-        /// <typeparam name="TResult">DTO type deserialised from <c>result</c>.</typeparam>
+        /// <typeparam name="TResult">DTO type to deserialise <c>result</c> into.</typeparam>
         /// <param name="method">Dotted method name, e.g. <c>"file.open"</c>.</param>
-        /// <param name="params">Plain object serialised as the <c>params</c> field; may be null.</param>
-        /// <param name="ct">Cancellation token; aborts the in-flight request only.</param>
+        /// <param name="params">Plain object that becomes the <c>params</c> field; can be null.</param>
+        /// <param name="ct">Cancellation token; only cancels this one request.</param>
         Task<TResult> SendAsync<TResult>(string method, object? @params, CancellationToken ct = default);
 
         /// <summary>
-        /// Fires for every server-initiated notification (a JSON-RPC message with
-        /// no <c>id</c> field). The Debug tab subscribes to this to receive
-        /// <c>log.emit</c> records; the File tab subscribes to it for
-        /// <c>progress.update</c>.
+        /// Raised for every notification the server sends (a JSON-RPC message with
+        /// no <c>id</c>). The Debug tab listens here for <c>log.emit</c> records,
+        /// and the File tab listens for <c>progress.update</c>.
         /// </summary>
         event System.Action<JsonRpcNotification>? OnNotification;
     }

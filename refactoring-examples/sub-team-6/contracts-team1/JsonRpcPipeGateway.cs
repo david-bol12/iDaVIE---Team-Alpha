@@ -1,13 +1,14 @@
-// Sub-team 6 — JsonRpcPipeGateway (Gateway Contract v1 §"Wire specification — local mode").
+// JsonRpcPipeGateway: the real-transport IServiceGateway (see the
+// "Wire specification - local mode" section of the Gateway Contract v1).
 //
-// The real-transport implementation of IServiceGateway. Connects to a Windows
-// named pipe at \\.\pipe\idavie.<session-id> and speaks JSON-RPC 2.0 framed
-// with LengthPrefixFraming.
+// Connects to a Windows named pipe at \\.\pipe\idavie.<session-id> and speaks
+// JSON-RPC 2.0, framed with LengthPrefixFraming.
 //
-// Skeleton: the read loop, request dispatch, error mapping, and shutdown are
-// production-shaped. The server side does not yet exist — Sub-team 1 owns it —
-// so end-to-end runs are deferred to integration sprints. Tier-1 tests use
-// FakeGateway; tier-2 (transport) tests stub a server-side pipe in-memory.
+// This is still a skeleton. The read loop, request dispatch, error mapping and
+// shutdown are all shaped the way the real thing will be, but the server side
+// doesn't exist yet (that's Sub-team 1's), so end-to-end runs wait for the
+// integration sprints. For now, tier-1 tests use FakeGateway and tier-2
+// (transport) tests stub a server-side pipe in memory.
 
 using System;
 using System.Collections.Concurrent;
@@ -20,9 +21,9 @@ using System.Threading.Tasks;
 namespace iDaVIE.Client.Gateway
 {
     /// <summary>
-    /// Named-pipe JSON-RPC 2.0 gateway. One instance per session.
-    /// Thread-safe for concurrent <see cref="SendAsync{TResult}"/> calls;
-    /// notifications are dispatched on the read-loop thread.
+    /// Named-pipe JSON-RPC 2.0 gateway, one instance per session. Concurrent
+    /// <see cref="SendAsync{TResult}"/> calls are safe; notifications get
+    /// dispatched on the read-loop thread.
     /// </summary>
     public sealed class JsonRpcPipeGateway : IServiceGateway
     {
@@ -44,10 +45,10 @@ namespace iDaVIE.Client.Gateway
         public event Action<JsonRpcNotification>? OnNotification;
 
         /// <param name="pipeName">
-        /// Pipe name without the <c>\\.\pipe\</c> prefix. The server writes the
-        /// canonical name to <c>%LOCALAPPDATA%\iDaVIE\session.pipe</c> at startup
-        /// (see Gateway Contract v1 §"Pipe naming"); the composition root reads it from
-        /// there and constructs this gateway.
+        /// Pipe name without the <c>\\.\pipe\</c> prefix. At startup the server
+        /// writes the canonical name to <c>%LOCALAPPDATA%\iDaVIE\session.pipe</c>
+        /// (see the contract's "Pipe naming" section); the composition root reads
+        /// it from there and builds this gateway.
         /// </param>
         public JsonRpcPipeGateway(string pipeName)
         {
@@ -119,7 +120,7 @@ namespace iDaVIE.Client.Gateway
             }
             catch (Exception ex)
             {
-                // Propagate to any pending callers so they don't hang.
+                // Push the failure to any in-flight callers so they don't hang forever.
                 foreach (var kv in _pending)
                     kv.Value.TrySetException(new InvalidOperationException(
                         "Gateway read loop terminated unexpectedly.", ex));
@@ -131,7 +132,7 @@ namespace iDaVIE.Client.Gateway
             using var doc = JsonDocument.Parse(payload);
             var root = doc.RootElement;
 
-            // Notification: Gateway Contract v1 — "no id, no response expected."
+            // No id means it's a notification ("no id, no response expected" in the contract).
             if (!root.TryGetProperty("id", out var idEl) || idEl.ValueKind == JsonValueKind.Null)
             {
                 if (!root.TryGetProperty("method", out var methodEl)) return;
@@ -164,7 +165,7 @@ namespace iDaVIE.Client.Gateway
             else
             {
                 tcs.TrySetException(new JsonRpcException(
-                    code: -32603, // JSON-RPC reserved "internal error"
+                    code: -32603, // the JSON-RPC reserved "internal error" code
                     message: $"Response for id {id} had neither result nor error.",
                     errorData: null));
             }
@@ -175,7 +176,7 @@ namespace iDaVIE.Client.Gateway
             _shutdown?.Cancel();
             if (_readLoopTask is not null)
             {
-                try { await _readLoopTask.ConfigureAwait(false); } catch { /* swallowed — shutdown */ }
+                try { await _readLoopTask.ConfigureAwait(false); } catch { /* ignore, we're shutting down */ }
             }
             await _pipe.DisposeAsync().ConfigureAwait(false);
             _shutdown?.Dispose();

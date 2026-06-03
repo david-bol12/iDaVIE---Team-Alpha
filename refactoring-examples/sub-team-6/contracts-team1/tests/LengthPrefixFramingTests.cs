@@ -1,8 +1,8 @@
-// Sub-team 6 — LengthPrefixFraming tests (Gateway Contract v1 §"Framing").
+// Tests for LengthPrefixFraming (the contract's "Framing" section).
 //
-// Every test references the exact spec clause it pins down. The whole point
-// of having a pure byte-level framing helper is that these tests can quote
-// the spec verbatim without spinning up a pipe.
+// Each test calls out the exact spec clause it's checking. That's really the
+// whole reason for pulling framing out into its own helper: the tests can quote
+// the spec word-for-word without ever spinning up a pipe.
 
 using System;
 using System.IO;
@@ -19,9 +19,9 @@ namespace iDaVIE.Client.Gateway.Tests
         [Test]
         public async Task RoundTrip_PreservesPayloadBytes_Exactly()
         {
-            // Gateway Contract v1: "Payload is exactly `length` bytes; no trailing newline
-            // inside the frame." Round-trip a non-trivial payload (including a
-            // multi-byte UTF-8 character) and assert byte equality.
+            // Contract: "Payload is exactly `length` bytes; no trailing newline
+            // inside the frame." Round-trip a non-trivial payload (with a
+            // multi-byte UTF-8 character in it) and check the bytes match exactly.
             var payload = Encoding.UTF8.GetBytes(@"{""jsonrpc"":""2.0"",""id"":17,""method"":""file.open"",""params"":{""path"":""/Volumes/cubes/résumé.fits""}}");
 
             var frame = LengthPrefixFraming.Encode(payload);
@@ -35,9 +35,9 @@ namespace iDaVIE.Client.Gateway.Tests
         [Test]
         public async Task EmptyPayload_ProducesZeroLengthFrame()
         {
-            // Gateway Contract v1: "length = byte length of the UTF-8 payload, ASCII
-            // decimal, no leading zeros." Edge case: zero is one digit; the
-            // frame is "0\n" with no payload bytes.
+            // Contract: "length = byte length of the UTF-8 payload, ASCII decimal,
+            // no leading zeros." The edge case is zero: it's a single digit, so the
+            // frame is just "0\n" with no payload after it.
             var frame = LengthPrefixFraming.Encode(ReadOnlySpan<byte>.Empty);
             Assert.That(frame, Is.EqualTo(new byte[] { (byte)'0', 0x0A }));
 
@@ -49,7 +49,7 @@ namespace iDaVIE.Client.Gateway.Tests
         [Test]
         public void ReadOneAsync_LeadingZeroInHeader_ThrowsFormatException()
         {
-            // Gateway Contract v1: "no leading zeros." "012\n..." must reject.
+            // Contract: "no leading zeros", so "012\n..." has to be rejected.
             var bad = new byte[] { (byte)'0', (byte)'1', (byte)'2', 0x0A,
                                    (byte)'a', (byte)'b', (byte)'c' };
             using var stream = new MemoryStream(bad);
@@ -61,8 +61,8 @@ namespace iDaVIE.Client.Gateway.Tests
         [Test]
         public void ReadOneAsync_CarriageReturnInHeader_ThrowsFormatException()
         {
-            // Gateway Contract v1: "Separator is a single \n (0x0A). No \r." Reject as
-            // soon as the CR byte is observed — do not consume it silently.
+            // Contract: "Separator is a single \n (0x0A). No \r." Reject the moment
+            // we see the CR byte rather than quietly swallowing it.
             var bad = new byte[] { (byte)'5', 0x0D, 0x0A, (byte)'a', (byte)'b' };
             using var stream = new MemoryStream(bad);
             Assert.That(async () => await LengthPrefixFraming.ReadOneAsync(stream),
@@ -73,9 +73,9 @@ namespace iDaVIE.Client.Gateway.Tests
         [Test]
         public void ReadOneAsync_StreamClosedMidPayload_ThrowsEndOfStreamException()
         {
-            // Header says 10 bytes follow, stream only delivers 4. Real pipes
-            // closing mid-frame is the most common failure we need to surface
-            // cleanly so the gateway's read loop can clean up pending callers.
+            // Header claims 10 bytes follow but the stream only has 4. A pipe
+            // closing mid-frame is the failure we hit most often, so we want it
+            // surfaced cleanly enough for the read loop to clean up pending callers.
             var bad = new byte[] { (byte)'1', (byte)'0', 0x0A,
                                    (byte)'a', (byte)'b', (byte)'c', (byte)'d' };
             using var stream = new MemoryStream(bad);
@@ -87,8 +87,8 @@ namespace iDaVIE.Client.Gateway.Tests
         [Test]
         public void ReadOneAsync_NonDigitInHeader_ThrowsFormatException()
         {
-            // Gateway Contract v1: "ASCII decimal." A letter in the header is a desync —
-            // catch it before allocating a huge payload buffer.
+            // Contract: "ASCII decimal." A letter in the header means we've lost
+            // sync, so catch it before we go allocating a huge payload buffer.
             var bad = new byte[] { (byte)'1', (byte)'2', (byte)'x', 0x0A };
             using var stream = new MemoryStream(bad);
             Assert.That(async () => await LengthPrefixFraming.ReadOneAsync(stream),
