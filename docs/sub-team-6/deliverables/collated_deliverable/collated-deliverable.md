@@ -11,14 +11,13 @@
 
 ### What this document is
 
-This is the single document that integrates the five Section 9.2 sub-team outputs into one
-artefact, as required by the brief. Each Section 9.2 item is reproduced in full below — the
-requirements document, the design document, the two mandated worked refactoring examples
-(File tab and Debug tab, both with before/after UML, dependency graphs, CK metric deltas,
-skeleton code and unit tests inlined), the test strategy, and the end-of-sprint Kanban
-snapshots.
+The brief asks each sub-team to hand in one document that pulls together its five Section 9.2
+outputs. This is ours. Nothing has been summarised away: the requirements document, the design
+document, both mandated worked examples (File tab and Debug tab, each with its own before/after
+UML, dependency graph, CK metric deltas, skeleton code and unit tests), the test strategy, and
+the three end-of-sprint Kanban snapshots all appear here in full.
 
-### Section 9.2 traceability — every required item is present
+### Section 9.2 traceability
 
 | §9.2 item | Required length | Where in this document | Status |
 |---|---|---|---|
@@ -27,9 +26,14 @@ snapshots.
 | 3. Worked refactoring examples (two, for a 4-person team) | — | [Part 3 — File tab](#part-3worked-example-1--file-tab) · [Part 4 — Debug tab](#part-4worked-example-2--debug-tab) | ✅ |
 | 4. Sub-team test strategy | 2–4 pages | [Part 5 — Test Strategy](#part-5test-strategy) | ✅ |
 | 5. Sub-team Kanban/Trello snapshot at end of each sprint | 3 sprints | [Part 6 — Kanban Snapshots](#part-6kanban-snapshots) | ✅ |
+| 6. Daily stand-up notes (single shared file) | — | [Part 7 — Stand-up highlights](#part-7daily-stand-up-notes-highlights) | ✅ included (see note) |
 
-> Item 6 of the brief's per-sub-team list (daily stand-up notes, single shared file) is a
-> separate living artefact and is not part of this collation.
+> A note on item 6. The Brightspace specification only asks this collation for the five items
+> above — it does not list the daily stand-up notes. The original assignment brief does list
+> them, as a sixth per-sub-team artefact (a single shared file). Since the brief asked for them,
+> we've kept them in rather than drop them on a technicality: the highlights are in
+> [Part 7](#part-7daily-stand-up-notes-highlights), and the full day-by-day log lives in its own
+> file at `Sprint-Documents/standups.md`.
 
 ### The two mandated worked examples (brief §6.6)
 
@@ -39,8 +43,8 @@ snapshots.
 2. **Debug tab** — from a passive Unity-log readout to an **Observer of a structured logging
    stream** (`ILogStream` → `ILogObserver`). Exercises the server-pushed notification path.
 
-Together they exercise the transport contract on both directions and prove the MVVM split
-produces independently unit-testable classes (47 + 35 NUnit tests, zero Unity dependency).
+Between them they cover both directions of the transport contract, and they show the MVVM
+split yields classes you can unit-test without Unity at all (47 + 35 NUnit tests).
 
 ### Architectural non-negotiables this proposal satisfies (brief §4.2)
 
@@ -51,12 +55,12 @@ produces independently unit-testable classes (47 + 35 NUnit tests, zero Unity de
 
 ### Reading note
 
-Each worked example (Parts 3 and 4) is presented fully inline: the code-anchored before/after
-traces, the Mermaid before/after sequence diagrams, the before/after class diagrams, the
-module-level dependency graphs, the CK metric delta tables, and then the complete skeleton
-(pure-C#) source, the adapter source, and the NUnit test listings. Mermaid and `csharp` blocks
-render in any Markdown viewer that supports GitHub-flavoured Markdown + Mermaid. Each embedded
-section retains its own `Source:` path so any artefact can be traced back to its file in
+Parts 3 and 4 hold each worked example in full. The order is the same both times: the
+code-anchored before trace, then the after trace, the before/after sequence diagrams and class
+diagrams, the module-level dependency graph, the CK metric tables, and finally the actual
+source — pure-C# skeleton, Unity/gateway adapters, and the NUnit tests. The Mermaid and
+`csharp` blocks render in any viewer that supports GitHub-flavoured Markdown with Mermaid. Every
+embedded section keeps its `Source:` path, so anything here can be traced back to its file under
 `file-tab-refactor/` or `debug-tab-refactor/`.
 
 
@@ -80,20 +84,18 @@ The **Desktop GUI and Client Shell** as defined in brief §6.6: `Assets/Scripts/
 
 ## 2. REQ-1 — Current behaviour and coupling catalogue
 
-Per-tab summary below; full per-control behaviour, state flows, VR-side touchpoints and the 13-row defect register live in `CurrentGUIStateDoc.md`.
-
 | Tab | Behaviour today | Direct I/O → server-side? | Unity / native coupling | Highest-severity defect |
 |---|---|---|---|---|
-| **File** | FITS browse + load via CFITSIO P/Invoke, header parse, optional mask, conditional 4D-axis dropdown | **Yes** | `transform.Find` chains into scene; `data_analysis_tool.dll` P/Invoke; `FindObjectOfType<VolumeDataSetRenderer>` | **B-08** UI blocks for seconds during load (no cancel, no background thread); **B-06** mask-dimension errors surface only in Unity log |
-| **Render** | Cube-size, colour map, min/max thresholds, rest-frequency dropdown — shared state with STATS and VR Settings | No | Material property-block writes; shared float fields on `CanvassDesktop` | **B-03** sliders don't refresh when VR Settings changes thresholds (stale until tab re-opened) |
-| **Stats** | Histogram, percentile quick-select, σ overlays, min/max scale | No | Reads in-memory float buffer; shared state with RENDER | **B-04** exact-percentile freeze on large cubes (no progress indicator) |
-| **Sources** | VOTable / FITS catalogue load, per-column mapping UI, save/restore mapping JSON | **Yes** | `FindObjectOfType<FeatureSetManager>`; native catalogue reader | **B-05** WCS vs. (x,y,z) one-voxel offset (open issue #464) |
-| **Paint** | Desktop 2D-slice mask painting: polygon select, additive/subtractive, axis + slice navigation, per-source IDs, save mask. Gated on VR paint mode + full-resolution cube | **Yes** (local mask FITS write) | `RawImage` / `Texture3D` slicing; bidirectional `CanvassDesktop ↔ DesktopPaintController` cycle; `FindObjectOfType<PaintMenuController>` | **B-14** `UpdateMaxValue` writes `minVal` — silent data corruption, untestable in a 1,558-line MonoBehaviour |
-| **Debug** | Scrollable Unity log readout, save log to `.txt` | No | Subscribes to `Application.logMessageReceived` on the main thread with no thread guard | **B-02 (CRITICAL)** tab switch during cube load → process crash, all session state lost |
+| **File** | FITS browse + load via CFITSIO P/Invoke, header parse, optional mask, conditional 4D-axis dropdown | **Yes** | `transform.Find` chains into scene; `data_analysis_tool.dll` P/Invoke; `FindObjectOfType<VolumeDataSetRenderer>` | UI blocks for seconds during load (no cancel, no background thread); mask-dimension errors surface only in Unity log |
+| **Render** | Cube-size, colour map, min/max thresholds, rest-frequency dropdown — shared state with STATS and VR Settings | No | Material property-block writes; shared float fields on `CanvassDesktop` | sliders don't refresh when VR Settings changes thresholds (stale until tab re-opened) |
+| **Stats** | Histogram, percentile quick-select, σ overlays, min/max scale | No | Reads in-memory float buffer; shared state with RENDER | exact-percentile freeze on large cubes (no progress indicator) |
+| **Sources** | VOTable / FITS catalogue load, per-column mapping UI, save/restore mapping JSON | **Yes** | `FindObjectOfType<FeatureSetManager>`; native catalogue reader |  WCS vs. (x,y,z) one-voxel offset (open issue #464) |
+| **Paint** | Desktop 2D-slice mask painting: polygon select, additive/subtractive, axis + slice navigation, per-source IDs, save mask. Gated on VR paint mode + full-resolution cube | **Yes** (local mask FITS write) | `RawImage` / `Texture3D` slicing; bidirectional `CanvassDesktop ↔ DesktopPaintController` cycle; `FindObjectOfType<PaintMenuController>` | `UpdateMaxValue` writes `minVal` — silent data corruption, untestable in a 1,558-line MonoBehaviour |
+| **Debug** | Scrollable Unity log readout, save log to `.txt` | No | Subscribes to `Application.logMessageReceived` on the main thread with no thread guard | tab switch during cube load → process crash, all session state lost |
 
-**Direct-file-I/O verdict.** File and Sources are the two tabs whose parsing leaves the client under the §6.6 split. The two **mandated worked refactoring examples** (§6.6 → D4) are **File** (direct native-plugin call → ViewModel command via the service gateway) and **Debug** (passive log readout → Observer of a structured logging stream). Together they exercise the transport ADR (`D2-Architecture/architecture.md` §4.2, ADR-0002) on both paths — File for request/response RPC, Debug for the server-pushed stream — confirming the contract has a real consumer.
+**Direct-file-I/O verdict.** File and Sources are the two tabs whose parsing leaves the client under the §6.6 split. The two **mandated worked refactoring examples** (§6.6 → D4) are **File** (direct native-plugin call → ViewModel command via the service gateway) and **Debug** (passive log readout → Observer of a structured logging stream). Together they exercise the transport ADR (client–server transport, JSON-RPC over named pipes / gRPC) on both paths — File for request/response RPC, Debug for the server-pushed stream — confirming the contract has a real consumer.
 
-**Defect → NFR linkage.** The bug list proves the NFRs aren't a wish-list of nice-to-haves — they're the specific requirements without which the documented bugs can't be fixed. **B-02** (DEBUG-tab crash) is caused by binding the IMGUI log readout to `Application.logMessageReceived` while the main thread is blocked inside CFITSIO — directly motivating **NFR-MOD-1** (no cycles), **NFR-REU-3** (no Unity-thread coupling in ViewModel) and **NFR-TST-2** (ViewModel mockable without Unity). **B-03** (slider sync) motivates the MVVM binding policy (D3). **B-08** (UI freeze during load) motivates moving long I/O behind the service gateway (D2).
+**Defect → NFR linkage.** (DEBUG-tab crash) is caused by binding the IMGUI log readout to `Application.logMessageReceived` while the main thread is blocked inside CFITSIO — directly motivating **NFR-MOD-1** (no cycles), **NFR-REU-3** (no Unity-thread coupling in ViewModel) and **NFR-TST-2** (ViewModel mockable without Unity). (slider sync) motivates the MVVM binding policy (D3). (UI freeze during load) motivates moving long I/O behind the service gateway (D2).
 
 ## 3. REQ-2 — ISO/IEC 25010 maintainability NFRs
 
@@ -257,7 +259,7 @@ Reverse-direction references are a CI failure. This enforces §4.2.2 (no cycles)
 └──────────────────────────────────────────────────────────┘
 ```
 
-> **Where is the Model?** This is a client–server MVVM: the authoritative domain model lives **server-side** (Sub-team 1's kernel + native plugins), so there is **no client `Model` assembly**. On the client the Model appears only as the immutable DTOs returned through the Gateway (`FitsFileInfo`, `LogEntry`, etc.); the Gateway is the access path to a remote Model, not the Model itself. Moving the Model off the client is precisely the §6.6 "direct file I/O that belongs server-side" goal — and the fix for B-02 / B-08.
+> **Where is the Model?** This is a client–server MVVM: the authoritative domain model lives **server-side** (Sub-team 1's kernel + native plugins), so there is **no client `Model` assembly**. On the client the Model appears only as the immutable DTOs returned through the Gateway (`FitsFileInfo`, `LogEntry`, etc.); the Gateway is the access path to a remote Model, not the Model itself. Moving the Model off the client is precisely the §6.6 "direct file I/O that belongs server-side" goal.
 
 ---
 
@@ -591,10 +593,9 @@ Notes on the FileTabViewModel WMC = 27 measurement: this is hand-counted from th
 
 **Mandated by brief §6.6:** *File tab — from direct native-plugin call → ViewModel command via service gateway.*
 
-This worked example is presented in full: the before-state code trace and sequence diagram,
-the after-state trace and sequence diagram, the before/after class diagrams, the module-level
-dependency graph, the CK metric deltas, and then the complete skeleton (pure-C#) source, the
-Unity/gateway adapter source, and the NUnit test listings.
+Below is the full example. The order is: the before trace, the after trace, the before/after
+sequence and class diagrams, the module-level dependency graph, the CK metric deltas, and then
+the code itself — pure-C# skeleton, Unity/gateway adapters, and the NUnit tests.
 
 
 ---
@@ -605,7 +606,7 @@ Unity/gateway adapter source, and the NUnit test listings.
 
 ## TL;DR
 
-Code-anchored walkthrough of the live `CanvassDesktop.cs` File-tab path (1899-line god-class `MonoBehaviour`). Two phases: **A** = user clicks Browse, FITS metadata read directly via `[DllImport]` from the UI layer; **B** = user clicks Load, coroutine instantiates the cube via field-pokes on `VolumeDataSetRenderer` and busy-waits on a `started` flag. Every message is cited to a real file:line so the BEFORE sequence diagram is defensible. Catalogues **8 smells** (S1–S8) — direct DLL calls from UI, god class, `transform.Find` chains, `FindObjectOfType` singletons, public mutable-field writes, busy-wait polling, Inspector-wired handlers, unmanaged `fptr` lifetime sprawl. **Headline claim:** the workflow is a forced two-click ritual and every metadata read leaks the native handle into MonoBehaviour scope.
+A code-anchored walkthrough of the File-tab path as it runs today, inside the 1899-line `CanvassDesktop` god-class. It takes two clicks. First Browse: the UI reads FITS metadata itself, calling `[DllImport]` straight from the view layer. Then Load: a coroutine builds the cube by poking public fields on `VolumeDataSetRenderer`, then busy-waits on a `started` flag. Every step below cites a real file:line, so the before-state sequence diagram holds up under questioning. The trace catalogues eight smells (S1–S8): DLL calls from the UI, the god class itself, `transform.Find` chains, `FindObjectOfType` singletons, public field writes, busy-wait polling, Inspector-wired handlers, and an unmanaged `fptr` whose lifetime sprawls across the class. The thing to take away: loading a cube is a forced two-click ritual, and every metadata read leaks a native handle into MonoBehaviour scope.
 
 ---
 
@@ -713,7 +714,7 @@ The Mermaid rendering of this trace lives in [`before-sequence.md`](before-seque
 
 ## TL;DR
 
-Mermaid `sequenceDiagram` rendering of `before-trace.md`. Two clicks drawn as one continuous diagram with a `Note` separator — the forced two-click UX is itself part of the argument. Centrepiece smells visible at a glance: the `CD → FR → DLL` triangle repeated on every metadata read, two `activate` bars on `CanvassDesktop` (SFB callback + load coroutine), `transform.Find` self-message, `FindObjectOfType` arrows, busy-wait `yield return WaitForSeconds(0.1f)` loop, and direct field writes onto `VolumeDataSetRenderer`. Pairs side-by-side with `after-sequence.md` for the panel slide.
+The Mermaid rendering of the before trace. Both clicks sit in one continuous diagram with a `Note` separator between them, because the forced two-click flow is part of the point. A few smells jump out of the picture: the `CD → FR → DLL` triangle that repeats on every metadata read, two `activate` bars on `CanvassDesktop` (one for the SFB callback, one for the load coroutine), the `transform.Find` self-message, the `FindObjectOfType` arrows, the busy-wait `yield return WaitForSeconds(0.1f)` loop, and the direct field writes onto `VolumeDataSetRenderer`. Put it beside `after-sequence.md` on the panel slide.
 
 ---
 
@@ -867,7 +868,7 @@ Pair the diagram with [`after-sequence.md`](after-sequence.md) on a side-by-side
 
 ## TL;DR
 
-MVVM split with a service gateway replaces the god-canvas. `FileTabView` (thin Unity MonoBehaviour) → `FileTabViewModel` (pure C#, no `UnityEngine` ref) → three injected interfaces: `IFileDialogService`, `IFitsService`, `IVolumeService`. FITS reading is **server-side**: `FitsServiceAdapter` forwards each call over `IServiceGateway` as JSON-RPC (`file.open` → `dataset.getAxes` → `dataset.getHeader`, ADR-0002). The client never touches `[DllImport]` or `IntPtr` — it carries only an opaque `RemoteFitsHandle` (a server-assigned `datasetId`). A failed `dataset.getAxes` fires a best-effort `file.close` so no dataset leaks server-side; `RemoteFitsHandle.Dispose()` closes it on teardown — no native handle ever crosses the ACL. The `postLoadFileFileSystem` cross-tab cascade is replaced by a single `IVolumeService.CubeLoaded(DTO)` event, which structurally closes Anomaly #8 (rest-frequency subscription leak). **Honest about what remains:** one smell *contained* — S5 (field writes onto `VolumeDataSetRenderer`) — inside `VolumeServiceAdapter` behind `IVolumeService`. Sub-team 3 can swap it out without touching the VM or any of the **47 NUnit tests**.
+The god-canvas is replaced by an MVVM split behind a service gateway. `FileTabView` (a thin Unity MonoBehaviour) talks to `FileTabViewModel` (pure C#, no `UnityEngine` reference), which depends only on three injected interfaces: `IFileDialogService`, `IFitsService`, `IVolumeService`. FITS reading moves server-side. `FitsServiceAdapter` forwards each call over `IServiceGateway` as JSON-RPC: `file.open`, then `dataset.getAxes`, then `dataset.getHeader`, per ADR-0002. The client never sees a `[DllImport]` or an `IntPtr`; it holds only an opaque `RemoteFitsHandle` wrapping a server-assigned `datasetId`. If `dataset.getAxes` fails, the adapter fires a best-effort `file.close` so nothing leaks server-side, and `RemoteFitsHandle.Dispose()` closes the handle on teardown. No native handle ever crosses the ACL. The old `postLoadFileFileSystem` cross-tab cascade becomes a single `IVolumeService.CubeLoaded(DTO)` event, which closes Anomaly #8 (the rest-frequency subscription leak) by construction. One smell is only contained, not removed: S5, the field writes onto `VolumeDataSetRenderer`, still lives inside `VolumeServiceAdapter` behind `IVolumeService`. Sub-team 3 can swap that out later without touching the ViewModel or any of its 47 NUnit tests.
 
 ---
 
@@ -1001,7 +1002,7 @@ See [`after-sequence.md`](after-sequence.md). The conversion follows the same ru
 
 ## TL;DR
 
-Mermaid rendering of `after-trace.md`, updated for the gateway rewire (ADR-009 / ADR-0002). Phase A's FITS reads no longer cross the Unity ↔ native boundary client-side — `FitsServiceAdapter` is now a **gateway proxy** that dispatches `file.open` and `dataset.getAxes` over JSON-RPC to the server kernel. No `IntPtr` ever exists on the client. The opaque `IFitsHandle` wraps a server-assigned `datasetId`; `Dispose()` fires a best-effort `file.close`. Phase B (cube load) is unchanged — the volume renderer is genuinely client-local and `VolumeServiceAdapter` remains a Unity adapter. The busy-wait elimination (S6) and the contained field-write smell (S5) carry over from the prior version.
+The Mermaid rendering of the after trace, updated for the gateway rewire (ADR-009 / ADR-0002). In Phase A the FITS reads no longer cross the Unity-to-native boundary on the client: `FitsServiceAdapter` is now a gateway proxy that dispatches `file.open` and `dataset.getAxes` over JSON-RPC to the server kernel, so no `IntPtr` exists client-side at all. The opaque `IFitsHandle` wraps a server-assigned `datasetId`, and `Dispose()` fires a best-effort `file.close`. Phase B, the cube load, is unchanged: the volume renderer really is client-local, so `VolumeServiceAdapter` stays a Unity adapter. The busy-wait fix (S6) and the one contained field-write smell (S5) carry over from the earlier version.
 
 ---
 
@@ -1174,7 +1175,7 @@ The S5 fix is a pure adapter-side edit — none of the 47 file-tab ViewModel uni
 
 ## TL;DR
 
-Two side-by-side Mermaid `classDiagram` blocks. **BEFORE** = single `CanvassDesktop` god-class with 8 outgoing arrows (one per Unity / native subsystem) and zero interfaces — every dependency direct. **AFTER** = two `namespace` packages: `Domain` (pure C#, interfaces + `FileTabViewModel` + `SubsetBoundsViewModel` + DTOs + commands) and `Adapters` (Unity-side concrete `FileTabView`, `FitsServiceAdapter`, `FileDialogServiceAdapter`, `VolumeServiceAdapter`, `MemoryProbeAdapter`, `FileTabCompositionRoot`). Every line crossing the boundary points adapter → interface, with one allowed exception: `FileTabCompositionRoot` may name both layers because composition is the one place a concrete object graph has to be assembled. **Headline numeric:** one 1899-line god-class → eight focused classes; CBO contribution from the slice drops from 8 to ≤4 per class.
+Two Mermaid class diagrams, before and after. Before is the single `CanvassDesktop` god-class: eight outgoing arrows, one per Unity or native subsystem, and not one interface between them, so every dependency is direct. After splits into two `namespace` packages. `Domain` is pure C#: the interfaces, `FileTabViewModel`, `SubsetBoundsViewModel`, the DTOs and the commands. `Adapters` is the Unity side: `FileTabView`, `FitsServiceAdapter`, `FileDialogServiceAdapter`, `VolumeServiceAdapter`, `MemoryProbeAdapter` and `FileTabCompositionRoot`. Every line that crosses the boundary points from an adapter to an interface. The one exception is `FileTabCompositionRoot`, which is allowed to name both layers because somewhere has to assemble the concrete object graph. In numbers: one 1899-line class becomes eight focused ones, and the slice's CBO contribution drops from 8 to 4 or fewer per class.
 
 ---
 
@@ -1574,7 +1575,7 @@ Single 1899-line god-class → eight small focused classes. The **domain layer**
 
 ## TL;DR
 
-Module-level view (assemblies / packages, not classes) of the Section 4.2 claim: *domain code must not transitively depend on `UnityEngine` / `SteamVR` / native plug-ins*. **BEFORE:** one `Assembly-CSharp` blob containing everything; transitive arrow `CanvassDesktop -.-> idavie_native` is the canonical violation. **AFTER:** three assemblies (`Domain`, `Adapters`, `Subsystem`) with strictly one-way dependency — `Adapters → Domain`, never the reverse. Topological sort prints 5 layers with **zero cycles**. `dotnet test` runs against the Domain assembly alone, no Unity required. Ends with the Day-13 tool verification checklist for NDepend / DV8 / CodeScene.
+The same story at the module level, this time in assemblies and packages rather than classes, testing the Section 4.2 rule that domain code must not transitively depend on `UnityEngine`, `SteamVR` or the native plug-ins. Before, everything lives in one `Assembly-CSharp` blob, and the transitive arrow `CanvassDesktop -.-> idavie_native` is the textbook violation. After, there are three assemblies (`Domain`, `Adapters`, `Subsystem`) with the dependency running one way only: `Adapters → Domain`, never back. A topological sort gives five layers and no cycles, and `dotnet test` runs against the Domain assembly on its own with no Unity present. The section ends with the Day-13 checklist for confirming all this in NDepend, DV8 and CodeScene.
 
 ---
 
@@ -1796,7 +1797,7 @@ A short follow-up commit on Day 13 will paste tool screenshots / DSM exports alo
 
 ## TL;DR
 
-**Tool-verified (Day 13, Understand static analysis export — authoritative). Updated after skeleton refactor (Day 10): three pure-static helpers extracted from `FileTabViewModel` into `FitsMetadataHelper`; `Clamp` inlined in `SubsetBoundsViewModel`.** **BEFORE `CanvassDesktop`:** WMC 63 ❌ (≤40), CBO 30 ❌ (≤25), LCOM 95% ❌ (≤50%), DIT 2 ✅, LOC 1899. Note: the tool defines RFC = total method count (63); traditional CK RFC (methods + external calls) ≈ 210. **AFTER** splits into 11 classes. `FileTabViewModel` re-classified as orchestrator (coordinates 4 services): WMC=40 ≤40 ✅, CBO=19 ≤25 ✅. `SubsetBoundsViewModel` WMC=20 ≤20 ✅. LCOM violations remain on 5 classes — structural artifact of the MVVM property-backing-field pattern. Headline deltas (god-class → worst successor class): **WMC 63→40 (−37%), CBO 30→19 (−37%)**. The unit-testable surface goes from **0** (Unity required) to **47** NUnit tests running with zero Unity dependency.
+These numbers are tool-verified from the Day-13 Understand export, which is the authoritative source. They were updated after the Day-10 skeleton refactor that pulled three pure-static helpers out of `FileTabViewModel` into `FitsMetadataHelper` and inlined `Clamp` in `SubsetBoundsViewModel`. Before the refactor, `CanvassDesktop` fails three of the five thresholds: WMC 63 (limit 40), CBO 30 (limit 25), LCOM 95% (limit 50%); DIT 2 and the 1899 LOC are within range or advisory. One caveat on RFC: the tool counts it as total method count (63), where the traditional CK definition (methods plus external calls) lands nearer 210. After the refactor the slice is eleven classes. `FileTabViewModel` is re-classified as an orchestrator because it coordinates four services, and at WMC 40 and CBO 19 it clears the orchestrator thresholds; `SubsetBoundsViewModel` sits at WMC 20. Five classes still show LCOM violations, but that is an artefact of the MVVM property-backing-field pattern rather than a real cohesion problem (the table notes explain why). The headline deltas, god-class to worst successor class, are WMC 63→40 and CBO 30→19, both down 37%. The unit-testable surface goes from nothing, since Unity was always required, to 47 NUnit tests that run with no Unity at all.
 
 ---
 
@@ -4976,14 +4977,14 @@ namespace iDaVIE.Desktop.Adapters.FileTab.Tests
 
 **Mandated by brief §6.6:** *Debug tab — as Observer of a structured logging stream.*
 
-This worked example is presented in full, in the same shape as the File tab: before/after
-traces and sequence diagrams, before/after class diagrams, the dependency graph, the log-origin
-trace cataloguing all 44 `Debug.Log*` call sites, the CK metric deltas, and then the complete
-skeleton source, adapter source, and NUnit test listings.
+Same shape as the File tab: the before and after traces, the sequence and class diagrams, the
+dependency graph, a log-origin trace that catalogues all 44 `Debug.Log*` call sites, the CK
+deltas, and then the skeleton source, adapters and NUnit tests.
 
-Honest framing carried over from the CK analysis: the Debug tab is a **testability and structure**
-refactor, not a metric refactor — `DebugLogging` already passes 5 of 6 CK thresholds; the case
-rests on the untestable static log hook (S1) and four-concerns-in-one-class (S8).
+One thing to be straight about, carried over from the CK analysis: this is a testability and
+structure refactor, not a metric one. `DebugLogging` already passes five of the six CK
+thresholds. The reason to change it is the static log hook that can't be tested without Unity
+(S1), and the four separate jobs crammed into one class (S8).
 
 
 ---
@@ -4994,7 +4995,7 @@ rests on the untestable static log hook (S1) and four-concerns-in-one-class (S8)
 
 ## TL;DR
 
-Code-anchored walkthrough of the live `DebugLogging.cs` (255-line `MonoBehaviour`). Four phases: **A** Startup wires log rotation + autosave file; **B** `OnEnable` subscribes `HandleLog` to the process-global `Application.logMessageReceived` event; **C** every `Debug.Log*` call anywhere in the process re-enters via the static hook, gets formatted as a string, enqueued into a **non-generic unbounded `Queue`**, written to disk via a `StreamWriter` opened+closed per message, then triggers an **O(N) rebuild of the entire log history** into a `StringBuilder` that replaces the whole `TMP_InputField.text`; **D** manual save reuses the queue. Catalogues **9 smells** (S1–S9) culminating in: untestable static event hook (S1), no source/timestamp captured (S2), unbounded queue (S3), per-message file I/O (S4), O(N) rebuild (S5), wholesale text replacement (S6), forced scroll (S7), four concerns in one class (S8), 44 unstructured `Debug.Log*` callers across the codebase (S9). **Headline:** `DebugLogging` passes 5/6 CK thresholds — the refactor case is **testability + structure**, not metrics.
+A code-anchored walkthrough of `DebugLogging.cs` as it stands, a 255-line `MonoBehaviour`. It runs in four phases. Startup (A) wires up log rotation and the autosave file. `OnEnable` (B) subscribes `HandleLog` to the process-global `Application.logMessageReceived` event. Then, for every `Debug.Log*` call anywhere in the process (C), the static hook re-enters: it formats the message into a string, enqueues it into a non-generic, unbounded `Queue`, writes it to disk through a `StreamWriter` opened and closed for that one message, then rebuilds the entire log history into a `StringBuilder` and assigns the whole thing back to `TMP_InputField.text`. A manual save (D) reuses the same queue. The trace catalogues nine smells (S1–S9): the untestable static event hook (S1), no source or timestamp captured (S2), the unbounded queue (S3), per-message file I/O (S4), the O(N) rebuild (S5), wholesale text replacement (S6), forced scroll-to-bottom (S7), four concerns in one class (S8), and 44 unstructured `Debug.Log*` callers spread across the codebase (S9). Worth saying up front: `DebugLogging` passes 5 of 6 CK thresholds, so the case for refactoring is testability and structure, not metrics.
 
 ---
 
@@ -5139,7 +5140,7 @@ The Mermaid rendering of this trace lives in [`before-sequence.md`](before-seque
 
 ## TL;DR
 
-Mermaid `sequenceDiagram` rendering of `before-trace.md`. Four phases drawn as one continuous diagram with `Note over` separators: **A** startup wires log rotation + save button; **B** `OnEnable` subscribes `HandleLog` to the static `Application.logMessageReceived` event; **C** every `Debug.Log*` in the process re-enters via the static hook → `Queue → StreamWriter → StringBuilder → TMP_InputField` chain; **D** manual export reuses the queue. The visual signature of S8 (four-concerns-in-one-class) is the four distinct activity bands inside the single `DL` lifeline — the same structural defect that LCOM hs = 0.95 quantifies. Centrepiece smells visible at a glance: the `Sub → UE → App → DL` static-event triangle (S1), the per-message `new StreamWriter` open/close (S4), and the O(N) `foreach` rebuild over the whole queue on every new entry (S5). Pairs side-by-side with [`after-sequence.md`](after-sequence.md) — every Phase C arrow collapses into the single `LogStream.Publish → ILogObserver.OnNext` dispatch in the AFTER design.
+The Mermaid rendering of the before trace. All four phases sit in one diagram, split by `Note over` separators: startup wiring (A), the `OnEnable` subscription to the static `Application.logMessageReceived` event (B), the per-message path where every `Debug.Log*` re-enters and runs the `Queue → StreamWriter → StringBuilder → TMP_InputField` chain (C), and the manual export that reuses the queue (D). Smell S8, four concerns in one class, shows up visually as four distinct activity bands inside the single `DL` lifeline, the same defect that LCOM hs = 0.95 puts a number on. Three more are easy to spot: the `Sub → UE → App → DL` static-event triangle (S1), the `new StreamWriter` opened and closed per message (S4), and the O(N) `foreach` rebuild over the whole queue on every entry (S5). Beside it, in [`after-sequence.md`](after-sequence.md), that entire Phase C chain collapses into one `LogStream.Publish → ILogObserver.OnNext` dispatch.
 
 ---
 
@@ -5304,7 +5305,7 @@ Pair the diagram with [`after-sequence.md`](after-sequence.md) on a side-by-side
 
 ## TL;DR
 
-Observer pattern + MVVM + ACL boundary. Four phases: **A** `CompositionRoot.Awake()` wires VM → adapter → View; **B** server pushes a `log.emit` JSON-RPC notification (ADR-0002), `GatewayLogStreamAdapter` filters and deserialises the payload (level, message, ISO-8601 timestamp preserved end-to-end), calls `LogStream.Publish`; `LogStream` snapshots its observer list under lock and dispatches `LogEntry` records to each `ILogObserver`; `DebugTabViewModel` appends to a bounded `List<LogEntry>` (cap 2000) and raises `EntriesChanged`; `DebugTabView` rebuilds TMP text over a capped 500-line slice; **C** Clear button empties the list; **D** `Dispose` symmetrically unsubscribes. **Smells eliminated:** S1 (static event hook gone — injectable `IServiceGateway`), S2 (timestamp preserved end-to-end from server), S3 (unbounded queue → bounded list), S4 (per-message file I/O gone), S7 (scroll-to-bottom now gated on `IDebugTabViewModel.AutoScrollEnabled`), S8 (four concerns → five named classes). **Contained:** S5/S6 (TMP rebuild capped at 500 lines). **Not captured:** S9 (44 client-side `Debug.Log*` callers — gateway receives server logs only; a bridge adapter can be added later as a second `ILogObserver`). Two open questions surfaced: should `LogEntry` carry a `source` field? should autosave come back as a separate `ILogObserver`?
+The after state uses the Observer pattern, MVVM and an ACL boundary, again in four phases. `CompositionRoot.Awake()` (A) wires the ViewModel to the adapter to the View. When the server pushes a `log.emit` JSON-RPC notification (B, per ADR-0002), `GatewayLogStreamAdapter` filters it, deserialises the payload (level, message, and an ISO-8601 timestamp that survives end-to-end) and calls `LogStream.Publish`; `LogStream` snapshots its observer list under a lock and hands a `LogEntry` to each `ILogObserver`; `DebugTabViewModel` appends to a bounded `List<LogEntry>` (capped at 2000) and raises `EntriesChanged`; `DebugTabView` rebuilds the TMP text over a 500-line slice. The Clear button (C) empties the list, and `Dispose` (D) unsubscribes symmetrically. That removes six smells: the static event hook (S1, now an injectable `IServiceGateway`), the missing timestamp (S2, now preserved from the server), the unbounded queue (S3, now a bounded list), per-message file I/O (S4, gone), forced scroll (S7, now gated on `IDebugTabViewModel.AutoScrollEnabled`), and four-concerns-in-one-class (S8, now five named classes). Two are only contained: the TMP rebuild (S5/S6) is still O(N), but capped at 500 lines. One is deliberately left alone: the 44 client-side `Debug.Log*` callers (S9), because the gateway only carries server logs — a bridge adapter could be added later as a second `ILogObserver`. Two questions stay open below: should `LogEntry` carry a `source` field, and should autosave come back as its own `ILogObserver`?
 
 ---
 
@@ -5474,7 +5475,7 @@ See [`after-sequence.md`](after-sequence.md). The conversion follows the same ru
 
 ## TL;DR
 
-Mermaid `sequenceDiagram` of the AFTER trace. ACL boundary drawn as a `box` around `[Application, UnityLogStreamAdapter, CompositionRoot, DebugTabView]`. Producer side (`AnySubsystem → Application`) deliberately unchanged — the 44 `Debug.Log*` callers are captured automatically. Centrepiece: the `LogStream.Publish → ILogObserver.OnNext` dispatch replaces the entire BEFORE `HandleLog → Queue → StreamWriter → StringBuilder → TMP_InputField` chain in one arrow. `activate` bars only on `LogStream` (during dispatch) and `DebugTabVM` (during `AppendEntry`). Two `⚠` annotations mark the contained smells (O(N) rebuild capped at 500, forced scroll-to-bottom). Phase D (teardown) shown explicitly to make symmetric Subscribe/Unsubscribe lifetime visible.
+The Mermaid rendering of the after trace. The ACL boundary is drawn as a `box` around `Application`, `UnityLogStreamAdapter`, `CompositionRoot` and `DebugTabView`. The producer side (`AnySubsystem → Application`) is left unchanged on purpose, so all 44 `Debug.Log*` callers are still captured automatically. The centrepiece is one arrow: `LogStream.Publish → ILogObserver.OnNext` stands in for the whole before-state `HandleLog → Queue → StreamWriter → StringBuilder → TMP_InputField` chain. There are `activate` bars only on `LogStream` during dispatch and on `DebugTabVM` during `AppendEntry`. One `⚠` marks the smell that is only contained, not gone — the O(N) TMP rebuild, now capped at 500 lines; the forced scroll-to-bottom is eliminated, since the scroll is gated on `AutoScrollEnabled`. Phase D (teardown) is drawn explicitly so the symmetric Subscribe/Unsubscribe lifetime is visible.
 
 ---
 
@@ -5639,7 +5640,7 @@ S7 (scroll forced to bottom) is **eliminated**: `IDebugTabViewModel.AutoScrollEn
 
 ## TL;DR
 
-Two side-by-side Mermaid `classDiagram` blocks. **BEFORE** = single `DebugLogging` `MonoBehaviour` with 9 outgoing arrows (Queue, StringBuilder, StreamWriter, TMP_InputField, Scrollbar, Button, SFB, PlayerPrefs, Config) plus the `Application → DebugLogging` static-event arrow that's the canonical untestable hook. **AFTER** = three packages: `Domain` (3 interfaces `IDebugTabViewModel` / `ILogStream` / `ILogObserver`, 2 concrete classes `LogStream` / `DebugTabViewModel`, `LogEntry` record + `LogLevel` enum) and `Adapters` (`UnityLogStreamAdapter`, `DebugTabView`, `DebugTabCompositionRoot`). Two-interface seam between producer side and consumer side — new observers (autosave, telemetry) attach without touching producers. **Headline numeric:** one 255-line class → 7 small types; domain `DebugTabViewModel` CBO drops from 9 collaborators to 1 (only `ILogStream`).
+Two Mermaid class diagrams, before and after. Before is the single `DebugLogging` `MonoBehaviour` with nine outgoing arrows (`Queue`, `StringBuilder`, `StreamWriter`, `TMP_InputField`, `Scrollbar`, `Button`, SFB, `PlayerPrefs`, `Config`), plus the `Application → DebugLogging` static-event arrow that is the untestable hook at the centre of the problem. After is three packages. `Domain` holds three interfaces (`IDebugTabViewModel`, `ILogStream`, `ILogObserver`), two concrete classes (`LogStream`, `DebugTabViewModel`), the `LogEntry` record and the `LogLevel` enum. `Adapters` holds `UnityLogStreamAdapter`, `DebugTabView` and `DebugTabCompositionRoot`. A two-interface seam separates the producer side from the consumer side, so a new observer (autosave, telemetry) can attach without anyone touching the producers. In numbers: one 255-line class becomes seven small types, and the domain `DebugTabViewModel`'s CBO drops from nine collaborators to one, just `ILogStream`.
 
 ---
 
@@ -5944,7 +5945,7 @@ CBO for the domain ViewModel falls from 9 collaborators to 1 (only `ILogStream`)
 
 ## TL;DR
 
-Module-level view defending the Section 4.2 claim for the Debug-tab slice. **BEFORE:** one `Assembly-CSharp` blob, `DebugLogging` is a hub for 9 collaborators reached directly, the producer/consumer seam is a static global event. **AFTER:** three assemblies (`Domain`, `Adapters`, `Producers`) with one-way dependency. Topological sort prints 5 layers with **zero cycles**. **Key claim — non-invasive at the producer side:** the 44 existing `Debug.Log*` callers in `CanvassDesktop` + `DataAnalysis` are captured automatically via `UnityLogStreamAdapter` — no production caller is modified. Migrating any specific producer to structured `ILogStream.Publish(...)` is an opt-in follow-up refactor (own ADR per producer), not a prerequisite. `dotnet build` on `DebugTabSkeleton.csproj` succeeds with zero `UnityEngine` references.
+The module-level view of the same Section 4.2 claim for the Debug-tab slice. Before, everything is one `Assembly-CSharp` blob and `DebugLogging` is a hub reaching nine collaborators directly, with the producer/consumer seam being a static global event. After, there are three assemblies (`Domain`, `Adapters`, `Producers`) with the dependency running one way, and a topological sort gives five layers and no cycles. The point worth stressing is that the producer side doesn't change: the 44 existing `Debug.Log*` callers in `CanvassDesktop` and `DataAnalysis` are picked up automatically by `UnityLogStreamAdapter`, so no production caller is touched. Moving any one producer over to structured `ILogStream.Publish(...)` is an opt-in follow-up, each with its own ADR, not a prerequisite for this slice. `dotnet build` on `DebugTabSkeleton.csproj` succeeds with no `UnityEngine` references.
 
 ---
 
@@ -6148,7 +6149,7 @@ A short follow-up commit on Day 13 will paste tool screenshots / DSM exports alo
 
 ## TL;DR
 
-**Where the 44 `Debug.Log*` calls actually come from.** Full catalogue across `CanvassDesktop.cs` (40 sites) + `DataAnalysis.cs` (4 sites), each classified by line, method, trigger, message text, and the after-state `source` value it would carry. Five categories: **E** native/plugin errors (E1–E10, 9 calls) · **W** warnings (W1–W3, 3 calls) · **I** load-lifecycle info (I1–I7, 8 calls) · **V** subset validation (24 calls, all in `checkSubsetBounds`) — these last 24 **disappear entirely** in the AFTER design because `SubsetBoundsViewModel` clamps in property setters and renders the corrected value inline. The four natural `source` values (`"FileTab"`, `"VolumeLoader"`, `"HistogramController"`, `"SourcesTab"`, `"DataAnalysis"`) provide direct evidence for the SRP split of `CanvassDesktop` and motivate adding `source` to `ILogStream.Publish(...)`. **E7–E10 are the cleanest ACL violations** — a P/Invoke wrapper calling `UnityEngine.Debug.Log` directly.
+Where the 44 `Debug.Log*` calls actually come from. This is the full catalogue across `CanvassDesktop.cs` (40 sites) and `DataAnalysis.cs` (4 sites), each tagged with its line, method, trigger, message text, and the `source` value it would carry in the after-state. They fall into five groups: native/plugin errors (E1–E10, 9 calls), warnings (W1–W3, 3 calls), load-lifecycle info (I1–I7, 8 calls), and subset validation (24 calls, all inside `checkSubsetBounds`). Those last 24 vanish entirely in the after-state, because `SubsetBoundsViewModel` clamps in its property setters and shows the corrected value inline. The handful of natural `source` values (`"FileTab"`, `"VolumeLoader"`, `"HistogramController"`, `"SourcesTab"`, `"DataAnalysis"`) line up with the SRP split of `CanvassDesktop` and make the case for adding `source` to `ILogStream.Publish(...)`. E7–E10 are the clearest ACL violations: a P/Invoke wrapper calling `UnityEngine.Debug.Log` directly.
 
 ---
 
@@ -6335,7 +6336,7 @@ The class diagram in [`class-diagram.md`](class-diagram.md) should show:
 
 ## TL;DR
 
-**Frame this honestly: it's a testability refactor, not a metric refactor.** `DebugLogging` already passes 5/6 CK thresholds individually — the only failure is LCOM hs ≈ 0.95 (four disjoint concern clusters). What CK metrics *can't* capture: the static `Application.logMessageReceived` hook (S1) makes the whole class untestable without Unity. AFTER splits into 7 types — all pass everything, LCOM hs ≈ 0 per class. Domain-side `DebugTabViewModel` CBO drops from 9 → 1. Bounded `List<LogEntry>` (cap 2000) replaces unbounded non-generic `Queue`. **Test surface:** 0 → **35 NUnit tests, ~20 ms total, zero Unity dependency.** Section 4.2 compliance verified by `dotnet build` on the skeleton csproj with zero `UnityEngine` references.
+To be honest about it, this is a testability refactor, not a metric one. `DebugLogging` already passes 5 of 6 CK thresholds on its own; the only miss is LCOM hs ≈ 0.95, from four disjoint concern clusters. The thing CK can't see is that the static `Application.logMessageReceived` hook (S1) makes the whole class impossible to test without Unity. After the split there are seven types, every one inside the thresholds, with LCOM hs near 0 per class. The domain-side `DebugTabViewModel`'s CBO drops from 9 to 1, and a bounded `List<LogEntry>` (cap 2000) replaces the unbounded non-generic `Queue`. The test surface goes from nothing to 35 NUnit tests running in about 20 ms with no Unity. Section 4.2 compliance is confirmed by `dotnet build` on the skeleton csproj producing zero `UnityEngine` references.
 
 ---
 
@@ -7958,6 +7959,52 @@ end-of-sprint board snapshots are reproduced below (PNG, source-controlled under
 ### Sprint 3 — end of week 3
 
 ![Sprint 3 Kanban snapshot](kanban-snapshots/week3-snapshot.png)
+
+
+
+<div style="page-break-before: always;"></div>
+
+# Part 7 — Daily Stand-up Notes (highlights)
+
+The Brightspace specification didn't ask for these, but the original assignment brief did, so
+we kept them. The full log is one shared file, `Sprint-Documents/standups.md` — one entry per
+day, 09:00–09:10, with the usual three questions each (yesterday, today, blockers). What follows
+is a read of that log, grouped by sprint, rather than a re-paste of every table.
+
+### Sprint 1 (Days 2–5, 19–22 May)
+
+- Read the brief end to end and turned it into a plan; set up the ClickUp Kanban boards for the
+  whole team.
+- Got the iDaVIE system building and running on the team's machines.
+- Mapped the before-state: a `CanvassDesktop` class diagram, a concern map of the god-class, and
+  the first before-UML diagrams.
+- Drafted the initial MVVM proposal.
+- Stood up the metric tooling — CodeScene, NDepend and a basic CI — and captured the before-state
+  CK numbers.
+- Closed the sprint with a review and retrospective and committed the Sprint 2 plan.
+
+### Sprint 2 (Days 6–10, 25–29 May)
+
+- Split the sprint's work and assigned roles on Day 1.
+- Brought both worked examples into scope and up to the same standard: the file tab was rescoped,
+  and the debug tab was pulled up to match it.
+- Wrote the sequence and phasing docs and finalised the requirements document, the architecture
+  document and the main testing doc.
+- Finished the second worked example and ran the SOLID/GRASP audit (Day 9).
+- Built the pitch slide deck and ran a mock interview.
+- Day 10 was the Sprint 2 review and retro alongside the mid-assessment visit from the iDaVIE
+  team. We also caught a mix-up between the sub-team and team interview formats and re-planned
+  around it.
+
+### Sprint 3 (Days 11–13, 1–3 June)
+
+- The closing stretch, run from the schedule rather than a formal planning session: no sprint
+  planning on Day 11, the final work day plus the 17:00 artefact freeze and the sub-team retro
+  on Day 12, and interview day on 3 June with the stand-up brought forward to 08:55.
+- Day 10's hand-off into this sprint was Q&A and interview-support material for the pitch.
+
+Blockers were rare across the whole log. The one technical snag worth recording was NDepend
+throwing errors during setup on Day 7; it was cleared by Day 8.
 
 ---
 
