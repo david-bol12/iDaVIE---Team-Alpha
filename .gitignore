@@ -534,6 +534,8 @@ sysinfo.txt
 *.unitypackage
 *.app
 
+#MACOS
+*.dSYM
 # Crashlytics generated file
 crashlytics-build.properties
 
@@ -544,3 +546,4 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
+.html
