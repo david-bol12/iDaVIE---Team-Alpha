@@ -98,7 +98,21 @@ public class VolumeInputController : MonoBehaviour
     public bool HasHoverAnchor => (_hoveredAnchor && _hoveredFeature != null);
     public bool HasEditingAnchor => (_editingAnchor && _editingFeature != null);
     public VolumeDataSetRenderer ActiveDataSet => _volumeDataSets.FirstOrDefault(dataSet => dataSet.isActiveAndEnabled);
-    
+
+    // ── Persistence accessors ────────────────────────────────────────────────
+    /// <summary>
+    /// Returns the current InteractionState as a string for the persistence layer.
+    /// Used by InteractionStateAdapter.Capture().
+    /// </summary>
+    public InteractionState CurrentInteractionState => InteractionStateMachine.State;
+
+    /// <summary>
+    /// Returns the current (private) LocomotionState as a string for the persistence layer.
+    /// Used by InteractionStateAdapter.Capture().
+    /// </summary>
+    public string GetLocomotionStateString() => _locomotionState.ToString();
+    // ────────────────────────────────────────────────────────────────────────
+
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;

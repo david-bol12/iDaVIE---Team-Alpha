@@ -573,6 +573,44 @@ jobs:
           exit $CODE
 
   # ════════════════════════════════════════════════════════════════════════════
+  # JOB 7b — PERSISTENCE UNIT TESTS  (blocks PRs)
+  # Runs the NUnit test suite for the pure-C# persistence layer.
+  # No Unity dependency — runs on standard .NET 8.
+  # ════════════════════════════════════════════════════════════════════════════
+  persistence-tests:
+    name: "Persistence unit tests"
+    runs-on: ubuntu-latest
+    needs: build-dotnet
+    outputs:
+      passed: ${{ steps.run.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore persistence test project
+        run: dotnet restore tests/PersistenceTests
+
+      - name: Run persistence tests
+        id: run
+        run: |
+          dotnet test tests/PersistenceTests \
+            --no-restore \
+            -c Release \
+            --logger "trx;LogFileName=persistence-results.trx" \
+            --results-directory persistence-test-results
+          echo "passed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: persistence-test-results
+          path: persistence-test-results/
+
+  # ════════════════════════════════════════════════════════════════════════════
   # JOB 8 — SONARQUBE CLOUD  (blocks PRs)
   # Skipped silently when SONAR_TOKEN is not configured.
   # The quality gate is evaluated server-side; this job fails if it is not met.
