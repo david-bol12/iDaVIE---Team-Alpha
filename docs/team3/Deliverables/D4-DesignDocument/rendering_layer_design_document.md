@@ -20,16 +20,18 @@
 
 `VolumeDataSetRenderer` spans 1,403 lines of C# and fails every measurable quality threshold:
 
+*Confirmed values from the Understand tool (Count of Methods / Count of Coupled Classes / Percent Lack of Cohesion).*
+
 | Metric | Baseline | Target | Excess |
 |--------|---------------|--------|--------|
-| WMC (Weighted Methods per Class) | **44** | ≤ 20 | 2.2× over |
-| CBO (Coupling Between Objects) | **45** | ≤ 14 | 3.2× over |
-| RFC (Response For a Class) | **89** | ≤ 50 | 1.8× over |
-| LCOM (Lack of Cohesion in Methods) | **0.81** | ≤ 0.5 | 1.6× over |
-| DIT (Depth of Inheritance Tree) | 1 | ≤ 4 | ✅ |
-| NOC (Number of Children) | 0 | ≤ 5 | ✅ |
+| WMC (Count of Methods) | **97** | ≤ 20 | 4.9× over |
+| CBO (Count of Coupled Classes) | **28** | ≤ 14 | 2.0× over |
+| RFC (Count of All Methods) | **97** | ≤ 50 | 1.9× over |
+| LCOM (% Lack of Cohesion) | **0.95** | ≤ 0.5 | 1.9× over |
+| DIT (Max Inheritance Tree) | 2 | ≤ 4 | ✅ |
+| NOC (Count of Derived Classes) | 0 | ≤ 5 | ✅ |
 
-The four failing metrics indicate a **God Class**. The worst single method, `_startFunc`, carries CC = 28 across 185 lines. CBO = 45 means 45 other files must be considered on any edit.
+The four failing metrics indicate a **God Class**. The worst single method, `_startFunc`, carries CC = 28 across 185 lines. NIM = 97 instance methods, NIV = 84 instance variables. CBO = 28 means 28 coupled classes must be considered on any edit.
 
 ### 2.2 Responsibility Inventory
 
@@ -66,19 +68,21 @@ We own the GPU-side volume rendering layer: all classes, interfaces, and shader 
 
 ### 4.1 Current Architecture (As-Is)
 
-The current structure is a single node coupled to 45 files across 8 packages. The SOLID/GRASP audit (§8) catalogues 17 confirmed violations — 6 Critical, 8 High, 1 Medium.
+The current structure is a single node coupled to 28 classes across 8 packages (CBO = 28, confirmed Understand). The SOLID/GRASP audit (§8) catalogues 17 confirmed violations — 6 Critical, 8 High, 1 Medium.
 
 ### 4.2 Target Architecture (To-Be)
 
 `VolumeDataSetRenderer` is replaced by five collaborating classes, each behind its own interface:
 
-| Class | Single Responsibility | Proj. WMC | Proj. CBO |
+| Class | Single Responsibility | WMC (measured) | CBO (measured) |
 |---|---|---|---|
-| `VolumeRenderCoordinator` | Orchestrates per-frame loop; wires the four domain classes | ≤ 10 | ≤ 6 |
-| `VolumeMaterialBinder` | Shader keyword management, material binding, colour-map application | ~16 | ≤ 11 |
-| `VolumeTextureManager` | 3D texture upload, LRU caching, 368 MB budget enforcement | ≤ 20 | ≤ 8 |
-| `VolumeCameraDriver` | Camera matrix calculation, clip planes, projection mode | ≤ 12 | ≤ 6 |
-| `FoveatedSamplingPolicy` | Per-frame sample-rate decision from gaze direction | ≤ 8 | ≤ 6 |
+| `VolumeRenderCoordinator` | Orchestrates per-frame loop; wires the four domain classes | 11 | 15 ⚠ orchestrator threshold ≤ 25 |
+| `VolumeMaterialBinder` | Shader keyword management, material binding, colour-map application | 10 | 12 |
+| `VolumeTextureManager` | 3D texture upload, LRU caching, 368 MB budget enforcement | 12 | 4 |
+| `VolumeCameraDriver` | Camera matrix calculation, clip planes, projection mode | 4 | 4 |
+| `FoveatedSamplingPolicy` | Per-frame sample-rate decision from gaze direction | 6 | 6 |
+
+*All values confirmed by Understand tool. CBO domain target ≤ 14; orchestrator threshold ≤ 25. WMC domain target ≤ 20.*
 
 `VolumeRenderCoordinator` is the only class that inherits from `MonoBehaviour` and the only class that knows all four domain classes exist. It contains zero domain logic — all computation is delegated.
 
@@ -325,7 +329,7 @@ See `docs/team3/test-strategy.md` for the detailed phased migration plan, entry/
 
 All diagrams are PlantUML source in `diagrams/`:
 
-- **`class-before.puml`** — current `VolumeDataSetRenderer` with 45 couplings annotated.
+- **`class-before.puml`** — current `VolumeDataSetRenderer` with 28 coupled classes annotated (CBO = 28, confirmed Understand).
 - **`class-after.puml`** — five-class target architecture with interface boundaries.
 - **`architecture.puml`** — component diagram annotating the `IRenderPipeline` boundary and cross-team contracts.
 - **`sequence-render-frame.puml`** — 8-step per-frame sequence: Update → camera → foveation → texture → material → mask → pipeline → GPU.
@@ -349,8 +353,8 @@ All diagrams are PlantUML source in `diagrams/`:
 | V-13 | GRASP Controller | `CropToRegion()` spans validation, data load, material update, outline update | 🔴 Critical |
 | V-14 | GRASP Indirection | No abstraction layer between Unity lifecycle hooks and domain logic | 🔴 Critical |
 | V-15 | GRASP Prot. Variations | Render pipeline, input provider, data format have zero interface protection | 🔴 Critical |
-| V-16 | GRASP Low Coupling | CBO ~45; 12 concrete dependencies, 0 interface dependencies | 🔴 Critical |
-| V-17 | GRASP High Cohesion | LCOM ~0.81; unrelated field clusters share one class | 🔴 Critical |
+| V-16 | GRASP Low Coupling | CBO = 28 (confirmed Understand); 28 concrete dependencies, 0 interface dependencies | 🔴 Critical |
+| V-17 | GRASP High Cohesion | LCOM = 0.95 (confirmed Understand); unrelated field clusters share one class | 🔴 Critical |
 
 *6 Critical, 8 High, 1 Medium total — see `SOLID_GRASP_Violations.md` for full 17-row table including V-02, V-03, V-05, V-09, V-11, V-12.*
 
@@ -364,11 +368,11 @@ All diagrams are PlantUML source in `diagrams/`:
 | V-07/V-08/V-09 (DIP) | DD-03 | All collaborators injected at composition root |
 | V-10 (DIP) | DD-01 + DD-03 | `VolumeCameraDriver` takes `Matrix4x4`; `IRenderPipeline` removes `UnityEngine.Rendering.*` from domain |
 | V-15 (Prot. Variations) | DD-01 | `IRenderPipeline` is the stable seam around the render pipeline variation point |
-| V-16/V-17 | DD-01 + DD-03 | Per-class CBO ≤ 11; per-class LCOM ≤ 0.05 |
+| V-16/V-17 | DD-01 + DD-03 | Domain-class CBO ≤ 12; coordinator CBO = 15 (orchestrator threshold ≤ 25); LCOM 0.00–0.33 for focused classes, 0.57–0.69 for lifecycle-structured classes (see `docs/metrics-worksheet.md §4`) |
 
 ### 7.3 Remaining Trade-offs
 
-**T-01 — Coordinator coupling (CBO ~6):** `VolumeRenderCoordinator` couples to four interfaces — acceptable (CBO ≤ 25 for orchestrators per brief). Coupling is to interfaces, not concrete classes.
+**T-01 — Coordinator coupling (CBO = 15, measured):** `VolumeRenderCoordinator` couples to four interfaces plus Unity/system types — marginally exceeds the ≤ 14 domain target but is within the ≤ 25 orchestrator threshold per brief. Coupling is to interfaces, not concrete classes.
 
 **T-02 — `MonoBehaviour` lifecycle:** A thin Unity entry-point shell must remain. Mitigation: ≤ 30 lines, zero domain logic, enforced by SonarQube (CC > 2 = build failure).
 
