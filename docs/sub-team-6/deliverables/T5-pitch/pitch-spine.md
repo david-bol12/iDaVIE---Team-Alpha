@@ -48,22 +48,22 @@ We map every architectural choice back to one of these. The panel cannot disagre
 - **GRASP — High Cohesion / Low Coupling.** Henderson-Sellers LCOM of **0.955** is the operational proof that cohesion has collapsed: 63 methods touch 67 fields with only 189 total field-method accesses; methods operate on disjoint slices of the field set.
 - **Fowler — Long Method, Large Class.** Refactoring catalogue.
 
-**Evidence (real numbers, all from `SK_BNCH.md` and `SonarQube Baseline report.md`):**
+**Evidence (CK figures tool-verified — Understand static-analysis export, Day 13, canonical in [`ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md); SonarQube rating from `SonarQube Baseline report.md`):**
 
 | Metric | Measured | §7.1 threshold | Status |
 |---|---|---|---|
 | LOC | 1 899 | — | n/a |
 | WMC | **63** | ≤ 40 (orchestrator) | violation +23 |
-| CBO | **47** | ≤ 25 (orchestrator) | violation +22 |
-| RFC | **118** | ≤ 50 | violation +68 |
+| CBO | **30** | ≤ 25 (orchestrator) | violation +5 |
+| RFC | **63** (tool def.) / ~210 (CK def.) | ≤ 50 | violation |
 | LCOM_HS | **0.955** | ≤ 0.50 | violation |
 | Cyclomatic complexity (max method `checkSubsetBounds`) | **31** | ≤ 15 (SonarQube default) | violation |
 | Dead fields | `_restFrequency`, `inPaintMode`, `_tabsManager` | 0 | violation |
 | SonarQube maintainability rating | **D** | A | violation |
 
-**Speaker note:** read the row that hurts most: "this one class is coupled to forty-seven other types — twenty-three project classes, thirteen Unity / TMPro types, seven System types, four Valve.VR types — and three of its own fields are declared but never accessed." Pause. The audience needs that pause.
+**Speaker note:** read the row that hurts most: "this one class is coupled to thirty other types — project controllers, Unity / TMPro UI widgets, System types and Valve.VR — and three of its own fields are declared but never accessed." Pause. The audience needs that pause.
 
-**Risk if challenged — "isn't CBO=47 unfair on a Unity MonoBehaviour?":** the threshold for orchestrators is 25, not 14; we are already grading on a curve. Even the orchestrator curve is broken almost 2×.
+**Risk if challenged — "isn't CBO=30 unfair on a Unity MonoBehaviour?":** the threshold for orchestrators is 25, not 14; we are already grading on a curve. Even on that generous curve the class is over — 30 against a 25 ceiling, and ≥ 20 even after excluding every Unity value type.
 
 ---
 
@@ -375,7 +375,7 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 
 ### Slide 3.4 — CK delta — the numbers (~75 sec)
 
-**Claim:** Replace `CanvassDesktop` *for the file-tab slice* with three classes; the measured CK numbers fall within §7.1 thresholds, with `FileTabViewModel` WMC (27) the one borderline case over the ≤ 20 domain ceiling — remediation documented.
+**Claim:** Replace the file-tab slice of `CanvassDesktop` with eleven focused classes; every measured CK number lands within its §7.1 threshold band. The worst successor class, `FileTabViewModel`, is classified as an **orchestrator** (it coordinates four injected services) and passes the orchestrator bands: WMC 40 ≤ 40, CBO 19 ≤ 25.
 
 **Why this matters:** Section 7 of the assignment is unambiguous — "speculative numbers without evidence are not accepted". The projection must be supported by the skeleton code, not by hope.
 
@@ -384,20 +384,22 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 - **Threshold-vs-trend reading.** Thresholds for absolute pass/fail; trend (Day 2 → Day 13) for the proposal's value claim.
 - **Henderson-Sellers LCOM.** Normalises across class size; the right LCOM variant for comparing classes of different LOC.
 
-**Evidence (from `after-dsm.md` CK projection table):**
+**Evidence (tool-verified — Understand export, Day 13; canonical table in [`ck-metrics.md`](../../../../refactoring-examples/sub-team-6/file-tab/ck-metrics.md)):**
 
-| Class | WMC before | WMC after | CBO before | CBO after | RFC before | RFC after | LCOM before | LCOM after | Threshold (domain) |
-|---|---|---|---|---|---|---|---|---|---|
-| CanvassDesktop (post-split, composition-root shell) | 63 | ~8 | 47 | ~4 | 118 | ~12 | 0.955 | ~0.30 | ≤ 40 (orchestrator) |
-| FileTabViewModel | — | 27 ⚠ | — | 9 | — | ~50 | — | ≈0.20 | ≤ 20 |
-| SubsetBoundsViewModel | — | ~8 | — | ~1 | — | ~15 | — | ~0.20 | ≤ 20 |
-| FitsServiceAdapter | — | ~10 | — | ~6 | — | ~20 | — | ~0.30 | ≤ 40 (adapter) |
+| Class | Layer | WMC | CBO | RFC (tool) | LCOM % | Threshold band | Pass? |
+|---|---|---:|---:|---:|---:|---|:--:|
+| **CanvassDesktop (before)** | god class | **63** | **30** | **63** / ~210 (CK) | **95%** | orchestrator | ❌ WMC, CBO, LCOM |
+| FileTabViewModel | orchestrator | **40** | **19** | 40 | 91% \* | ≤ 40 / ≤ 25 | ✅ WMC, CBO |
+| SubsetBoundsViewModel | domain | **20** | 1 | 20 | 77% \* | ≤ 20 / ≤ 14 | ✅ WMC, CBO |
+| FitsServiceAdapter | adapter | 6 | 7 | 6 | 33% | ≤ 40 / ≤ 25 | ✅ |
 
-**Note on `FileTabViewModel` WMC = 27 (⚠):** hand-counted Day 6 (`metrics.md §2.2`), this is borderline **over** the ≤ 20 domain threshold and we say so on the slide. Documented remediation: extract a `FileTabCommands` helper for the four command bodies, dropping the ViewModel to WMC ~22. Every other class in the slice is within threshold. Do not quote the old "~12 / re-derive to 15" figure — it was a stale projection, superseded by the measured 27.
+**Headline delta (god class → worst successor class):** WMC **63 → 40** (−37 %), CBO **30 → 19** (−37 %). `FileTabViewModel` is the largest remaining class and still clears the orchestrator bands; every other successor is smaller. It was re-classified from *domain* to *orchestrator* because it coordinates four injected services (`IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`); three pure-static helpers (`GetAxisMaxima`, `ComputeZScale`, `MaskAxesMatchImage`) were extracted to `FitsMetadataHelper` in the Day-10 refactor, bringing the tool-reported WMC from 43 to 40. **Do not quote** the old hand-counted "27 / domain / borderline-over" figure or the "extract `FileTabCommands` → ~22" remediation — both are superseded by the tool-verified 40 (orchestrator, passing).
 
-**Speaker note:** "the projection is evidenced by the skeleton code in `refactoring-examples/sub-team-6/file-tab/`. The numbers are not aspirational — they are countable from the skeleton. The full Understand re-run on the skeleton is owed by Day 13."
+**\* LCOM note:** the after-state LCOM stays high (`FileTabViewModel` 91 %, `SubsetBoundsViewModel` 77 %), but this is a *property-backing-field artifact* of MVVM — every bindable property has one backing field touched only by its getter/setter — not the disjoint-concern collapse that drives `CanvassDesktop`'s 95 %. Same number range, opposite structural cause (`ck-metrics.md`, LCOM note).
 
-**Risk if challenged — "projected numbers, not measured":** acknowledge. Per §7, projection is acceptable if supported by skeleton code that can be re-measured. We commit to a re-measurement by Day 13 (D9 projection deliverable).
+**Speaker note:** "these are tool-verified — the Understand static-analysis export (Day 13) over the committed skeleton in `refactoring-examples/sub-team-6/file-tab/`. They are measured, not projected; the canonical table is `ck-metrics.md`."
+
+**Risk if challenged — "projected numbers, not measured":** for the file-tab slice they are measured — the Day-13 Understand export over the committed skeleton, not a projection (`ck-metrics.md`). The one metric item still owed is Quality-Guild tool confirmation of the dependency-cycle count (Gap #1).
 
 ---
 
@@ -422,7 +424,7 @@ The pattern of each worked-example block: **before** (1 slide showing pain) → 
 | **Information Expert** | `SubsetBoundsViewModel` owns the bounds *data*; therefore owns the *validation*. |
 | **Indirection** | `IFitsService` is the indirection between ViewModel and native code. |
 | **Protected Variations** | The variation we anticipate (transport, file format, dialog) is each behind a stable interface. |
-| **Low Coupling / High Cohesion** | CBO drops 47 → ~4 on the composition-root shell; LCOM 0.955 → ~0.30. |
+| **Low Coupling / High Cohesion** | CBO drops **30 → 19** on the worst successor class (−37 %); the remaining coupling relocates into adapters where the ≤ 25 band absorbs it. LCOM stays high (91 %) but for a benign MVVM property-pattern reason, not the disjoint-concern collapse behind the 95 % before-state (see Slide 3.4 LCOM note). |
 | **Polymorphism** | `IFitsService` adapters dispatch on file type — no `if (extension == ...)` switch in the ViewModel. |
 | **Pure Fabrication** | `FileTabViewModel` is a *fabricated* class with no real-world counterpart; it exists only to make the ViewModel layer testable. |
 
@@ -801,7 +803,7 @@ The reason the assignment names *two* worked examples (§6.6) is so we cannot pa
 
 | ISO 25010 sub-char | Before (D rating) | After (target A) |
 |---|---|---|
-| Modularity | CBO 47, cycles | CBO ≤ 14 / 25, zero cycles |
+| Modularity | CBO 30, cycles | CBO ≤ 14 / 25, zero cycles |
 | Reusability | no interfaces | ISP ≤ 7 on every boundary |
 | Analysability | WMC 63, CC 31 | WMC ≤ 20 / 40, CC ≤ 15 |
 | Modifiability | propagation cost high (DV8 owed) | ≥ 30 % drop (NFR-MOF-2) |
@@ -861,7 +863,7 @@ Ranked by pitch-day visibility. Each gap names an artefact, an owner, and a due 
 | 9 | Debug-tab before-state UML | `…/D4-worked-examples/ex2-debug-tab/before-*.puml` | TL | Day 8 | 4.1 |
 | 10 | BNCH-6 mocking-difficulty + BNCH-7 ISP audit tables — **CLOSED 2026-05-28** (both committed; BNCH-6 `CanvassDesktop` 205 → VM 0; BNCH-7 11/12 interfaces ≤ 7, `IFileTabViewModel` facade documented trade-off) | `docs/sub-team-6/deliverables/other/T2-baseline-benchmark/BNCH-6.md`, `BNCH-7.md` | Quality Champion | ✅ Day 9 | 5.2 |
 | 11 | File-tab skeleton + `BrowseImage`/`Load` unit tests | `refactoring-examples/sub-team-6/file-tab/tests/` | Sub-team | Day 10 | 5.3 |
-| 12 | Day-13 CK re-measurement on skeleton (Understand re-run) | `docs/sub-team-6/metrics/projection.md` | Quality Champion | Day 13 | 3.4, 4.4 |
+| 12 | Day-13 CK re-measurement (Understand re-run) — **file-tab CLOSED** (tool-verified table in `refactoring-examples/sub-team-6/file-tab/ck-metrics.md`); debug-tab re-measure still owed | `…/file-tab/ck-metrics.md`, `docs/sub-team-6/metrics/projection.md` | Quality Champion | Day 13 | 3.4, 4.4 |
 | 13 | Author names on ADR-0002, mvvm-binding-policy | inline | TL | Day 7 | 7.3 |
 | 14 | Per-slide speaker assignment + rehearsal plan | `docs/sub-team-6/deliverables/T5-pitch/speakers.md` | SM | Day 12 | 7.3 |
 
@@ -883,12 +885,12 @@ Ranked by signal — *probability × difficulty × cost of muffing it*. If we re
 
 | # | Question (likely panel voice) | What they are really probing | First-line answer | Trap |
 |---|---|---|---|---|
-| **1** | *"You did not change a single line of production code. Why should we believe these CK numbers will land?"* | Projection ≠ measurement. §7 forbids "speculative numbers without evidence". | Point at skeleton: `refactoring-examples/sub-team-6/file-tab/`, `…/debug-tab/skeleton/`. The numbers are countable from skeleton, not from hope. Day 13 re-measurement on the skeleton is owed (Gap #12, Appendix A). | Promising the full refactor is delivered. It is not — design proposal only (§6.6). |
+| **1** | *"You did not change a single line of production code. Why should we believe these CK numbers will land?"* | Projection ≠ measurement. §7 forbids "speculative numbers without evidence". | Point at skeleton: `refactoring-examples/sub-team-6/file-tab/`, `…/debug-tab/skeleton/`. The file-tab numbers are **tool-verified** — the Day-13 Understand export over the committed skeleton (`ck-metrics.md`), not hand-counted hope; the debug-tab re-measure is still owed (Gap #12, Appendix A). | Promising the full refactor is delivered. It is not — design proposal only (§6.6). |
 | **2** | *"Pick one slide. Defend it as if you wrote it alone."* | §10.5 #4 — inability to defend = fail signal. They will pick a slide *with our name on it*. | Whichever member is asked: lead with the **claim** sentence from that slide, then the **theory anchor**, then the **evidence pointer**. Do not improvise — the spine is the script. | Reading the slide back. They asked you to *defend*, not narrate. |
 | **3** | *"Show me where in the brief MVVM is mandated, and defend the choice over MVP / MVU / MVC."* | LO4 + ADR-0001 quality. §6.6 says "MVVM-style split"; the choice between MVVM variants is ours. | Brief §6.6 names MVVM explicitly. ADR-0001 *Alternatives Considered* rejects MVP (no binding semantics — equivalent boilerplate without payoff), MVU (mismatch with UI Toolkit two-way binding; learning-curve risk), MVC (View pulls Model — defeats DIP for our threading model), Reactive MVVM (Rx adds a library dependency we have not justified). | Defending MVVM as "the obvious choice". The brief names it but does not justify it — we must. |
 | **4** | *"Sub-team 1 owns the `IServiceGateway`. What happens if their contract differs from your assumption?"* | DEPS-1, integration risk (R01 in ADR-0001). | Slide 6.3. The contract *is* the artefact. Day 8 integration review (sprint plan) is the lock-in date. Our ViewModel depends only on `IFitsService` and `ILogStream` — those are *ours*. The seam to `IServiceGateway` is the adapter and is owned in our composition root. If Sub-team 1's shape changes, we rewrite the adapter, not the ViewModel. | Saying "we coordinated with them". Name the *artefact* and the *date*. |
 | **5** | *"`CanvassDesktop` is a `MonoBehaviour` because Unity demands it. Doesn't your split fight the engine?"* | The panel wrote the engine integration. They know Unity. | The View *stays* a `MonoBehaviour` (or `UIDocument` in UI Toolkit) — that is the only assembly that touches Unity. The ViewModel is pure C# because it does *not* extend `MonoBehaviour`; it is held by reference, not by the scene graph. We are not fighting Unity — we are letting Unity own only what Unity must own. `mvvm-binding-policy.md` §5 (composition root). | Implying the View is also pure C#. It is not. |
-| **6** | *"You claim 47 → ~4 CBO on the post-split shell. How? Show me the dependencies you removed."* | Quantitative challenge. CBO drops are easy to over-claim. | Walk the before-DSM (`before-dsm.md`) → after-DSM (`after-dsm.md`) for **CanvassDesktop (post-split)** row only. The shell's responsibility is *only* to instantiate the ViewModels and bind the `UIDocument`. Its CBO is now bounded by the count of ViewModels it composes (~4). The remaining dependencies (FITS, native, dialogs) moved *into* the adapters, where adapter thresholds (CBO ≤ 25) absorb them. | Quoting the gross number without showing where the coupling *went*. CBO does not disappear — it relocates to a class with a higher threshold. |
+| **6** | *"You claim CBO 30 → 19 on the worst successor class. How? Show me the dependencies you removed."* | Quantitative challenge. CBO drops are easy to over-claim. | Walk the before-DSM (`before-dsm.md`) → after-DSM (`after-dsm.md`). `CanvassDesktop`'s 30 collaborators redistribute across eleven classes; the worst successor, `FileTabViewModel`, couples to 19 (four injected service interfaces + the DTOs they exchange), within the ≤ 25 orchestrator band. The native / FITS / dialog dependencies moved *into* the adapters (`FitsServiceAdapter` CBO 7, etc.), where the adapter band absorbs them; the tiny `FileTabCompositionRoot` (CBO 12) only wires the graph. | Quoting the gross number without showing where the coupling *went*. CBO does not disappear — it relocates to classes with appropriate thresholds. |
 | **7** | *"You found a real bug (`UpdateMaxValue` writes `minVal`). Did you fix it? Did you tell the maintainers?"* | This is the trick question. The brief is design-only (§6.6) — but the panel *is* the maintainer. | Frame: this is evidence of cost in Slide 1.4, not a deliverable. We are now telling you — on a slide. We can raise a GitHub issue post-pitch if useful; we did not raise it during the assessment because doing so was out of §6.6 scope. | Either (a) hedging — say it cleanly. Or (b) claiming we will fix it during the assessment window. We will not. |
 | **8** | *"JSON-RPC over named pipes is fine for local. What is your evidence that the same interface survives the gRPC switch?"* | OCP / Protected Variations on a real boundary. | ADR-0002 §A.6 — `wireVersion` semver discipline. ADR-0002 §A.7 — gRPC `.proto` reuses method names and error codes. The `IServiceGateway` interface is *transport-agnostic by construction*: method signatures take DTOs, return `Task<Result>`, no pipe-specific types leak into the contract. The cost of switching is one new adapter class, not a new interface. | Claiming we *will* migrate to gRPC. We are claiming the *interface* survives the migration. |
 | **9** | *"Where exactly is the cycle? You list `HistogramHelper → CanvassDesktop → HistogramMenuController → HistogramHelper` as 'suspected'. Why not measured?"* | Evidence Gap #1 (DV8/NDepend cycle report on the 8-class slice). | Acknowledge openly: the cycle suspicion is from the SonarQube Rank 10 finding; full graph-level cycle detection is owed by Day 10 (Quality Champion). The other three §4.2 boxes are already failed without it, so the architectural argument holds. We do not need the cycle report to justify the split. | Bluffing the cycle. The panel uses NDepend; they can ask us to run it. |
@@ -928,7 +930,7 @@ These questions sit alongside the Risk lines on the slides themselves. Where a s
 
 #### B.2.3 — Worked examples (Sections 3 & 4 — 12 min slot, the centrepiece)
 
-- **Q: "I see `FileTabViewModel` WMC 27. Show me the method list."** — Skeleton probe. Answer: open the committed `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs` and narrate: constructor, 9 non-trivial property setters (`ImagePath`, `MaskPath`, `SelectedHduIndex`, `SelectedZAxisIndex`, `SubsetEnabled`, `RatioMode`, `IsLoading`, `HeaderText`, `ValidationMessage`), the `IsLoadable` getter, 4 command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `ClearMask`), `Dispose`, `RefreshHduHeaderAsync`, `BuildMemoryWarning`, `PopulateZAxisOptions`, `UpdateZAxisMax`, `GetAxisMaxima`, `ComputeZScale`, `MaskAxesMatchImage`, plus the notify helpers — 27 total (hand-counted Day 6, `metrics.md §2.2`). WMC 27 is borderline over the ≤ 20 domain threshold; documented remediation: extract a `FileTabCommands` helper → WMC ~22. **Trap:** quoting a number without method names; quoting the stale "~12".
+- **Q: "I see `FileTabViewModel` WMC 40. Show me the method list."** — Skeleton probe. Answer: open the committed `refactoring-examples/sub-team-6/file-tab/skeleton/FileTabViewModel.cs` and narrate: constructor, the non-trivial property setters (`ImagePath`, `MaskPath`, `SelectedHduIndex`, `SelectedZAxisIndex`, `SubsetEnabled`, `RatioMode`, `IsLoading`, `HeaderText`, `ValidationMessage`), the `IsLoadable` getter, 4 command bodies (`BrowseImageAsync`, `BrowseMaskAsync`, `LoadAsync`, `ClearMask`), `Dispose`, `RefreshHduHeaderAsync`, `BuildMemoryWarning`, `PopulateZAxisOptions`, `UpdateZAxisMax`, plus the notify/INPC helpers — **40** total, tool-counted by Understand (Day 13, `ck-metrics.md`). The three pure-static FITS helpers (`GetAxisMaxima`, `ComputeZScale`, `MaskAxesMatchImage`) were **extracted to `FitsMetadataHelper`** in the Day-10 refactor — that is what brought the tool-reported WMC from 43 to 40. The class is an **orchestrator** (coordinates four injected services), so 40 clears the ≤ 40 orchestrator band. **Trap:** quoting the stale hand-counted "27 / domain / borderline-over" or the "`FileTabCommands` → ~22" remediation — both superseded.
 
 - **Q: "How does the View know when `ImagePath` changes?"** — Binding mechanics. Answer: `INotifyPropertyChanged` event. The ViewModel raises `PropertyChanged("ImagePath")`; the View's `UIDocument` has a binding registered against `ImagePath` via UI Toolkit's binding system (Unity 6) or via our `UnityBinder<T>` shim (Unity 2021). `mvvm-binding-policy.md` §2.1. **Trap:** "the View polls it". That would be the old design.
 
@@ -1010,7 +1012,7 @@ These are the questions designed to break composure or expose unfounded confiden
 
 - **Q: "Your sub-team is allocated to 'Desktop GUI and Client Shell'. The brief lists you as Sub-team 5 (Die Boks) in §5.5 but you call yourselves Sub-team 6. Why?"** — **A:** §5.5 numbers are *allocation IDs*; §6.x numbers are *work-package IDs*. We are allocation 5, work package 6. We refer to "Sub-team 6" because that is the work package we read; we are formally Die Boks / Sub-team 5 in cohort coordination. (Resolved 2026-05-19 — see CLAUDE.md project header.)
 
-- **Q: "I don't believe your CK projections. Re-derive WMC for `FileTabViewModel` from first principles, live."** — **A:** WMC is the sum of method complexities. The committed skeleton has 27 methods/accessors, most of cyclomatic complexity 1–2 (validation lives in `SubsetBoundsViewModel`), so WMC 27 — hand-counted Day 6 (`metrics.md §2.2`), measured not projected. That is borderline over the ≤ 20 domain threshold and we say so; documented remediation is to extract a `FileTabCommands` helper → WMC ~22.
+- **Q: "I don't believe your CK projections. Re-derive WMC for `FileTabViewModel` from first principles, live."** — **A:** WMC here is method count (the tool's NOM-style WMC). The committed skeleton has 40 methods/accessors, most of cyclomatic complexity 1–2 (validation lives in `SubsetBoundsViewModel`), so WMC 40 — tool-counted by Understand (Day 13, `ck-metrics.md`), measured not projected. `FileTabViewModel` is an orchestrator (four injected services), so 40 clears the ≤ 40 orchestrator band; three static FITS helpers were extracted to `FitsMetadataHelper` to bring it from 43 to 40.
 
 - **Q: "What is one thing about your design you are uncertain about?"** — **A:** The `IUIDispatcher` abstraction may be heavier than necessary if UI Toolkit's binding system already marshals to the UI thread reliably under all event sources. We carry the abstraction because the Unity 2021 path (without UI Toolkit) needs it; once we are Unity-6-only it may simplify. Open question for Sprint 3.
 

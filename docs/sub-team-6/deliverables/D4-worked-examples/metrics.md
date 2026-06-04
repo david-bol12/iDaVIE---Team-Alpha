@@ -155,7 +155,7 @@ interface to introduce.
 | Interfaces backing file tab APIs | 0 | **5** (`IFileTabViewModel`, `IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`) | +5 | ✅ |
 | Dead methods | 1 (`CheckImgMaskAxisSize`) | **0** | −1 | ✅ |
 | File tab testable without Unity runner | 0 / 16 methods | **4 / 11 types** (`FileTabViewModel`, `SubsetBoundsViewModel`, `AsyncRelayCommand`, `RelayCommand`) | +4 pure-C# types | ✅ |
-| NUnit tests covering domain layer | **0** | **34** (committed in `file-tab/tests/FileTabViewModelTests.cs`) | +34 | ✅ NFR-TST-1 |
+| NUnit tests covering domain layer | **0** | **47** (committed in `file-tab/tests/FileTabViewModelTests.cs`) | +47 | ✅ NFR-TST-1 |
 
 ---
 

@@ -16,8 +16,8 @@ ISO 25010:2023 is the standard the brief names (Appendix A). It gives us five na
 ### Q1.2 — "1 899 lines for `CanvassDesktop.cs` — does that include generated code or comments?"
 Physical lines, including comments and blanks, as Understand counts them. Sloc-without-comments is ~1 510. The thing being criticised is not the line count itself — it is the WMC of 63 across 67 fields and 63 methods inside one `MonoBehaviour`.
 
-### Q1.3 — "CBO 47 sounds bad. What does it mean operationally?"
-Forty-seven distinct types are referenced by methods or fields of `CanvassDesktop`: 23 project classes, 13 Unity / TMPro types, 7 System types, 4 Valve.VR types. Operationally: a change anywhere in any of those 47 types can require a change here. The class is downstream of half the codebase.
+### Q1.3 — "CBO 30 sounds bad. What does it mean operationally?"
+Thirty distinct types are referenced by methods or fields of `CanvassDesktop` — project controllers (`FitsReader`, `VolumeCommandController`, `HistogramHelper`, `StandaloneFileBrowser`, …), Unity / TMPro UI widgets, System types and `Valve.VR`. Even excluding every Unity value type the count stays ≥ 20. Operationally: a change anywhere in any of those types can require a change here. The class is downstream of half the codebase. (Tool-verified, Understand export — `ck-metrics.md`.)
 
 ### Q1.4 — "Henderson-Sellers LCOM vs the original Chidamber-Kemerer LCOM — why your variant?"
 HS is normalised to [0, 1], so it is comparable across classes of different size. Original CK LCOM is unbounded. Understand reports HS by default; the §7.1 threshold of 0.5 is calibrated against the HS variant.
@@ -99,8 +99,8 @@ The `OpenImageAsync` signature takes a `CancellationToken`. Between native calls
 ### Q3.7 — "What about errors — the file is corrupt, the path is invalid?"
 The adapter throws a typed exception. The ViewModel catches it in the command, sets `Error` to the message, and `IsBusy` to false. The View is bound to `Error` and shows it. The command itself never propagates the exception. `mvvm-binding-policy.md` §2.3.
 
-### Q3.8 — "Your table lists WMC 27 for `FileTabViewModel` — that is over your ≤ 20 domain threshold. Explain."
-WMC 27, hand-counted from the committed skeleton on Day 6 (`metrics.md §2.2`), not projected. It is borderline over the ≤ 20 domain threshold and we flag it as such — we do not hide it. Documented remediation: extract a `FileTabCommands` helper for the four command bodies, dropping the ViewModel to WMC ~22. Every other class in the file-tab slice is within threshold.
+### Q3.8 — "Your table lists WMC 40 for `FileTabViewModel` — explain it against your thresholds."
+WMC 40, tool-counted by Understand (Day 13, `ck-metrics.md`), not hand-estimated. `FileTabViewModel` is classified as an **orchestrator** — it coordinates four injected services (`IFitsService`, `IFileDialogService`, `IVolumeService`, `IMemoryProbe`) — so it is measured against the ≤ 40 orchestrator band, which it meets exactly. Three pure-static FITS helpers were extracted to `FitsMetadataHelper` in the Day-10 refactor, bringing the tool figure from 43 to 40. CBO 19 likewise clears the ≤ 25 orchestrator band. Do not quote the old "27 / domain / borderline-over" figure or the "`FileTabCommands` → ~22" remediation — both are superseded by the tool-verified numbers.
 
 ### Q3.9 — "Which SOLID principle does `SubsetBoundsViewModel` exemplify?"
 SRP and GRASP Information Expert — the class owns the bounds *data*, so it owns the bounds *validation*. Plus DIP: the file ViewModel depends on the bounds ViewModel via interface, not concrete type.
@@ -147,7 +147,7 @@ Both examples share the same three-assembly split, the same composition root, th
 Zero in the new style. The skeleton is committed; the `BrowseImage`/`Load` command tests are owed by Day 10. That is the gate at which CI begins enforcing the coverage rule.
 
 ### Q5.2 — "70 % branch + line on ViewModel — how do you guarantee that gate is hit?"
-The `FileTabViewModel` is ~27 mostly-trivial methods and property accessors (CC 1–2; `metrics.md §2.2`), so the path count is bounded. A small fixed test set (happy / error / cancel / threading for each command) covers the branches by construction — the 34 committed NUnit tests already do. The number is not aspirational.
+The `FileTabViewModel` is 40 mostly-trivial methods and property accessors (CC 1–2; tool-counted, `ck-metrics.md`), so the path count is bounded. A small fixed test set (happy / error / cancel / threading for each command) covers the branches by construction — the **47** committed NUnit tests already do. The number is not aspirational.
 
 ### Q5.3 — "Why NUnit and not xUnit?"
 NUnit is the Unity Test Framework's default; using the same runner inside and outside Unity reduces our tooling surface. xUnit is technically newer; the cost of switching is greater than the value.
@@ -259,7 +259,7 @@ Different constraints — Unity 5, no UI Toolkit, single-client assumption. The 
 Slide 2.6 (concern map redistribution). It supports Slide 2.2; if compressed, 2.2 carries the load and 2.6 lives in the appendix. Never cut a Section 3 or 4 slide — the brief allocates 12 minutes there.
 
 ### QH.4 — "I do not believe your CK numbers. Re-derive WMC for `FileTabViewModel` live."
-WMC 27, hand-counted from the committed skeleton: constructor + ~9 non-trivial property setters + 4 command bodies + the HDU/Z-axis/memory helpers + the notify methods (`metrics.md §2.2`). That is borderline **over** the ≤ 20 domain threshold — we do not hide it. Documented remediation: extract a `FileTabCommands` helper, dropping the ViewModel to WMC ~22.
+WMC 40, tool-counted by Understand from the committed skeleton: constructor + the non-trivial property setters + 4 command bodies + the HDU/Z-axis/memory helpers + the notify methods (`ck-metrics.md`). `FileTabViewModel` is an **orchestrator** (it coordinates four injected services), so 40 clears the ≤ 40 orchestrator band — it is not a domain class graded against ≤ 20. The three pure-static FITS helpers were extracted to `FitsMetadataHelper` (Day-10), bringing the tool figure from 43 to 40.
 
 ### QH.5 — "Defend your worst slide."
 *(Be ready: probably Slide 2.7 if ADR-0003 has not landed yet, or Slide 1.3 if the cycle report is still pending.)* The slide is honest about the gap; the architectural argument does not depend on the missing artefact; the gap is owed by [date] with named owner.

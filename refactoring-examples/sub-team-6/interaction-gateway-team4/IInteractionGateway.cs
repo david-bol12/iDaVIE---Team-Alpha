@@ -44,7 +44,7 @@ namespace iDaVIE.Client.Interaction
     /// </summary>
     public interface IInteractionGateway
     {
-        // ---- Commands (Client -> Server). Issued by either surface. ----
+        // Commands (Client -> Server). Issued by either surface.
 
         /// <summary>Set the rendering intensity window. Wire verb: <c>render.setThreshold</c>.</summary>
         Task SetThresholdAsync(string datasetId, float min, float max, CancellationToken ct = default);
@@ -70,7 +70,7 @@ namespace iDaVIE.Client.Interaction
         /// <summary>Request application exit. Wire verb: <c>app.exit</c>. <paramref name="confirm"/> false asks the server to prompt first (ties to defect B-01).</summary>
         Task ExitAsync(bool confirm, CancellationToken ct = default);
 
-        // ---- Notifications (Server -> Client). Raised on VR-originated changes. ----
+        // Notifications (Server -> Client). Raised on VR-originated changes.
 
         /// <summary>VR changed the threshold. Wire verb: <c>render.thresholdChanged</c>. Structural fix for B-03.</summary>
         event Action<ThresholdChangedArgs>? ThresholdChanged;
@@ -100,7 +100,7 @@ namespace iDaVIE.Client.Interaction
     /// <summary>Inclusive 1-indexed voxel bounds for <see cref="IInteractionGateway.CropCubeAsync"/>. Mirrors file-tab/skeleton/SubsetBounds.cs. (OPEN O5: confirm indexing — B-05 risk.)</summary>
     public sealed record SubsetBounds(int XMin, int XMax, int YMin, int YMax, int ZMin, int ZMax);
 
-    // ---- Notification payloads (Server -> Client). Field names = wire field names. ----
+    // Notification payloads (Server -> Client). Field names = wire field names.
 
     public sealed record ThresholdChangedArgs(string DatasetId, float Min, float Max);
     public sealed record ColorMapChangedArgs(string DatasetId, string ColorMap);

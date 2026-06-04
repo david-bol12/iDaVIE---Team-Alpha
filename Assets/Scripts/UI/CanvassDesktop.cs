@@ -1894,5 +1894,4 @@ public class CanvassDesktop : MonoBehaviour
     public void paintTabLeft() {
         paintMenuController.ExitPaintMode();
     }
-
 }

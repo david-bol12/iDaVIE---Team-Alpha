@@ -1,19 +1,22 @@
-// Sub-team 6 — FakeGateway (in-process IServiceGateway test double).
+// FakeGateway: an in-process IServiceGateway test double.
 //
-// Ships in the GatewayContracts assembly (not the tests/ folder) so every
-// downstream adapter suite — WE1 file-tab (FitsServiceAdapterTests) and WE2
-// debug-tab (GatewayLogStreamAdapterTests) — can exercise the transport seam
-// without a real named pipe or a running server. Its behavioural contract is
-// pinned by FakeGatewayTests in the sibling tests/ project.
+// This lives in the GatewayContracts assembly itself, not under tests/, so that
+// the downstream adapter suites can use it too: the WE1 file-tab tests
+// (FitsServiceAdapterTests) and the WE2 debug-tab tests
+// (GatewayLogStreamAdapterTests). That way they can hit the transport seam
+// without a real named pipe or a running server. Its own behaviour is pinned
+// down by FakeGatewayTests over in the sibling tests/ project.
 //
-// Faithful-enough mimic of JsonRpcPipeGateway:
-//   - SendAsync before ConnectAsync is a programmer error (InvalidOperationException).
-//   - Every call is recorded in Sent (method + camelCase params element) so tests
-//     can assert the exact JSON-RPC method/param shape from Gateway Contract v1.
-//   - SetResponse / SetError stub the server side; an unstubbed method throws an
-//     InvalidOperationException naming the method (the "forgot to stub" trap).
-//   - Params/response are round-tripped through System.Text.Json with the same
-//     CamelCase policy the real pipe uses, so DTO (de)serialisation is exercised.
+// It tries to behave like JsonRpcPipeGateway closely enough to be useful:
+//   - Calling SendAsync before ConnectAsync is a bug, so it throws
+//     InvalidOperationException.
+//   - Every call gets recorded in Sent (method plus the camelCase params), so
+//     tests can check the exact method/param shape from the Gateway Contract.
+//   - SetResponse / SetError stub out the server side. Hit a method nobody
+//     stubbed and you get an InvalidOperationException that names it - that's
+//     the "you forgot to stub this" trap.
+//   - Params and responses go through System.Text.Json with the same CamelCase
+//     policy the real pipe uses, so DTO (de)serialisation actually gets exercised.
 
 using System;
 using System.Collections.Generic;
@@ -25,15 +28,15 @@ using System.Threading.Tasks;
 namespace iDaVIE.Client.Gateway
 {
     /// <summary>
-    /// In-memory <see cref="IServiceGateway"/> for unit tests. Stub responses with
-    /// <see cref="SetResponse{T}"/> / <see cref="SetError"/>, push server
-    /// notifications with <see cref="EmitNotification"/>, and inspect outbound
-    /// calls via <see cref="Sent"/>.
+    /// In-memory <see cref="IServiceGateway"/> for unit tests. Stub responses
+    /// with <see cref="SetResponse{T}"/> or <see cref="SetError"/>, push server
+    /// notifications with <see cref="EmitNotification"/>, and check what went out
+    /// via <see cref="Sent"/>.
     /// </summary>
     public sealed class FakeGateway : IServiceGateway
     {
-        // Mirrors JsonRpcPipeGateway.JsonOptions: CamelCase on the wire, tolerant
-        // casing on read so DTO round-trips match the real transport.
+        // Same settings as JsonRpcPipeGateway.JsonOptions: CamelCase on the wire,
+        // case-insensitive on read, so DTO round-trips match the real transport.
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -49,18 +52,16 @@ namespace iDaVIE.Client.Gateway
 
         public event Action<JsonRpcNotification>? OnNotification;
 
-        /// <summary>A single outbound request recorded by the fake.</summary>
+        /// One outbound request the fake recorded.
         public sealed record SentCall(string Method, JsonElement? Params);
 
-        /// <summary>Outbound calls in dispatch order (snapshot — safe to enumerate).</summary>
+        /// Outbound calls in the order they were sent. This is a snapshot, so it's safe to enumerate.
         public IReadOnlyList<SentCall> Sent
         {
             get { lock (_lock) return _sent.ToArray(); }
         }
 
-        // ── Stubbing API ───────────────────────────────────────────────────────
-
-        /// <summary>Stub the result returned for <paramref name="method"/>.</summary>
+        // Stubbing API
         public void SetResponse<T>(string method, T response)
         {
             lock (_lock)
@@ -70,7 +71,6 @@ namespace iDaVIE.Client.Gateway
             }
         }
 
-        /// <summary>Stub a JSON-RPC error for <paramref name="method"/>.</summary>
         public void SetError(string method, int code, string message)
         {
             lock (_lock)
@@ -80,7 +80,7 @@ namespace iDaVIE.Client.Gateway
             }
         }
 
-        /// <summary>Fire a server-pushed notification to all <see cref="OnNotification"/> subscribers.</summary>
+        /// <summary>Fire a server-pushed notification at every <see cref="OnNotification"/> subscriber.</summary>
         public void EmitNotification(string method, object? payload)
         {
             JsonElement? p = payload is null
@@ -89,7 +89,7 @@ namespace iDaVIE.Client.Gateway
             OnNotification?.Invoke(new JsonRpcNotification(method, p));
         }
 
-        // ── IServiceGateway ────────────────────────────────────────────────────
+        // IServiceGateway implementation
 
         public Task ConnectAsync(CancellationToken ct = default)
         {
@@ -101,10 +101,11 @@ namespace iDaVIE.Client.Gateway
         {
             if (!_connected)
                 throw new InvalidOperationException(
-                    $"FakeGateway is not connected — call ConnectAsync() before SendAsync (method '{method}').");
+                    $"FakeGateway is not connected; call ConnectAsync() before SendAsync (method '{method}').");
 
-            // Record the call FIRST so an errored call still shows up in Sent
-            // (the GetAxesFails path asserts file.open + dataset.getAxes + file.close).
+            // Record the call before anything else, so a call that errors still
+            // shows up in Sent. The GetAxesFails test relies on this - it checks
+            // that file.open, dataset.getAxes and file.close were all sent.
             JsonElement? paramsElement = @params is null
                 ? null
                 : JsonSerializer.SerializeToElement(@params, JsonOpts);

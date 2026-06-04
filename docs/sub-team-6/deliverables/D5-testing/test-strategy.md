@@ -251,10 +251,10 @@ Smoke tests are manual at this stage. They exercise the full desktop shell (real
 | SM-3 | Load a mask with mismatched axes | Cube already loaded | Mask is rejected; error surfaced in File tab; cube unaffected |
 | SM-4 | Debug tab receives live log entries | Debug tab visible during cube load | Entries appear in order; timestamps present |
 | SM-5 | Debug tab clear | Debug tab with ≥ 3 entries | Entries cleared; list view empty |
-| SM-6 | Switch desktop tabs | File tab active | All five tabs render without error; active tab state preserved |
+| SM-6 | Switch desktop tabs | File tab active | All six tabs (File, Render, Stats, Sources, Paint, Debug) render without error; active tab state preserved |
 | SM-7 | Close and reopen desktop panel | Panel visible | Panel reopens to previous tab; no null reference exceptions in console |
 
-SM-1 through SM-7 map directly to the five rows in the [requirements behaviour catalogue](../D1-requirements/requirements.md) §2 and the two user-observable outcomes in the worked examples (File tab and Debug tab).
+SM-1 through SM-7 map directly to the six rows in the [requirements behaviour catalogue](../D1-requirements/requirements.md) §2 and the two user-observable outcomes in the worked examples (File tab and Debug tab).
 
 ---
 

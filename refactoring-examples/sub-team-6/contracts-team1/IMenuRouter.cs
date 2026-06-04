@@ -1,13 +1,14 @@
-// Sub-team 6 — IMenuRouter (ADR-009 Decision §2 · Shared Command Boundary v1).
+// IMenuRouter: the UI-agnostic seam between the desktop/VR surfaces and the
+// client command layer. (Background: ADR-009 decision 2, Shared Command
+// Boundary v1.)
 //
-// The single UI-agnostic seam between desktop/VR interaction surfaces and the
-// client command layer. Every menu or toolbar action from the shell passes
-// through this interface, regardless of whether the user clicked a desktop
-// button, pressed a VR controller binding, or triggered a keyboard shortcut.
+// Any menu or toolbar action from the shell goes through here, and it doesn't
+// matter whether the user clicked a desktop button, pressed a VR controller
+// binding, or hit a keyboard shortcut.
 //
-// Pure C#. No UnityEngine reference, no desktop/VR UI reference at the
-// interface level — DesktopMenuRouter is one concrete implementation;
-// FakeMenuRouter is another. ViewModels and tests depend on this interface only.
+// Same deal as the gateway: no UnityEngine or desktop/VR UI types referenced at
+// this level. DesktopMenuRouter is the real implementation, FakeMenuRouter is
+// the test one, and ViewModels/tests only see this interface.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,36 +16,35 @@ using System.Threading.Tasks;
 namespace iDaVIE.Client.Gateway
 {
     /// <summary>
-    /// Client-side command seam shared by desktop and VR interaction layers.
-    /// Dispatches named UI actions through a transport/UI-agnostic boundary so
-    /// higher-level logic does not depend on concrete Unity UI types.
-    /// Implementations are chosen at the composition root: a real router for
-    /// desktop/VR shells, or a fake router for unit tests.
+    /// The command seam shared by the desktop and VR layers. It dispatches named
+    /// UI actions across a boundary that knows nothing about Unity UI types, so
+    /// higher-level logic stays decoupled from the actual widgets. The
+    /// composition root wires up a real router for the shells, or a fake one for
+    /// unit tests.
     /// </summary>
     public interface IMenuRouter
     {
         /// <summary>
-        /// Execute a shared UI command such as <c>"file.open"</c>,
-        /// <c>"view.togglePaintMode"</c>, or <c>"workspace.save"</c>.
-        /// The command vocabulary is shared across desktop and VR so both shells
-        /// can trigger the same actions without knowing about each other's UI
-        /// widgets or layout structure.
+        /// Run a shared UI command, e.g. <c>"file.open"</c>,
+        /// <c>"view.togglePaintMode"</c> or <c>"workspace.save"</c>. Desktop and
+        /// VR share the same command vocabulary, so both shells can fire the same
+        /// action without knowing anything about each other's widgets or layout.
         /// </summary>
         /// <param name="command">Dotted command name, e.g. <c>"file.open"</c>.</param>
-        /// <param name="args">Plain object carrying optional command arguments; may be null.</param>
-        /// <param name="ct">Cancellation token for the in-flight command only.</param>
+        /// <param name="args">Plain object with any command arguments; can be null.</param>
+        /// <param name="ct">Cancellation token; only cancels this one command.</param>
         Task RouteAsync(string command, object? args = null, CancellationToken ct = default);
 
         /// <summary>
-        /// Fires after a command has been routed. Useful for shells that want to
-        /// observe command traffic for debug overlays, telemetry, or menu-state
-        /// synchronisation without coupling to the concrete sender.
+        /// Raised after a command has been routed. Handy for shells that want to
+        /// watch command traffic (debug overlays, telemetry, keeping menu state in
+        /// sync) without being coupled to whoever sent it.
         /// </summary>
         event System.Action<MenuCommand>? OnCommandRouted;
     }
 
     /// <summary>
-    /// Immutable record describing a routed shared UI command.
+    /// Immutable record for a routed UI command.
     /// </summary>
     /// <param name="Name">Dotted command name, e.g. <c>"file.open"</c>.</param>
     /// <param name="Args">Optional payload associated with the command.</param>

@@ -1,25 +1,26 @@
-// Sub-team 6 — JsonRpcNotification DTO (Gateway Contract v1 §"Message shape").
+// JsonRpcNotification DTO (see the "Message shape" section of the Gateway
+// Contract v1).
 //
-// A server-initiated JSON-RPC message — no id, no response expected.
-// Carries the raw params element so the subscriber can deserialise lazily
-// into its own DTO type (the gateway has no compile-time knowledge of every
-// notification payload type).
+// A message the server starts on its own: no id, and no response expected. We
+// keep the params as a raw element so the subscriber can deserialise it lazily
+// into whatever DTO it wants. The gateway can't know every notification payload
+// type up front, so it doesn't try.
 
 using System.Text.Json;
 
 namespace iDaVIE.Client.Gateway
 {
     /// <summary>
-    /// A JSON-RPC 2.0 notification. The gateway raises one per inbound
-    /// server-pushed message.
+    /// A JSON-RPC 2.0 notification. The gateway raises one of these for each
+    /// message the server pushes.
     /// </summary>
     /// <param name="Method">Dotted method name, e.g. <c>"log.emit"</c>.</param>
-    /// <param name="Params">Raw <c>params</c> element, or null if the server sent none. Use <see cref="Deserialize{T}"/> to convert.</param>
+    /// <param name="Params">Raw <c>params</c> element, or null if the server sent none. Call <see cref="Deserialize{T}"/> to convert it.</param>
     public sealed record JsonRpcNotification(string Method, JsonElement? Params)
     {
         /// <summary>
-        /// Deserialise <see cref="Params"/> into a subscriber-owned DTO type.
-        /// Returns <c>default</c> if the server sent no params.
+        /// Deserialise <see cref="Params"/> into whatever DTO the subscriber owns.
+        /// Returns <c>default</c> if the server didn't send any params.
         /// </summary>
         public T? Deserialize<T>(JsonSerializerOptions? options = null)
             => Params.HasValue ? Params.Value.Deserialize<T>(options) : default;

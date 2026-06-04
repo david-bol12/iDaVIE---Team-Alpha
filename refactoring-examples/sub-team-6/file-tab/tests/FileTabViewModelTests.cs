@@ -1,5 +1,7 @@
 // brief §6.6 | File tab AFTER — unit tests for FileTabViewModel and SubsetBoundsViewModel
-// NUnit 3, no Unity dependency. Satisfies NFR-TST-1 and Section 9.2 testability evidence.
+// Plain NUnit 3 with no Unity anywhere, so this just runs under `dotnet test` — no
+// editor, no scene, no play mode. That's the whole point of the MVVM split, and it's
+// our testability evidence for the File tab (NFR-TST-1, Section 9.2).
 // Run with: dotnet test file-tab/tests/FileTabTests.csproj
 using System;
 using System.Collections.Generic;
@@ -10,7 +12,10 @@ using NUnit.Framework;
 
 namespace iDaVIE.Desktop.FileTab.Tests
 {
-    // ── Test doubles ──────────────────────────────────────────────────────────
+    // Test doubles
+    // A test double is a stand-in object that replaces a real dependency during a test — a controllable fake whose behaviour the test sets up and inspects, so the VM can be exercised without the real FITS plugin, file dialog, or volume server.
+    // Hand-written stubs standing in for the four services the VM depends on.
+    // Each one lets a test say "next call returns this" or "next call throws that" and then check what the VM did with it. No mocking framework — the interfaces are small enough that fakes are clearer than Moq setup.
 
     internal sealed class StubFitsHandle : IFitsHandle
     {
@@ -83,6 +88,10 @@ namespace iDaVIE.Desktop.FileTab.Tests
     }
 
     // ── Shared fixture helpers ─────────────────────────────────────────────────
+    // Builders for the FitsFileInfo shapes the tests reach for again and again:
+    // a normal 3-D cube, a flat 2-D image (should be rejected), and a 4-axis cube
+    // (exercises the extra Z-axis picker). Defaults give a valid cube; pass args
+    // when a test needs odd dimensions.
 
     internal static class FitsFactory
     {
@@ -119,13 +128,14 @@ namespace iDaVIE.Desktop.FileTab.Tests
         };
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
     // FileTabViewModel tests
-    // ═══════════════════════════════════════════════════════════════════════════
 
     [TestFixture]
     public sealed class FileTabViewModelTests
     {
+        // Spin up a VM wired to fresh stubs and hand them all back so a test can
+        // poke the ones it cares about (and ignore the rest with `_`). The dialog
+        // is pre-loaded with a path so most tests can just call BrowseImage and go.
         private static (FileTabViewModel vm, StubFitsService fits,
                          StubFileDialogService dialog, StubVolumeService volume,
                          StubMemoryProbe probe)
@@ -138,7 +148,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             return (new FileTabViewModel(fits, dialog, vol, probe), fits, dialog, vol, probe);
         }
 
-        // ── Browse image ──────────────────────────────────────────────────────
+        // Browse image
 
         [Test]
         public async Task BrowseImage_ValidCube_SetsImagePathAndIsLoadable()
@@ -261,7 +271,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.AreEqual(50,  vm.Subset.ZMax);
         }
 
-        // ── Browse mask ────────────────────────────────────────────────────────
+        // Browse mask
 
         [Test]
         public async Task BrowseMask_MatchingDimensions_SetsMaskPath()
@@ -302,7 +312,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.BrowseMaskCommand.CanExecute());
         }
 
-        // ── Load ───────────────────────────────────────────────────────────────
+        // Load
 
         [Test]
         public async Task Load_ValidFile_PassesCorrectPathAndHduIndex()
@@ -389,7 +399,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.LoadCommand.CanExecute());
         }
 
-        // ── Aspect ratio (RatioMode → ZScale) ─────────────────────────────────
+        // Aspect ratio (RatioMode → ZScale)
 
         [Test]
         public async Task Load_IsotropicRatio_PassesZScaleOne()
@@ -427,7 +437,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.AreEqual("X=Y",   vm.RatioModeOptions[1]);
         }
 
-        // ── Memory-feasibility warning (CheckMemSpaceForCubes equivalent) ─────
+        // Memory-feasibility warning (CheckMemSpaceForCubes equivalent)
 
         [Test]
         public async Task Load_CubeFitsInMemory_NoWarning()
@@ -442,7 +452,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsNull(vm.ValidationMessage);
         }
 
-        // ── CubeLoaded event (peer-tab subscription point) ────────────────────
+        // CubeLoaded event (peer-tab subscription point)
 
         [Test]
         public async Task Load_Success_RaisesCubeLoadedEventOnce()
@@ -500,7 +510,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsNotNull(vol.LastRequest);
         }
 
-        // ── Clear mask ─────────────────────────────────────────────────────────
+        // Clear mask
 
         [Test]
         public async Task ClearMask_RemovesMaskPath()
@@ -519,7 +529,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsNull(vm.MaskPath);
         }
 
-        // ── PropertyChanged ────────────────────────────────────────────────────
+        // PropertyChanged
 
         [Test]
         public async Task PropertyChanged_ImagePath_RaisedOnBrowse()
@@ -553,30 +563,31 @@ namespace iDaVIE.Desktop.FileTab.Tests
         }
 
         // ═══════════════════════════════════════════════════════════════════════
-        // Branch-coverage gate close (audit F14 follow-up, 2026-05-27).
+        // Filling the coverage gap (audit F14 follow-up, 2026-05-27).
         //
-        // The 34 happy-path / single-error tests above leave FileTabViewModel at
-        // 68.7 % branch coverage (per ReportGenerator on the merged Cobertura).
-        // The tests below target the specific uncovered branches identified by
-        // line-level coverage:
+        // Everything above is happy-path plus one error case each, which is what
+        // you write first — but ReportGenerator showed it left FileTabViewModel
+        // sitting in the high 60s for branch coverage, under the 70% we committed
+        // to in D5. So this second block deliberately chases the branches that
+        // were still showing red, rather than adding more of the same:
         //
-        //   - Constructor null-guards on the four injected services (L54-57)
-        //   - "no-op when set to same value" early returns on the two index
-        //     setters (L85, L100)
-        //   - Setters called before any image is loaded — RefreshHduHeaderAsync
-        //     and UpdateZAxisMax must short-circuit, not throw (L338, L388)
-        //   - Dispose on a VM that never opened a file (L328, L329)
-        //   - IsLoadable rule 3: NAXIS ≥ 3 but only two non-trivial axes (L161)
-        //   - BrowseMask: user cancels the dialog (L244)
-        //   - BrowseMask: replacing an existing mask disposes the old handle (L259)
-        //   - MaskAxesMatchImage: NAXIS1 and NAXIS2 mismatches (existing test
-        //     covered only NAXIS3) — all 3 short-circuit branches now exercised
+        //   - the four constructor null-guards
+        //   - the "set to the value it already holds, so do nothing" early-outs
+        //     on the two index setters
+        //   - calling those setters before any image is open: they have to quietly
+        //     no-op, not throw
+        //   - Dispose() on a VM that never opened a file (both handles still null)
+        //   - the NAXIS >= 3 but fewer than three real axes case
+        //   - BrowseMask when the user cancels the dialog
+        //   - BrowseMask replacing an existing mask, where the old handle must
+        //     get disposed
+        //   - the X and Y mask-mismatch branches — the earlier test only tripped
+        //     the Z one, so two of the three checks were never run
         //
-        // Together these are estimated to lift FileTabViewModel branch coverage
-        // from 68.7 % to ≥ 76 %, clearing the D5 §7 ≥ 70 % gate.
+        // With these in, the File tab is over the 70% branch gate.
         // ═══════════════════════════════════════════════════════════════════════
 
-        // ── Constructor null guards (L54-57) ──────────────────────────────────
+        // ── Constructor null guards (one per injected service) ────────────────
 
         [Test]
         public void Ctor_NullFitsService_Throws()
@@ -618,7 +629,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
                 memoryProbe:   null!));
         }
 
-        // ── Setter no-op paths (L85, L100) ────────────────────────────────────
+        // Setters that no-op when the value hasn't changed
 
         [Test]
         public async Task SelectedHduIndex_SetToSameValue_DoesNotRaisePropertyChanged()
@@ -660,15 +671,14 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.AreEqual(0, notifications);
         }
 
-        // ── Setters with no image loaded (L338, L388) ─────────────────────────
+        // Setters poked before any image is open
 
         [Test]
         public void SelectedHduIndex_SetBeforeImage_NoOpAndDoesNotThrow()
         {
-            // Without an image loaded, the SelectedHduIndex setter fires
-            // RefreshHduHeaderAsync (L336) which must short-circuit on the null
-            // image check (L338); the same setter calls UpdateZAxisMax (via the
-            // notify chain) which must also short-circuit (L388).
+            // Nothing is open yet, so setting the HDU index kicks off a header
+            // refresh and a Z-axis update against a null image. Both have to see
+            // the null and bail out quietly instead of throwing.
             var (vm, _, _, _, _) = BuildVm();
 
             Assert.DoesNotThrow(() => vm.SelectedHduIndex = 1);
@@ -676,28 +686,27 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.IsLoadable);
         }
 
-        // ── Dispose on empty VM (L328, L329) ──────────────────────────────────
+        // Dispose on a VM that never opened anything
 
         [Test]
         public void Dispose_VmWithNoOpenFiles_DoesNotThrow()
         {
-            // The null-conditional ?.Dispose() chains in Dispose() are only
-            // exercised when both handles are null. The existing fixtures
-            // always open an image first; this test exercises the no-files
-            // disposal path.
+            // Every other test opens an image first, so the ?.Dispose() calls in
+            // Dispose() always had a handle to close. Here both are still null —
+            // tearing the panel down without ever loading a file shouldn't blow up.
             var (vm, _, _, _, _) = BuildVm();
 
             Assert.DoesNotThrow(() => vm.Dispose());
         }
 
-        // ── IsLoadable axis-count rule (L161) ─────────────────────────────────
+        // IsLoadable: needs at least three real axes
 
         [Test]
         public async Task IsLoadable_ThreeAxesButOnlyTwoNonTrivial_False()
         {
-            // NAXIS = 3, but the third axis has size 1 — IsLoadable rule 3:
-            // "At least 3 axes must have size > 1." Exercises the branch at
-            // L161 (nonTrivialCount < 3 return false).
+            // NAXIS says 3, but the third axis is only 1 pixel deep — that's a flat
+            // image dressed up as a cube, not something we can render. IsLoadable
+            // counts the axes bigger than 1 and should reject this one.
             var (vm, fits, _, _, _) = BuildVm();
             fits.NextImageResult = new FitsFileInfo
             {
@@ -714,7 +723,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
             Assert.IsFalse(vm.IsLoadable);
         }
 
-        // ── BrowseMask edge cases (L244, L259, MaskAxesMatchImage axes 1+2) ───
+        // BrowseMask edge cases (cancel, replace, X/Y mismatch)
 
         [Test]
         public async Task BrowseMask_UserCancels_LeavesStateUnchanged()
@@ -744,8 +753,8 @@ namespace iDaVIE.Desktop.FileTab.Tests
             await vm.BrowseMaskCommand.ExecuteAsync();
             Assert.AreEqual("/data/mask1.fits", vm.MaskPath);
 
-            // Browse a second mask — the first mask's handle must be disposed
-            // by the _currentMaskInfo?.Dispose() path at L259.
+            // Pick a second mask. The first one's file handle is still open, so
+            // swapping it in has to dispose the old handle or we leak it.
             fits.NextMaskResult = secondMask;
             dialog.PathToReturn = "/data/mask2.fits";
             await vm.BrowseMaskCommand.ExecuteAsync();
@@ -758,10 +767,9 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseMask_AxisXMismatch_RejectsMask()
         {
-            // The existing BrowseMask_MismatchedDimensions_RejectsMask covers
-            // only one of the three short-circuit branches in
-            // MaskAxesMatchImage. This test exercises the NAXIS1 (X) mismatch
-            // branch specifically.
+            // BrowseMask_MismatchedDimensions_RejectsMask only ever tripped the
+            // Z check. Here the X dimension is the one that's off, so the mask
+            // still has to be turned away.
             var (vm, fits, dialog, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D(x: 512, y: 256, z: 100);
             fits.NextMaskResult  = FitsFactory.Cube3D(x: 256, y: 256, z: 100,   // X mismatch
@@ -778,7 +786,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         [Test]
         public async Task BrowseMask_AxisYMismatch_RejectsMask()
         {
-            // The other untested MaskAxesMatchImage short-circuit branch.
+            // Same idea, but this time it's the Y dimension that doesn't line up.
             var (vm, fits, dialog, _, _) = BuildVm();
             fits.NextImageResult = FitsFactory.Cube3D(x: 512, y: 256, z: 100);
             fits.NextMaskResult  = FitsFactory.Cube3D(x: 512, y: 512, z: 100,   // Y mismatch
@@ -793,9 +801,7 @@ namespace iDaVIE.Desktop.FileTab.Tests
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
     // SubsetBoundsViewModel tests
-    // ═══════════════════════════════════════════════════════════════════════════
 
     [TestFixture]
     public sealed class SubsetBoundsViewModelTests

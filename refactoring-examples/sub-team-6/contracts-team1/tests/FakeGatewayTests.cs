@@ -1,8 +1,8 @@
-// Sub-team 6 — FakeGateway behavioural tests.
+// Behavioural tests for FakeGateway.
 //
-// Pins down the FakeGateway contract that the adapter test projects depend on.
-// Each test is also a worked example of how a downstream test sets up the
-// gateway double.
+// These nail down the behaviour the adapter test projects rely on. Each test
+// also doubles as a little worked example of how a downstream test would set up
+// the gateway double.
 
 using System;
 using System.Threading.Tasks;
@@ -18,8 +18,8 @@ namespace iDaVIE.Client.Gateway.Tests
         public void SendAsync_BeforeConnect_Throws()
         {
             var gateway = new FakeGateway();
-            // Mirrors JsonRpcPipeGateway: a Send without ConnectAsync first is
-            // a programmer error, not a transport error.
+            // Same as JsonRpcPipeGateway: sending without connecting first is a
+            // programmer mistake, not a transport failure.
             Assert.That(async () => await gateway.SendAsync<int>("anything", null),
                         Throws.TypeOf<InvalidOperationException>()
                               .With.Message.Contains("not connected"));
@@ -30,9 +30,8 @@ namespace iDaVIE.Client.Gateway.Tests
         {
             var gateway = new FakeGateway();
             await gateway.ConnectAsync();
-            // The "test forgot to stub" trap: assertion message must name the
-            // method so the failing test points the reader at the missing
-            // SetResponse call.
+            // The "you forgot to stub it" trap: the message has to name the method
+            // so a failing test points you straight at the missing SetResponse call.
             Assert.That(async () => await gateway.SendAsync<int>("file.open", null),
                         Throws.TypeOf<InvalidOperationException>()
                               .With.Message.Contains("file.open"));
@@ -58,7 +57,7 @@ namespace iDaVIE.Client.Gateway.Tests
         {
             var gateway = new FakeGateway();
             await gateway.ConnectAsync();
-            // Code -32011 = "FITS header invalid" per Gateway Contract v1 §"Error model".
+            // -32011 is "FITS header invalid" in the contract's Error model section.
             gateway.SetError("file.open", code: -32011, message: "FITS header invalid");
 
             var ex = Assert.ThrowsAsync<JsonRpcException>(

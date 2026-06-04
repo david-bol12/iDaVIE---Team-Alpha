@@ -181,59 +181,41 @@
 
 ---
 
-## 2026-06-01 (Day 11 — Mon) — Sprint 3 Day 1 — no formal sprint planning
+## 2026-06-02 (Day 11 — Tue) — Sprint 3 Day 1 — Final sprint work day; artefact freeze 17:00;
 
-**Present:** 
+**Present:** Con, Mark, Rory, Jimmy
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Con | Practice interview run-through | Final practice run; | None |
+| Mark | Practice interview run-through | Final practice run; | None |
+| Rory | Practice interview run-through | Final practice run; | None |
+| Jimmy | Practice interview run-through | Final practice run; | None |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- Everything locked before the 17:00 artefact freeze
+- One more run-through tomorrow morning before the 10:00 pitch
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- N/A
 
 ---
 
-## 2026-06-02 (Day 12 — Tue) — Sprint 3 Day 2 — Final sprint work day; artefact freeze 17:00; Sprint 3 retro (sub-team only) 16:00–17:00
+## 2026-06-03 (Day 12 — Wed) — Sprint 3 Day 2 — Interview day;
 
-**Present:** 
-
-| Person | Yesterday | Today | Blockers |
-|---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
-
-**Decisions:**
-- _(decisions made in stand-up)_
-
-**Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
-
----
-
-## 2026-06-03 (Day 13 — Wed) — Sprint 3 Day 3 — Interview day; stand-up at 08:55
-
-**Present:** 
+**Present:** Con, Mark, Rory, Jimmy
 
 | Person | Yesterday | Today | Blockers |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Con | Final practice run | Pitch at 10:00 | None |
+| Mark | Final practice run | Pitch at 10:00 | None |
+| Rory | Final practice run | Pitch at 10:00 | None |
+| Jimmy | Final practice run | Pitch at 10:00 | None |
 
 **Decisions:**
-- _(decisions made in stand-up)_
+- Quick run-through at stand-up, then pitch at 10:00 — good luck all
 
 **Raised at 09:15 cross-sub-team stand-up:**
-- _(items the SM took up)_
+- N/A
 
 ---

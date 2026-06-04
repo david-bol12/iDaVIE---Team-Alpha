@@ -9,7 +9,7 @@ Source: [zzalscv2/iDaVIE](https://github.com/zzalscv2/iDaVIE)
 
 This document is the requirements engineering baseline for Sub-team 6. Its scope is the **current, as-built Desktop GUI** of iDaVIE: every visible control, every state transition, every piece of data it reads or writes, and every known defect or behavioural issue. Nothing is proposed or changed here. The document draws on the zzalscv2/iDaVIE source repository (a fork of idia-astro/iDaVIE), the official Read the Docs documentation, the published GitHub issue tracker, and the iDaVIE v1.0 paper (Sivitilli et al. 2026, arXiv:2603.15490).
 
-The Desktop GUI is the first thing a user sees when iDaVIE launches and the only interface available throughout the entire VR session. Despite this centrality, it is implemented as a single Unity MonoBehaviour (`CanvassDesktop`) that owns tab switching, file I/O, histogram computation, rendering control, source catalogue loading, log display, and the VR view mirror simultaneously. This document captures all of that behaviour in enough detail to drive refactoring and test design.
+The Desktop GUI is the first thing a user sees when iDaVIE launches and the only interface available throughout the entire VR session. Despite this centrality, it is implemented as a single Unity MonoBehaviour (`CanvassDesktop`) that owns tab switching, file I/O, histogram computation, rendering control, source catalogue loading, desktop mask painting, log display, and the VR view mirror simultaneously. This document captures all of that behaviour in enough detail to drive refactoring and test design.
 
 | Property | Value |
 |---|---|
@@ -28,7 +28,7 @@ The Desktop GUI is the first thing a user sees when iDaVIE launches and the only
 On launch, a single non-resizable windowed application appears on the desktop monitor. The window is split into two horizontal regions that remain fixed for the lifetime of the session:
 
 - **Left panel — Display area.** Shows either the live VR View (a render-texture mirror of the headset camera, updated every frame) or the About screen (software version, author list, LGPL-3 licence text). The two states are toggled by the VR View and About buttons in the top bar. VR View activates automatically once a cube finishes loading; before that point the panel is blank.
-- **Right panel — Control panel.** Contains the five tabs (FILE, RENDER, STATS, SOURCES, DEBUG) arranged horizontally across the top. Below the tab bar is the active tab's content area. Switching tabs is instantaneous and does not reload data or reset state.
+- **Right panel — Control panel.** Contains six tabs (FILE, RENDER, STATS, SOURCES, PAINT, DEBUG) arranged horizontally across the top. Below the tab bar is the active tab's content area. Switching tabs is instantaneous and does not reload data or reset state. The PAINT tab (`TabsManager.PAINT_TAB_INDEX = 4`) is conditionally usable — it requires an active VR paint session and a full-resolution cube (see §7).
 - **Top bar (persistent).** Three buttons always visible above the tab selector: VR View, About, and Exit. Exit calls `Application.Quit()` with no save prompt or confirmation dialog — any unsaved mask edits or flag changes are lost silently.
 
 > ⚠️ The Exit button terminates immediately with no confirmation dialog. Unsaved mask edits and flagged source changes are permanently lost with no warning to the user.
@@ -147,18 +147,56 @@ A confirmed open bug (idia-astro/iDaVIE issue #464) reports that when a catalogu
 
 ---
 
-## 7. DEBUG Tab
+## 7. PAINT Tab
+
+The PAINT tab is the **desktop-side mask painting surface** and the part of the as-built GUI most consistently omitted from prior summaries. It lets a user draw segmentation masks on the desktop monitor by tracing 2D polygons over a single slice of the loaded cube, as an alternative to painting in VR. It sits in the tab bar between SOURCES and DEBUG (`TabsManager.PAINT_TAB_INDEX = 4`, the `Paint_Button`). It is implemented by a dedicated 1,558-line MonoBehaviour, `DesktopPaintController`, which `CanvassDesktop.paintTabSelected()` activates and wires on tab entry.
+
+The tab is **conditionally available**, gated two ways:
+
+- **VR paint mode must be active.** Selecting the tab calls `quickMenuController.OpenPaintMenu()` and shows the desktop selection surface; leaving it calls `paintMenuController.ExitPaintMode()`. The desktop tab and the VR paint menu are the same mask-edit session, not two independent tools.
+- **Full resolution required.** If the cube is downsampled (not `IsFullResolution`), the tab shows a "waiting" container and disables painting. The user must first crop to a sub-region that fits at full resolution — the same constraint as VR mask painting (§10.4).
+
+### 7.1 Controls
+
+| # | Control | Behaviour |
+|---|---|---|
+| 1 | Slice viewer (RawImage) | Renders one 2D slice of the loaded cube as a colour-mapped image. Existing mask voxels on the slice are outlined; voxels matching the active source ID are highlighted yellow, others dusky red. |
+| 2 | Axis dropdown (X / Y / Z) | Chooses which axis the slice is taken down. Keyboard X / Y / Z mirror the dropdown. Default is Z. Changing axis resets the slice index to 0 and repositions the in-scene slice camera and slice indicator. |
+| 3 | Slice slider | Selects the slice index along the current axis. Right / Left arrow keys step to the next / previous slice (wrapping at the ends). A 3D slice-indicator plane in the VR scene tracks the current slice. |
+| 4 | Polygon selection (mouse) | Click-drag on the slice traces a freehand polygon (a marker is dropped per point). Right-click removes the last point. The polygon auto-closes when its end returns within ~1 px of the start. |
+| 5 | Fill / Apply Mask (Space bar) | Fills the closed polygon and writes the enclosed voxels into the mask under the active source ID (additive) or clears them (subtractive). Painting over a voxel that belongs to a *different* source ID is rejected with an on-screen message ("Cannot paint over mask of different source"). |
+| 6 | Additive / Subtractive toggle | Switches between adding voxels to the mask (green) and removing them (red). |
+| 7 | Source ID dropdown + Add Source | Lists the mask source IDs present in the cube and selects the active one. Add Source allocates the next ID. New source IDs start at 1000 and increment. |
+| 8 | Clear All | Removes every voxel of the active source ID from the current slice. Enabled only while the slice holds masked voxels. |
+| 9 | Reset selection | Discards the in-progress polygon and markers without altering the committed mask. (Keyboard: R.) |
+| 10 | Undo | Reverts the last paint / subtract action on the slice. (Keyboard: C.) |
+| 11 | Get Previous Mask (P) | Copies the mask from the previously viewed slice onto the current slice — a manual aid for propagating a mask across consecutive slices. |
+| 12 | Colour Map dropdown | Selects the colour map applied to the slice viewer. Defaults to the configured `defaultColorMap`. |
+| 13 | Scroll-wheel zoom | Zooms the slice image toward the cursor (1× to `maxZoom`) by adjusting the UV rect. Cannot zoom out past the original extent. |
+| 14 | Save Mask (overwrite / new) | Writes the edited mask to disk via `PaintMenuController.SaveOverwriteMask()` or `SaveNewMask()`. A transient "Mask written to disk" / "New Mask saved" overlay is the only confirmation. |
+
+### 7.2 Mask Write Path — Direct, In-Client, Coupled to the VR Session
+
+All paint operations mutate the in-memory `VolumeDataSet` mask directly (`maskSet.PaintMaskVoxel(...)` then `maskSet.ConsolidateMaskEntries()`) on the active renderer obtained via `canvassDesktop.GetFirstActiveRenderer()`. There is no ViewModel and no service boundary. `DesktopPaintController` holds a direct `CanvassDesktop` reference and `CanvassDesktop` holds a direct `DesktopPaintController` reference — a bidirectional cycle, confirmed in the CK baseline as cycle #1 (`CanvassDesktop ↔ DesktopPaintController`). Saving is delegated to `PaintMenuController`, located at runtime via `FindObjectOfType<PaintMenuController>()`.
+
+> ❌ **B-14 (High)** — Silent data corruption: `DesktopPaintController.UpdateMaxValue(float value)` assigns to `minVal`, not `maxVal` (lines 305–307). The maximum display bound for the paint slice is never updated. Because the class cannot be constructed outside the Unity engine there is no unit test that could catch this, and it is invisible on read in a 1,558-line file. This is the headline evidence for the god-class refactoring case.
+
+> ⚠️ The desktop PAINT tab is not self-sufficient: opening it force-opens the VR paint menu, and it is unusable on a downsampled cube. iDaVIE's single most data-destructive desktop operation has no desktop-only path and no ViewModel-mediated save.
+
+---
+
+## 8. DEBUG Tab
 
 The DEBUG tab presents a scrollable readout of Unity's application log for the current session. It is the primary (and only) diagnostic surface available to a user without access to the raw log file. In the current implementation it is a passive, unstructured display. It is also the source of the most critical crash in the application.
 
-### 7.1 Controls
+### 8.1 Controls
 
 | # | Control | Behaviour |
 |---|---|---|
 | 1 | Log readout area | Scrollable text area displaying all Unity log messages since launch: `Debug.Log`, `Debug.LogWarning`, `Debug.LogError`, and exception stack traces. All entries appear in the same plain text style with no severity distinction, no colour coding, no timestamps, and no subsystem tags. |
 | 2 | Save Log button | Opens the OS save dialog. Writes the full current log text to a user-chosen `.txt` file. The saved file contains no metadata header (no version number, no session ID, no timestamp). File naming is entirely up to the user. |
 
-### 7.2 Critical Crash: Tab Switch During Cube Load (B-02)
+### 8.2 Critical Crash: Tab Switch During Cube Load (B-02)
 
 The most severe known GUI defect is a reliable system crash triggered by switching to the DEBUG tab while a cube is loading. The root cause is a thread-safety violation:
 
@@ -172,7 +210,7 @@ The most severe known GUI defect is a reliable system crash triggered by switchi
 
 > ℹ️ **Root cause:** the DEBUG tab log readout is connected directly to `Application.logMessageReceived` with no thread guard. The MVVM refactor must make the ViewModel subscribe to the log stream and push updates to the View on the main thread only after the load pipeline releases it.
 
-### 7.3 Additional DEBUG Tab Deficiencies
+### 8.3 Additional DEBUG Tab Deficiencies
 
 - **No severity filtering.** `Debug.Log` (info), `Debug.LogWarning`, and `Debug.LogError` entries are rendered identically. A user troubleshooting a crash must read the entire log to find the relevant error.
 - **No colour coding.** Warnings and errors have no visual distinction from informational messages.
@@ -184,7 +222,7 @@ The most severe known GUI defect is a reliable system crash triggered by switchi
 
 ---
 
-## 8. Persistent Controls (Top Bar)
+## 9. Persistent Controls (Top Bar)
 
 Three controls sit in the top bar above the tab selector and are always visible regardless of the active tab.
 
@@ -196,33 +234,33 @@ Three controls sit in the top bar above the tab selector and are always visible 
 
 ---
 
-## 9. VR GUI — Interactions That Affect the Desktop GUI
+## 10. VR GUI — Interactions That Affect the Desktop GUI
 
 The VR GUI and Desktop GUI share the same MonoBehaviour composition root and therefore share state directly. The following VR-side actions have observable effects on the Desktop GUI.
 
-### 9.1 Quick Menu
+### 10.1 Quick Menu
 
 The VR Quick Menu is invoked by holding the secondary controller's thumb button. It provides VR-side controls for source lists, plots, voice commands, settings, colour maps, mask painting, mask save, cube cropping, mask application mode, screenshot, and exit. The Exit button in the Quick Menu terminates the process identically to the Desktop Exit button.
 
-### 9.2 Settings Window — Threshold and Colour Map
+### 10.2 Settings Window — Threshold and Colour Map
 
 The VR Settings Window exposes colour map selection, scaling function (linear, log, sqrt, x², power, gamma), min/max threshold adjustment, primary-hand setting, and moment map step size. Threshold changes made here update the shared state, but the RENDER tab sliders on the desktop do not visually update until the tab is deactivated and reactivated (see B-03).
 
-### 9.3 Source List Window
+### 10.3 Source List Window
 
 The VR Source List Window shows mask sources, imported catalogue sources, and New List sources. Changes made here (flagging, adding to New List) update the shared source list that the Desktop SOURCES tab reflects on next tab switch. The list has 19 interactive elements: white buttons (1–5, 19) for per-source interactions, and yellow buttons (9–13, 16–17) for list-level operations including save, visibility, colour, and catalogue navigation.
 
-### 9.4 Mask Painting Mode
+### 10.4 Mask Painting Mode
 
-Mask painting is VR-only. It is unavailable if the cube is at reduced resolution due to downsampling — the user must first crop the cube to a subregion that fits at full resolution. Mask source IDs start at 1000 and increment for each new source. There is no desktop-side mask save path; saving is done via the Quick Menu or Mask Painting Menu in VR.
+Mask painting can be performed **either in VR or on the desktop**. The desktop path is the PAINT tab (§7); the VR path uses the controller in immersive mode. The two are not independent — they share a single mask-edit session, and entering the desktop PAINT tab opens the VR paint menu (`OpenPaintMenu()`). Both write to the same in-memory mask. Mask painting is unavailable if the cube is at reduced resolution due to downsampling — the user must first crop the cube to a subregion that fits at full resolution. Mask source IDs start at 1000 and increment for each new source. **Saving is available from the desktop PAINT tab** (Save Mask → overwrite / new, delegated to `PaintMenuController`) as well as from the VR Quick Menu / Mask Painting Menu.
 
-### 9.5 Controller Cursor Info
+### 10.5 Controller Cursor Info
 
 The 3D cursor in VR shows: WCS sky coordinates, WCS spectral coordinate, image voxel coordinates (1-indexed), data value, alternate spectral coordinate (from rest frequency), source ID (if inside a mask), and voice command/window focus status icons. Threshold adjustment mode overlays Min/Max values; selection mode overlays region dimensions, sky angle, and spectral depth.
 
 ---
 
-## 10. Known Defects — Full Register
+## 11. Known Defects — Full Register
 
 Severities: **Critical** = data loss or process crash; **High** = incorrect output or major usability failure; **Medium** = visible inconsistency; **Low** = usability friction with workaround available.
 
@@ -241,10 +279,11 @@ Severities: **Critical** = data loss or process crash; **High** = incorrect outp
 | B-11 | Low | SOURCES | The Exclude out-of-bounds tick-box silently excludes sources with no feedback on how many were excluded or which sources they were. |
 | B-12 | Medium | All tabs | Toast notifications (e.g. successful save confirmations) do not always appear. Open issue [#472](https://github.com/idia-astro/iDaVIE/issues/472). Reported specifically when saving a subcube with a mask: only one of two expected notifications appears. |
 | B-13 | Medium | VR Sources | The Previous Mask button in the VR Source List Window is non-functional. Open issue [#456](https://github.com/idia-astro/iDaVIE/issues/456). |
+| B-14 | High | PAINT | `DesktopPaintController.UpdateMaxValue(float value)` assigns to `minVal` instead of `maxVal` (lines 305–307). The paint slice's maximum display bound never updates. Undetectable by unit test (the class cannot be constructed outside Unity) and invisible on read in a 1,558-line file. Headline evidence for the god-class refactoring case. |
 
 ---
 
-## 11. State and Data Flows
+## 12. State and Data Flows
 
 All flows currently pass through shared fields on `CanvassDesktop` with no intermediary ViewModel.
 
@@ -259,10 +298,12 @@ All flows currently pass through shared fields on `CanvassDesktop` with no inter
 | SOURCES — Load | VR Source List | Source list (positions, names, columns) | Shared `List<Source>` field on `CanvassDesktop` |
 | VR flagging / New List | SOURCES status | Flag strings, New List membership | Shared source objects; tab reflects state on switch |
 | Unity log stream | DEBUG readout | All Unity log messages | `Application.logMessageReceived` event (no thread guard — B-02) |
+| PAINT tab (desktop) | In-memory mask (`VolumeDataSet`) | Painted voxel IDs per slice | Direct `maskSet.PaintMaskVoxel()` on active renderer; bidirectional `CanvassDesktop ↔ DesktopPaintController` cycle |
+| PAINT — Save Mask | Mask FITS on disk | Full mask cube | `PaintMenuController.SaveOverwriteMask()` / `SaveNewMask()`, resolved via `FindObjectOfType` |
 
 ---
 
-## 12. Long-Term Roadmap — Desktop GUI Implications
+## 13. Long-Term Roadmap — Desktop GUI Implications
 
 The following planned features from the official iDaVIE roadmap have direct implications for the Desktop GUI and are noted here as future requirements inputs.
 
@@ -275,7 +316,7 @@ The following planned features from the official iDaVIE roadmap have direct impl
 
 ---
 
-## 13. References
+## 14. References
 
 - [zzalscv2/iDaVIE GitHub repository](https://github.com/zzalscv2/iDaVIE)
 - [idia-astro/iDaVIE (upstream)](https://github.com/idia-astro/iDaVIE)

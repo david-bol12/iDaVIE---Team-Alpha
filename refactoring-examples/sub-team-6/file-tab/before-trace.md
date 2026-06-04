@@ -100,13 +100,3 @@ The Mermaid rendering of this trace lives in [`before-sequence.md`](before-seque
 | S7 | Inspector-wired button handlers (no in-code subscription) | `BrowseImageFile`, `LoadFileFromFileSystem` | Testability — cannot exercise the flow without loading the Unity scene |
 | S8 | Unmanaged `fptr` lifetime spans many UI mutations between open (line 349) and close (line 407) | `CanvassDesktop.cs:349–407` | RAII / resource ownership unclear |
 
----
-
-## How this becomes the Mermaid diagram
-
-Convert each row above to a `sequenceDiagram` message:
-
-- Phase A and B can be drawn as one continuous diagram OR split with a `Note over User: clicks Load button` separator between them.
-- Use `activate` / `deactivate` bars on `CanvassDesktop` to show that the dialog callback (A6) and the coroutine (B3) re-enter the same lifeline asynchronously.
-- The DLL boundary (A9, and the implicit calls inside A11–A16) is the visual centrepiece — a thick arrow into `idavie_native` is what the "after" diagram replaces with a single `serviceGateway.openFits(...)` message.
-- Collapse the `UpdateHeaderFromFits` internal DLL calls into one self-call on `CanvassDesktop` labelled "read header keywords via FitsReader" — keeps the diagram readable without losing fidelity.

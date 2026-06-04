@@ -17,7 +17,7 @@ Together with `viewmodel-unit-tests.md`, this discharges the two Software Testin
 | In scope | Out of scope |
 |---|---|
 | `iDaVIE.Client.View` panels backed by a `UIDocument` | ViewModel internals (covered by `viewmodel-unit-tests.md`) |
-| `FileTabPage`, `DebugTabPage` — one page object per panel, driving the real `FileTabViewModel` / `DebugTabViewModel` (the concrete classes from each AFTER skeleton) | Render, Stats, Sources tabs (no AFTER skeleton — out of D4 scope) |
+| `FileTabPage`, `DebugTabPage` — one page object per panel, driving the real `FileTabViewModel` / `DebugTabViewModel` (the concrete classes from each AFTER skeleton) | Render, Stats, Sources, Paint tabs (no AFTER skeleton — out of D4 scope) |
 | Bindings between View and ViewModel exercised through page-object methods | Native plug-in I/O; gateway transport |
 | UI Toolkit event-driven interaction via `SendEvent` | Pixel / USS visual-diff testing |
 
