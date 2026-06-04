@@ -73,7 +73,7 @@ sequenceDiagram
     activate DL
 
     DL->>DL: logMessage = "[" + type + "] : " + logString
-    Note right of DL: ★ S2 — string concat;<br/>no source, no timestamp,<br/>no structured fields
+    Note right of DL: ★ S2 — string concat,<br/>no source, no timestamp,<br/>no structured fields
 
     DL->>DL: debugLogQueue.Enqueue(logMessage)
     Note right of DL: ★ S3 — non-generic Queue,<br/>stores object, unbounded growth
@@ -94,10 +94,10 @@ sequenceDiagram
     Note right of DL: ★ S5 — O(N) rebuild of entire<br/>log history on every new entry
 
     DL->>TIF: logOutput.text = builder.ToString()
-    Note right of TIF: ★ S6 — replaces entire TMP text;<br/>full re-layout every message
+    Note right of TIF: ★ S6 — replaces entire TMP text,<br/>full re-layout every message
 
     DL->>DL: debugScrollbar.value = 1.0f
-    Note right of DL: ★ S7 — forced scroll-to-bottom;<br/>user cannot read while logging
+    Note right of DL: ★ S7 — forced scroll-to-bottom,<br/>user cannot read while logging
 
     DL-->>User: new log line visible at bottom of Debug tab
     deactivate DL
