@@ -1,0 +1,266 @@
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{D1F577C9-ACC5-CA87-7964-36D317EA9708}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <NoStandardLibraries>false</NoStandardLibraries>
+    <AssemblyName>ConsoleApplication</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>Refactored_Examples</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="handoffs\feature-table-fits-read\after.cs" />
+    <Compile Include="handoffs\feature-table-fits-read\before.cs" />
+    <Compile Include="Persistence\Application\AutosaveService.cs" />
+    <Compile Include="Persistence\Application\CrashDetector.cs" />
+    <Compile Include="Persistence\Application\CrashRecoveryOrchestrator.cs" />
+    <Compile Include="Persistence\Application\Interfaces\IDataIoStateAdapter.cs" />
+    <Compile Include="Persistence\Application\Interfaces\IFeatureStateAdapter.cs" />
+    <Compile Include="Persistence\Application\Interfaces\IGuiStateAdapter.cs" />
+    <Compile Include="Persistence\Application\Interfaces\IInteractionStateAdapter.cs" />
+    <Compile Include="Persistence\Application\Interfaces\IRenderingStateAdapter.cs" />
+    <Compile Include="Persistence\Application\Interfaces\IWorkspaceStateCollector.cs" />
+    <Compile Include="Persistence\Application\LoadWorkspaceUseCase.cs" />
+    <Compile Include="Persistence\Application\RestoreOrchestrator.cs" />
+    <Compile Include="Persistence\Application\SaveWorkspaceUseCase.cs" />
+    <Compile Include="Persistence\Application\WorkspaceValidator.cs" />
+    <Compile Include="Persistence\Domain\Dtos\DataIoStateDto.cs" />
+    <Compile Include="Persistence\Domain\Dtos\FeatureStateDto.cs" />
+    <Compile Include="Persistence\Domain\Dtos\GuiStateDto.cs" />
+    <Compile Include="Persistence\Domain\Dtos\InteractionStateDto.cs" />
+    <Compile Include="Persistence\Domain\Dtos\RenderingStateDto.cs" />
+    <Compile Include="Persistence\Domain\PersistFieldAttribute.cs" />
+    <Compile Include="Persistence\Domain\Serialization\SerializableColor.cs" />
+    <Compile Include="Persistence\Domain\Serialization\SerializableQuaternion.cs" />
+    <Compile Include="Persistence\Domain\Serialization\SerializableVector3.cs" />
+    <Compile Include="Persistence\Domain\WorkspaceAggregate.cs" />
+    <Compile Include="Persistence\Domain\WorkspaceMetadata.cs" />
+    <Compile Include="Persistence\Domain\WorkspaceProfile.cs" />
+    <Compile Include="Persistence\Domain\WorkspaceSnapshot.cs" />
+    <Compile Include="Persistence\Infrastructure\MigrationCoordinator.cs" />
+    <Compile Include="Persistence\Infrastructure\Migrations\Migration_1_0_to_1_1.cs" />
+    <Compile Include="Persistence\Infrastructure\SnapshotReflector.cs" />
+    <Compile Include="Persistence\Infrastructure\SnapshotRing.cs" />
+    <Compile Include="Persistence\Infrastructure\SnapshotSerializer.cs" />
+    <Compile Include="Persistence\Infrastructure\WorkspaceStubFactory.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\after\FitsFile.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\after\FitsHeader.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\after\FitsImage.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\after\FitsMask.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\after\FitsTable.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\after\NativePluginLoader.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\after\PluginBootstrapper.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\before\FitsReader.cs" />
+    <Compile Include="Sub-Team-2\Fits Reader\before\NativePluginLoader.cs" />
+    <Compile Include="Sub-Team-2\tests\FitsHeaderUnitTests.cs" />
+    <Compile Include="Sub-Team-2\tests\FitsReaderIntegrationTests.cs" />
+    <Compile Include="Sub-Team-2\tests\NativePluginLoaderUnitTests.cs" />
+    <Compile Include="Sub-Team-2\tests\StructuralTests.cs" />
+    <Compile Include="Sub-Team-2\WCS Transformation Without Unity\WcsTransformer.cs" />
+    <Compile Include="sub-team-5\example-1-moment-maps\after\IMomentMapAdapter.cs" />
+    <Compile Include="sub-team-5\example-1-moment-maps\after\IMomentMapService.cs" />
+    <Compile Include="sub-team-5\example-1-moment-maps\after\MomentMapCalculator.cs" />
+    <Compile Include="sub-team-5\example-1-moment-maps\after\MomentMapRendererAdapter.cs" />
+    <Compile Include="sub-team-5\example-1-moment-maps\after\MomentMapRequest.cs" />
+    <Compile Include="sub-team-5\example-1-moment-maps\after\MomentMapResult.cs" />
+    <Compile Include="sub-team-5\example-1-moment-maps\after\MomentMapService.cs" />
+    <Compile Include="sub-team-5\example-1-moment-maps\before\MomentMapRenderer_before.cs" />
+    <Compile Include="sub-team-5\example-2-votable-export\after\FeatureCatalog_after_excerpt.cs" />
+    <Compile Include="sub-team-5\example-2-votable-export\after\IAstFrame.cs" />
+    <Compile Include="sub-team-5\example-2-votable-export\after\ICoordinateTransformer.cs" />
+    <Compile Include="sub-team-5\example-2-votable-export\after\IVoTableExporter.cs" />
+    <Compile Include="sub-team-5\example-2-votable-export\after\VoTableExportService.cs" />
+    <Compile Include="sub-team-5\example-2-votable-export\before\VoTableSaver_before.cs" />
+    <Compile Include="sub-team-6\contracts-team1\FakeGateway.cs" />
+    <Compile Include="sub-team-6\contracts-team1\IMenuRouter.cs" />
+    <Compile Include="sub-team-6\contracts-team1\IServiceGateway.cs" />
+    <Compile Include="sub-team-6\contracts-team1\JsonRpcException.cs" />
+    <Compile Include="sub-team-6\contracts-team1\JsonRpcNotification.cs" />
+    <Compile Include="sub-team-6\contracts-team1\JsonRpcPipeGateway.cs" />
+    <Compile Include="sub-team-6\contracts-team1\LengthPrefixFraming.cs" />
+    <Compile Include="sub-team-6\contracts-team1\tests\FakeGatewayTests.cs" />
+    <Compile Include="sub-team-6\contracts-team1\tests\LengthPrefixFramingTests.cs" />
+    <Compile Include="sub-team-6\debug-tab\adapters\DebugTabCompositionRoot.cs" />
+    <Compile Include="sub-team-6\debug-tab\adapters\DebugTabView.cs" />
+    <Compile Include="sub-team-6\debug-tab\adapters\GatewayLogStreamAdapter.cs" />
+    <Compile Include="sub-team-6\debug-tab\adapters\tests\GatewayLogStreamAdapterTests.cs" />
+    <Compile Include="sub-team-6\debug-tab\skeleton\DebugTabViewModel.cs" />
+    <Compile Include="sub-team-6\debug-tab\skeleton\IDebugTabViewModel.cs" />
+    <Compile Include="sub-team-6\debug-tab\skeleton\ILogObserver.cs" />
+    <Compile Include="sub-team-6\debug-tab\skeleton\ILogStream.cs" />
+    <Compile Include="sub-team-6\debug-tab\skeleton\LogStream.cs" />
+    <Compile Include="sub-team-6\debug-tab\tests\DebugTabTests.cs" />
+    <Compile Include="sub-team-6\file-tab\adapters\FileDialogServiceAdapter.cs" />
+    <Compile Include="sub-team-6\file-tab\adapters\FileTabCompositionRoot.cs" />
+    <Compile Include="sub-team-6\file-tab\adapters\FileTabView.cs" />
+    <Compile Include="sub-team-6\file-tab\adapters\FitsServiceAdapter.cs" />
+    <Compile Include="sub-team-6\file-tab\adapters\MemoryProbeAdapter.cs" />
+    <Compile Include="sub-team-6\file-tab\adapters\tests\FitsServiceAdapterTests.cs" />
+    <Compile Include="sub-team-6\file-tab\adapters\VolumeServiceAdapter.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\CubeLoadedEventArgs.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\FileTabViewModel.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\FitsFileInfo.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\FitsMetadataHelper.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\ICommand.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\IFileDialogService.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\IFileTabViewModel.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\IFitsHandle.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\IFitsService.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\IMemoryProbe.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\IVolumeService.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\LoadCubeRequest.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\SubsetBounds.cs" />
+    <Compile Include="sub-team-6\file-tab\skeleton\SubsetBoundsViewModel.cs" />
+    <Compile Include="sub-team-6\file-tab\tests\FileTabViewModelTests.cs" />
+    <Compile Include="sub-team-6\interaction-gateway-team4\FakeInteractionGateway.cs" />
+    <Compile Include="sub-team-6\interaction-gateway-team4\IInteractionGateway.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Interfaces\ICoordinateMapper.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Interfaces\IMaskController.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Interfaces\IRegionController.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Interfaces\IRestFrequencyController.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Interfaces\IVolumeDataExporter.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Interfaces\IVolumeRenderer.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Services\MaskControllerService.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Services\RegionControllerService.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Services\RestFrequencyService.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Services\VolumeCoordinateMapper.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Services\VolumeDataExportService.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\Services\VolumeRenderingService.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\ValueObjects\FoveationParameters.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\ValueObjects\MaskParameters.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\ValueObjects\RenderingParameters.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\ValueObjects\VignetteParameters.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\after\VolumeDataSetRenderer.cs" />
+    <Compile Include="subteam-1\VolumeDataSetRenderer\before\VolumeDataSetRenderer.cs" />
+    <Compile Include="team3\example1-VolumeDataSetRenderer\after\FoveatedSamplingPolicy.cs" />
+    <Compile Include="team3\example1-VolumeDataSetRenderer\after\VolumeCameraDriver.cs" />
+    <Compile Include="team3\example1-VolumeDataSetRenderer\after\VolumeMaterialBinder.cs" />
+    <Compile Include="team3\example1-VolumeDataSetRenderer\after\VolumeRenderCoordinator.cs" />
+    <Compile Include="team3\example1-VolumeDataSetRenderer\after\VolumeTextureManager.cs" />
+    <Compile Include="team3\example1-VolumeDataSetRenderer\before\VolumeDataSetRenderer.cs" />
+    <Compile Include="team3\example2-MaskModes\after\ApplyMaskMode.cs" />
+    <Compile Include="team3\example2-MaskModes\after\IMaskMode.cs" />
+    <Compile Include="team3\example2-MaskModes\after\InverseMaskMode.cs" />
+    <Compile Include="team3\example2-MaskModes\after\IsolateMaskMode.cs" />
+    <Compile Include="team3\example2-MaskModes\before\VolumeDataSetRenderer.cs" />
+    <Compile Include="team3\stubs\ApplyMaskMode.cs" />
+    <Compile Include="team3\stubs\DisabledMaskMode.cs" />
+    <Compile Include="team3\stubs\HdrpRenderPipeline.cs" />
+    <Compile Include="team3\stubs\IMaskMode.cs" />
+    <Compile Include="team3\stubs\InverseMaskMode.cs" />
+    <Compile Include="team3\stubs\IRenderPipeline.cs" />
+    <Compile Include="team3\stubs\IsolateMaskMode.cs" />
+    <Compile Include="team3\stubs\IVolumeRenderer.cs" />
+    <Compile Include="team3\stubs\NullRenderPipeline.cs" />
+    <Compile Include="team3\stubs\StubGazeProvider.cs" />
+    <Compile Include="team3\stubs\UrpRenderPipeline.cs" />
+    <Compile Include="team3\tests\Example1_RendererSplitTests.cs" />
+    <Compile Include="team3\tests\Example2_MaskModeTests.cs" />
+    <Compile Include="team3\tests\GoldenImageRegressionTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="handoffs\feature-table-fits-read\change.patch" />
+    <None Include="handoffs\feature-table-fits-read\README.md" />
+    <None Include="sub-team-1\abi\ABI_SPEC.md" />
+    <None Include="sub-team-1\abi\CONFORMANCE.md" />
+    <None Include="Sub-Team-2\Fits Reader\metrics\Metrics Comparison.pdf" />
+    <None Include="Sub-Team-2\tests\TESTS.md" />
+    <None Include="sub-team-5\example-1-moment-maps\CK_Metrics.md" />
+    <None Include="sub-team-5\example-1-moment-maps\diagram.puml" />
+    <None Include="sub-team-5\example-2-votable-export\CK_Metrics.md" />
+    <None Include="sub-team-5\example-2-votable-export\diagram.puml" />
+    <None Include="sub-team-6\contracts-team1\GatewayContracts.csproj" />
+    <None Include="sub-team-6\contracts-team1\README.md" />
+    <None Include="sub-team-6\contracts-team1\tests\GatewayContractsTests.csproj" />
+    <None Include="sub-team-6\debug-tab\.gitkeep" />
+    <None Include="sub-team-6\debug-tab\adapters\DebugTabAdapters.csproj" />
+    <None Include="sub-team-6\debug-tab\adapters\tests\DebugTabAdaptersTests.csproj" />
+    <None Include="sub-team-6\debug-tab\after-sequence.md" />
+    <None Include="sub-team-6\debug-tab\after-trace.md" />
+    <None Include="sub-team-6\debug-tab\before-sequence.md" />
+    <None Include="sub-team-6\debug-tab\before-trace.md" />
+    <None Include="sub-team-6\debug-tab\ck-metrics.md" />
+    <None Include="sub-team-6\debug-tab\class-diagram.md" />
+    <None Include="sub-team-6\debug-tab\dependency-graph.md" />
+    <None Include="sub-team-6\debug-tab\log-origin-trace.md" />
+    <None Include="sub-team-6\debug-tab\skeleton\DebugTabSkeleton.csproj" />
+    <None Include="sub-team-6\debug-tab\tests\DebugTabTests.csproj" />
+    <None Include="sub-team-6\file-tab\.gitkeep" />
+    <None Include="sub-team-6\file-tab\adapters\Adapters-ReadME.md" />
+    <None Include="sub-team-6\file-tab\adapters\FileTabAdapters.csproj" />
+    <None Include="sub-team-6\file-tab\adapters\tests\FileTabAdaptersTests.csproj" />
+    <None Include="sub-team-6\file-tab\after-sequence.md" />
+    <None Include="sub-team-6\file-tab\after-trace.md" />
+    <None Include="sub-team-6\file-tab\before-sequence.md" />
+    <None Include="sub-team-6\file-tab\before-trace.md" />
+    <None Include="sub-team-6\file-tab\ck-metrics.md" />
+    <None Include="sub-team-6\file-tab\class-diagram.md" />
+    <None Include="sub-team-6\file-tab\dependency-graph.md" />
+    <None Include="sub-team-6\file-tab\skeleton\FileTabSkeleton.csproj" />
+    <None Include="sub-team-6\file-tab\skeleton\Skeleton-ReadME.md" />
+    <None Include="sub-team-6\file-tab\tests\FileTabTests.csproj" />
+    <None Include="sub-team-6\interaction-gateway-team4\README.md" />
+    <None Include="subteam-1\domain-model.md" />
+    <None Include="subteam-1\god-classes\01-volume-data-set.puml" />
+    <None Include="subteam-1\god-classes\02-canvass-desktop.puml" />
+    <None Include="subteam-1\god-classes\03-volume-input-controller.puml" />
+    <None Include="subteam-1\god-classes\04-desktop-paint-controller.puml" />
+    <None Include="subteam-1\god-classes\05-volume-data-set-renderer.puml" />
+    <None Include="subteam-1\god-classes\06-catalog-data-set-renderer.puml" />
+    <None Include="subteam-1\god-classes\07-volume-command-controller.puml" />
+    <None Include="subteam-1\god-classes\README.md" />
+    <None Include="subteam-1\god-classes\refactoring-suggestions.md" />
+    <None Include="subteam-1\VolumeDataSetRenderer\justification.md" />
+    <None Include="subteam-1\VolumeDataSetRenderer\metrics.md" />
+    <None Include="team3\example1-VolumeDataSetRenderer\after\Rationale\VolumeMaterialBinder-decisions.md" />
+    <None Include="team3\example1-VolumeDataSetRenderer\after\Rationale\VolumeTextureManager-decisions.md" />
+    <None Include="team3\example1-VolumeDataSetRenderer\README.md" />
+    <None Include="team3\example2-MaskModes\README.md" />
+    <None Include="team3\stubs\md explanations\E1_RenderPipelineStubs_Annotation.md" />
+    <None Include="team3\tests\iDaVIE.Rendering.Tests.asmdef" />
+    <None Include="team3\tests\TESTS.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="team3\example1-VolumeDataSetRenderer\example1-VolumeDataSetRenderer.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include=".vs\Refactored Examples.slnx\v18\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
+  <ProjectExtensions>
+    <VisualStudio AllowExistingFolder="true" />
+  </ProjectExtensions>
+</Project>
