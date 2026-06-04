@@ -7,12 +7,12 @@ Mandatory artefact per Section 9.2 (T8) of the assignment spec. Every AI-assiste
 One file per sub-team, by **work-package number** (Section 6.1–6.7):
 
 - `sub-team-1.md` — Architecture / Micro-kernel
-- `sub-team-2.md` — Persistence & Data
+- `sub-team-2.md` — Native Plug-ins
 - `sub-team-3.md` — Rendering & Compute
 - `sub-team-4.md` — Interaction System
 - `sub-team-5.md` — Networking / Server
 - `sub-team-6.md` — Desktop GUI & Client Shell *(us)*
-- `sub-team-7.md` — Native Plug-ins
+- `sub-team-7.md` — Persistence & Data
 
 Edit only your own sub-team's file. PR review is light-touch — the goal is completeness, not gatekeeping.
 
