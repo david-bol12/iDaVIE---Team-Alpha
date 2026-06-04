@@ -1,0 +1,228 @@
+Worked Example 1: Voice Command Refactor (Koffiewinkel)
+Author: Arnav Kothari
+Related: refactoring-examples/koffiewinkel/volume-input/ (worked example 2 — Colin Forde)
+Scope: Interaction/voice only — NOT rendering (VolumeDataSetRenderer out of scope)
+
+1) Problem Statement (Before)
+
+This worked example targets the interaction-system voice layer in VolumeCommandController.
+
+Baseline issues observed:
+- A long if/else if chain in ExecuteVoiceCommand handled all phrases in one place.
+- Speech recognition (KeywordRecognizer) was owned directly by VolumeCommandController.
+- Desktop UI sync logic for thresholds/ratio used repeated scene-path lookups.
+- The class mixed orchestration, platform API handling, command dispatch, and command behavior.
+
+These issues reduce maintainability (understandability, analyzability, modifiability, testability), aligning with ISO/IEC 25010 concerns raised in the brief.
+
+--------------------------------------------------------------------------------
+
+2) Refactoring Objective
+
+Refactor voice-command handling into composable units while preserving runtime behavior and external API compatibility.
+
+Constraints followed:
+- Keep voice phrases and command behavior consistent with baseline.
+- Preserve public methods used by existing callers (CanvassDesktop, voice list UI, colour-map UI, editor tooling).
+- Minimize scope to interaction/voice layer.
+
+--------------------------------------------------------------------------------
+
+3) Design Approach
+
+Patterns applied:
+1. Adapter: WindowsVoiceRecogniser wraps Unity Windows speech API.
+2. Command + Registry: phrase-to-action mapping moved to VoiceCommandRegistry.
+3. Context Object: dependencies accessed via IVoiceCommandContext.
+4. Helper extraction: desktop slider/dropdown sync isolated in VoiceDesktopUiSync.
+
+--------------------------------------------------------------------------------
+
+4) Implementation Changes
+
+4.1 Speech abstraction (IVoiceRecogniser)
+
+IVoiceRecogniser defines start/stop/running state and one recognition event.
+
+public interface IVoiceRecogniser
+{
+    bool IsRunning { get; }
+    void Start();
+    void Stop();
+    event EventHandler<VoicePhraseRecognizedEventArgs> PhraseRecognized;
+}
+
+Why this matters:
+- VolumeCommandController no longer depends directly on Unity speech types.
+- Future recognizers can be swapped behind the same interface.
+
+4.2 Windows adapter (WindowsVoiceRecogniser)
+
+Unity-specific APIs are now isolated here.
+
+public sealed class WindowsVoiceRecogniser : IVoiceRecogniser, IDisposable
+{
+    private readonly KeywordRecognizer _recognizer;
+
+    public WindowsVoiceRecogniser(string[] keywords, ConfidenceLevel confidenceLevel)
+    {
+        _recognizer = new KeywordRecognizer(keywords, confidenceLevel);
+        _recognizer.OnPhraseRecognized += OnPhraseRecognized;
+    }
+
+    private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
+    {
+        PhraseRecognized?.Invoke(this, new VoicePhraseRecognizedEventArgs(
+            args.text, args.confidence, args.phraseStartTime, args.phraseDuration));
+    }
+}
+
+Why this matters:
+- Platform boundary is explicit.
+- Lifecycle (Dispose) and event unsubscription are localized.
+
+4.3 Phrase dispatch moved to registry (VoiceCommandRegistry)
+
+Dispatch is now data-driven via a dictionary.
+
+var commands = new Dictionary<string, IVoiceCommand>(StringComparer.Ordinal);
+void Add(string phrase, Action<IVoiceCommandContext> action) =>
+    commands[phrase] = new DelegateVoiceCommand(action);
+
+Add(k.EditThresholdMin, c => owner.startThresholdEditing(false));
+Add(k.EditThresholdMax, c => owner.startThresholdEditing(true));
+Add(k.SaveThreshold, c => owner.endThresholdEditing());
+Add(k.ResetThreshold, c => owner.resetThreshold());
+
+And execution:
+
+if (!registry.TryGetValue(phrase, out var command))
+{
+    Debug.LogWarning($"Unknown voice command: {phrase}");
+    return false;
+}
+
+command.Execute(context);
+return true;
+
+Why this matters:
+- Removes the long branch chain and centralizes mapping.
+- Adding a new phrase becomes one registry entry.
+
+4.4 VolumeCommandController reduced to orchestrator
+
+Controller now wires dependencies, listens for phrases, and delegates execution:
+
+_voiceCommands = VoiceCommandRegistry.Build(this);
+_voiceCommandContext = new VoiceCommandContext(this, _dataSets);
+
+var recogniser = new WindowsVoiceRecogniser(Keywords.All, _config.voiceCommandConfidenceLevel);
+recogniser.PhraseRecognized += OnPhraseRecognized;
+_voiceRecogniser = recogniser;
+
+Phrase flow:
+
+private void OnPhraseRecognized(object sender, VoicePhraseRecognizedEventArgs args)
+{
+    _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
+    ExecuteVoiceCommand(args.Text);
+}
+
+private void ExecuteVoiceCommand(string phrase)
+{
+    VoiceCommandRegistry.TryExecute(phrase, _voiceCommands, _voiceCommandContext);
+}
+
+Why this matters:
+- Controller no longer contains phrase-dispatch logic internals.
+- Runtime behavior remains consistent from user perspective.
+
+4.5 Desktop UI sync extraction (VoiceDesktopUiSync)
+
+Threshold slider and ratio dropdown synchronization moved out of command controller:
+
+public static void SyncThresholdSliders(GameObject mainCanvassDesktop, VolumeDataSetRenderer dataSet)
+{
+    var settings = FindSettings(mainCanvassDesktop);
+    var thresholdContainer = settings.Find("Threshold_container");
+    var minSlider = thresholdContainer.Find("Threshold_min")?.Find("Slider")?.GetComponent<Slider>();
+    var maxSlider = thresholdContainer.Find("Threshold_max")?.Find("Slider")?.GetComponent<Slider>();
+    if (minSlider != null) minSlider.value = dataSet.ThresholdMin;
+    if (maxSlider != null) maxSlider.value = dataSet.ThresholdMax;
+}
+
+Why this matters:
+- Scene-path coupling is isolated in one utility.
+- Reduces duplication and accidental drift in UI sync behavior.
+
+--------------------------------------------------------------------------------
+
+5) Behavioral Compatibility
+
+Compatibility preserved intentionally:
+- Keywords and Keywords.All retained.
+- Existing public methods retained for current callers.
+- Push-to-talk flow retained (OnPushToTalkPressed / OnPushToTalkReleased).
+- Voice list execution path retained via ExecuteVoiceCommandFromList.
+
+Known non-change:
+- Speech recognition engine is still Unity Windows KeywordRecognizer (not OS-agnostic yet).
+
+--------------------------------------------------------------------------------
+
+6) Quality Impact (Brief Alignment)
+
+Expected maintainability impact:
+- Understandability: smaller focused files with clear responsibilities.
+- Analyzability: command mapping visible in one registry.
+- Modifiability: new phrase/action additions are localized.
+- Testability: recognizer contract (IVoiceRecogniser) enables mocks/stubs.
+- Coupling reduction: desktop UI traversal and speech API references moved out of controller.
+
+Suggested CK metric interpretation for reporting:
+- VolumeCommandController should show reduced complexity and response surface relative to baseline due to dispatch extraction.
+- New classes increase count but reduce per-class burden and improve cohesion.
+
+--------------------------------------------------------------------------------
+
+7) Verification Plan
+
+Manual smoke tests:
+1. Start scene with voice enabled, confirm recognizer starts (or push-to-talk mode works).
+2. Speak command samples across groups:
+   - Threshold: edit min, save threshold, reset threshold
+   - Display: color map plasma, projection maximum
+   - Paint/mask: paint mode, show mask outline, mask on
+3. Trigger commands from voice list UI (button execution path).
+4. Confirm desktop threshold sliders update after save/reset.
+5. Confirm no regressions for external callers (CanvassDesktop, voice list UI, VolumeInputController threshold paths).
+
+--------------------------------------------------------------------------------
+
+8) Risks and Limitations
+
+- Recognition accuracy/platform dependence unchanged (still Windows speech backend).
+- Registry growth can still become large; future step is grouping commands by domain.
+- Some behavior still delegates to large legacy controllers (outside this worked example scope).
+
+--------------------------------------------------------------------------------
+
+9) Next Iteration (Out of Scope for this slice)
+
+- Introduce alternative recognizer implementations for OS-agnostic support behind IVoiceRecogniser.
+- Split command groups into feature-specific registry modules (threshold/mask/video/etc.).
+- Add automated unit tests around VoiceCommandRegistry.TryExecute using a mocked context.
+
+--------------------------------------------------------------------------------
+
+10) Changed Files (Evidence Index)
+
+- Assets/Scripts/VolumeData/VolumeCommandController.cs
+- Assets/Scripts/VolumeData/Voice/IVoiceRecogniser.cs
+- Assets/Scripts/VolumeData/Voice/WindowsVoiceRecogniser.cs
+- Assets/Scripts/VolumeData/Voice/IVoiceCommand.cs
+- Assets/Scripts/VolumeData/Voice/IVoiceCommandContext.cs
+- Assets/Scripts/VolumeData/Voice/VoiceCommandContext.cs
+- Assets/Scripts/VolumeData/Voice/DelegateVoiceCommand.cs
+- Assets/Scripts/VolumeData/Voice/VoiceCommandRegistry.cs
+- Assets/Scripts/VolumeData/Voice/VoiceDesktopUiSync.cs
