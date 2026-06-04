@@ -304,3 +304,41 @@ _Add your AI usage log here. Use the same format as above — one entry per sess
 **Prompt summary:** Asked Claude to review all prompts and commits made regarding the iDaVIE project and update the existing team AI usage log with Damien's work.
 **Output:** Sessions 1–15 written into `AI-USAGE-LOG.md` under Damien O Brien's section, drawn from session transcript history and git commit log.
 **Files affected:** `AI-USAGE-LOG.md`.
+
+# AI Usage Log — Cathal Ging
+ 
+## Session 1 (2026-05-24)
+- Used Claude to validate `IRenderPipeline` interface design (6 methods, DIP reasoning)
+- Drafted `NullRenderPipeline` test double with Claude's help
+- Sketched `IMaskMode` interface + three strategy implementations
+- Documented design rationale for test doubles in stubs/
+## Session 2 (2026-05-25)
+- Used Claude to confirm CBO count in dependency map (28 coupled classes)
+- Drafted diagrams: architecture.puml, class-before.puml with real metrics
+- Annotated before/ code with SOLID/GRASP violation markers
+## Session 3 (2026-05-25)
+- Used Claude to extract and annotate VolumeDataSetRenderer.cs (20+ inline markers)
+- Documented 8 responsibilities and mapping to target classes
+## Session 4 (2026-05-25)
+- Drafted design document outline with Claude (10-section structure, brief-aligned)
+## Session 5 (2026-05-25)
+- Created architecture.puml component diagram with Claude (5-layer, DIP callout)
+- Expanded sequence-render-frame.puml (7-step frame loop, alt blocks)
+- Created class-after.puml skeleton with projected CK annotations
+## Session 6 (2026-05-26)
+- Drafted VolumeMaterialBinder.cs with Claude (16 WMC, 11 CBO, 0.05 LCOM)
+- Validated CK projections against targets
+- Extracted ShaderID nested class (no public exposure of 20+ properties)
+## Session 7 (2026-05-26)
+- Drafted FoveatedSamplingPolicy.cs with Claude (7 WMC, 6 CBO, 0.0 LCOM)
+- Sketched IGazeProvider placeholder for Sub-team 4 dependency
+- Documented FoveationZone enum and FoveationParameters struct
+## Session 8 (2026-05-27)
+- Drafted VolumeCameraDriver.cs with Claude (9 WMC, 4 CBO, VolumeCoordinateService helper)
+- Finalized IMaskMode.cs + three mask mode implementations
+- Enriched SOLID/GRASP violation table with code locations (file/class/method)
+## Session 9 (2026-06-02)
+- Updated all code comments for Sprint 3 wire-up
+
+
+
