@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using DataFeatures;
+using iDaVIE.Infrastructure.Unity;
 using LineRenderer;
 using Stateless;
 using TMPro;
@@ -97,7 +98,21 @@ public class VolumeInputController : MonoBehaviour
     public bool HasHoverAnchor => (_hoveredAnchor && _hoveredFeature != null);
     public bool HasEditingAnchor => (_editingAnchor && _editingFeature != null);
     public VolumeDataSetRenderer ActiveDataSet => _volumeDataSets.FirstOrDefault(dataSet => dataSet.isActiveAndEnabled);
-    
+
+    // ── Persistence accessors ────────────────────────────────────────────────
+    /// <summary>
+    /// Returns the current InteractionState as a string for the persistence layer.
+    /// Used by InteractionStateAdapter.Capture().
+    /// </summary>
+    public InteractionState CurrentInteractionState => InteractionStateMachine.State;
+
+    /// <summary>
+    /// Returns the current (private) LocomotionState as a string for the persistence layer.
+    /// Used by InteractionStateAdapter.Capture().
+    /// </summary>
+    public string GetLocomotionStateString() => _locomotionState.ToString();
+    // ────────────────────────────────────────────────────────────────────────
+
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;
@@ -714,7 +729,7 @@ public class VolumeInputController : MonoBehaviour
         
         activeDataSet.ClearRegion();
         activeDataSet.ClearMeasure();
-        var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
+        var featureVisualiser = activeDataSet.GetComponentInChildren<FeatureVisualiser>();
         // Clear region selection by clicking selection. Attempt to select feature
         if (_selectionStopwatch.ElapsedMilliseconds < 200)
         {
@@ -722,9 +737,9 @@ public class VolumeInputController : MonoBehaviour
         }
         else
         {
-            if (featureSetManager)
+            if (featureVisualiser)
             {
-                featureSetManager.CreateSelectionFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel);
+                featureVisualiser.CreateSelectionFeature((Vector3)activeDataSet.RegionStartVoxel, (Vector3)activeDataSet.RegionEndVoxel);
             }
         }
     }
@@ -1390,16 +1405,15 @@ public class VolumeInputController : MonoBehaviour
         _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
     }
 
-    public void SetHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
+    public void SetHoveredFeature(FeatureVisualiser featureVisualiser, FeatureAnchor featureAnchor)
     {
-        _hoveredFeature = featureSetManager?.SelectedFeature;
+        _hoveredFeature = featureVisualiser?.Service?.SelectedFeature;
         _hoveredAnchor = featureAnchor;
-        //ActiveDataSet?.SetRegionPosition(_hoveredFeature.GetMinBounds(), true);
     }
 
-    public void ClearHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
+    public void ClearHoveredFeature(FeatureVisualiser featureVisualiser, FeatureAnchor featureAnchor)
     {
-        var hoveredFeature = featureSetManager?.SelectedFeature;
+        var hoveredFeature = featureVisualiser?.Service?.SelectedFeature;
         if (_hoveredFeature == hoveredFeature && _hoveredAnchor == featureAnchor)
         {
             _hoveredFeature = null;
