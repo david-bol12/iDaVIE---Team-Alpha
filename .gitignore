@@ -550,3 +550,7 @@ crashlytics-build.properties
 
 # Allow hand-authored .csproj files in refactoring examples (not Unity-generated)
 !refactoring-examples/**/*.csproj
+
+# NDepend
+*.ndproj
+NDependOut/
